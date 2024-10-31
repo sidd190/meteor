@@ -80,6 +80,8 @@ Object.assign(DummyDocumentView.prototype, {
 var SessionDocumentView = function () {
   var self = this;
   self.existsIn = new Set(); // set of subscriptionHandle
+
+  // Memory Growth
   self.dataByKey = new Map(); // key-> [ {subscriptionHandle, value} by precedence]
 };
 
@@ -185,6 +187,7 @@ Object.assign(SessionDocumentView.prototype, {
 var SessionCollectionView = function (collectionName, sessionCallbacks) {
   var self = this;
   self.collectionName = collectionName;
+  // Memory Growth
   self.documents = new Map();
   self.callbacks = sessionCallbacks;
 };
@@ -636,7 +639,7 @@ Object.assign(Session.prototype, {
           if (!blocked)
             return; // idempotent
           blocked = false;
-          processNext();
+          setImmediate(processNext);
         };
 
         self.server.onMessageHook.each(function (callback) {
