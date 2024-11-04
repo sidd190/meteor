@@ -10,7 +10,8 @@ Npm.depends({
   "lodash.once": "4.1.1",
   "lodash.isempty": "4.4.0",
   "lodash.isstring": "4.0.1",
-  "lodash.isobject": "3.0.2"
+  "lodash.isobject": "3.0.2",
+  "lru_map": '0.4.1'
 });
 
 Package.onUse(function (api) {
@@ -23,6 +24,7 @@ Package.onUse(function (api) {
       "mongo-id",
       "diff-sequence",
       "ecmascript",
+      "typescript",
     ],
     "server"
   );
