@@ -5,14 +5,14 @@ import { EJSON } from 'meteor/ejson';
 import { Random } from 'meteor/random';
 import { MongoID } from 'meteor/mongo-id';
 import { DDP } from './namespace.js';
-import MethodInvoker from './MethodInvoker.js';
+import { MethodInvoker } from './method_invoker';
 import {
   hasOwn,
   slice,
   keys,
   isEmpty,
   last,
-} from "meteor/ddp-common/utils.js";
+} from "meteor/ddp-common/utils";
 
 class MongoIDMap extends IdMap {
   constructor() {
