@@ -164,19 +164,24 @@ export class ObserveMultiplexer {
 
   async _sendAdds(handle: ObserveHandle): Promise<void> {
     const add = this._ordered ? handle._addedBefore : handle._added;
-
     if (!add) return;
 
-    await this._cache.docs.forEachAsync(async (doc: any, id: string) => {
-      if (!(handle._id in this._handles!))
+    const addPromises: Promise<void>[] = [];
+
+    this._cache.docs.forEach((doc: any, id: string) => {
+      if (!(handle._id in this._handles!)) {
         throw Error("handle got removed before sending initial adds!");
+      }
 
       const { _id, ...fields } = handle.nonMutatingCallbacks ? doc : EJSON.clone(doc);
 
-      if (this._ordered)
-        await add(id, fields, null);
-      else
-        await add(id, fields);
+      const promise = this._ordered ?
+        add(id, fields, null) :
+        add(id, fields);
+
+      addPromises.push(promise);
     });
+
+    await Promise.all(addPromises);
   }
 }

@@ -15,11 +15,11 @@ export class ObserveHandle {
   nonMutatingCallbacks: boolean;
   _stopped: boolean;
 
-  _added?: (...args: any[]) => void;
-  _addedBefore?: (...args: any[]) => void;
-  _changed?: (...args: any[]) => void;
-  _movedBefore?: (...args: any[]) => void;
-  _removed?: (...args: any[]) => void;
+  _added?: (...args: any[]) => Promise<void>;
+  _addedBefore?: (...args: any[]) => Promise<void>;
+  _changed?: (...args: any[]) => Promise<void>;
+  _movedBefore?: (...args: any[]) => Promise<void>;
+  _removed?: (...args: any[]) => Promise<void>;
 
   constructor(multiplexer: any, callbacks: Record<ObserveHandleCallback, any>, nonMutatingCallbacks: boolean) {
     this._multiplexer = multiplexer;
