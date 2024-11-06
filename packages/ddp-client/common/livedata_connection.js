@@ -202,12 +202,6 @@ export class Connection {
     self._updatesForUnknownStores = {};
     // if we're blocking a migration, the retry func
     self._retryMigrate = null;
-
-    self.__flushBufferedWrites = Meteor.bindEnvironment(
-      self._flushBufferedWrites,
-      'flushing DDP buffered writes',
-      self
-    );
     // Collection name -> array of messages.
     self._bufferedWrites = {};
     // When current buffer of updates must be flushed at, in ms timestamp.
@@ -1306,7 +1300,7 @@ export class Connection {
     self._bufferedWritesFlushHandle = setTimeout(() => {
       // __flushBufferedWrites is a promise, so with this we can wait the promise to finish
       // before doing something
-      self._liveDataWritesPromise = self.__flushBufferedWrites();
+      self._liveDataWritesPromise = self._flushBufferedWrites();
 
       if (Meteor._isPromise(self._liveDataWritesPromise)) {
         self._liveDataWritesPromise.finally(
@@ -1340,7 +1334,7 @@ export class Connection {
     const self = this;
 
     if (self._resetStores || !isEmpty(updates)) {
-      // Start all store updates
+      // Start all store updates - keeping original loop structure
       for (const store of Object.values(self._stores)) {
         await store.beginUpdate(
           updates[store._name]?.length || 0,
@@ -1350,12 +1344,21 @@ export class Connection {
 
       self._resetStores = false;
 
-      // Process each store's updates
+      // Process each store's updates sequentially as before
       for (const [storeName, messages] of Object.entries(updates)) {
         const store = self._stores[storeName];
         if (store) {
-          for (const msg of messages) {
-            await store.update(msg);
+          // Batch each store's messages in modest chunks to prevent event loop blocking
+          // while maintaining operation order
+          const CHUNK_SIZE = 100;
+          for (let i = 0; i < messages.length; i += CHUNK_SIZE) {
+            const chunk = messages.slice(i, Math.min(i + CHUNK_SIZE, messages.length));
+
+            for (const msg of chunk) {
+              await store.update(msg);
+            }
+
+            await new Promise(resolve => process.nextTick(resolve));
           }
         } else {
           // Queue updates for uninitialized stores
@@ -1413,7 +1416,7 @@ export class Connection {
    * Executes buffered writes either synchronously (client) or async (server)
    * @private
    */
-  _flushBufferedWrites() {
+  async _flushBufferedWrites() {
     const self = this;
     const writes = self._prepareBuffersToFlush();
 
