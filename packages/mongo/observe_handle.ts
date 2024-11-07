@@ -15,6 +15,9 @@ export class ObserveHandle {
   nonMutatingCallbacks: boolean;
   _stopped: boolean;
 
+  public initialAddsSentResolver: (value: void) => void = () => {};
+  public initialAddsSent: Promise<void>
+
   _added?: (...args: any[]) => Promise<void>;
   _addedBefore?: (...args: any[]) => Promise<void>;
   _changed?: (...args: any[]) => Promise<void>;
@@ -40,6 +43,13 @@ export class ObserveHandle {
     this._stopped = false;
     this._id = nextObserveHandleId++;
     this.nonMutatingCallbacks = nonMutatingCallbacks;
+
+    this.initialAddsSent = new Promise(resolve => {
+      return this.initialAddsSentResolver = () => {
+        resolve();
+        this.initialAddsSent = Promise.resolve();
+      };
+    });
   }
 
   async stop() {

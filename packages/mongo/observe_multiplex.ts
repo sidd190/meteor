@@ -140,7 +140,7 @@ export class ObserveMultiplexer {
     return !!this._isReady;
   }
 
-  _applyCallback(callbackName: string, args: any[]): void {
+  async _applyCallback(callbackName: string, args: any[]) {
     this._queue.queueTask(async () => {
       if (!this._handles) return;
 
@@ -152,12 +152,17 @@ export class ObserveMultiplexer {
 
       for (const handleId of Object.keys(this._handles)) {
         const handle = this._handles && this._handles[handleId];
+
         if (!handle) return;
+
         const callback = (handle as any)[`_${callbackName}`];
-        callback && (await callback.apply(
+
+        if (!callback) continue;
+
+        handle.initialAddsSent.then(callback.apply(
           null,
           handle.nonMutatingCallbacks ? args : EJSON.clone(args)
-        ));
+        ))
       }
     });
   }
@@ -183,5 +188,7 @@ export class ObserveMultiplexer {
     });
 
     await Promise.all(addPromises);
+
+    handle.initialAddsSentResolver();
   }
 }
