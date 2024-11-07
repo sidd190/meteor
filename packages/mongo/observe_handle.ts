@@ -45,9 +45,16 @@ export class ObserveHandle {
     this.nonMutatingCallbacks = nonMutatingCallbacks;
 
     this.initialAddsSent = new Promise(resolve => {
-      return this.initialAddsSentResolver = () => {
+      const ready = () => {
         resolve();
         this.initialAddsSent = Promise.resolve();
+      }
+
+      const timeout = setTimeout(ready, 30000)
+
+      this.initialAddsSentResolver = () => {
+        ready();
+        clearTimeout(timeout);
       };
     });
   }
