@@ -2,7 +2,7 @@
 
 Authorization package for Meteor - compatible with built-in accounts package.
 
-> Available since Meteor 3.1.0
+> Available since Meteor 3.1.0 (previously alanning:roles)
 
 ## Installation
 
