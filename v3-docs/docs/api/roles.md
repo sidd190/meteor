@@ -2,6 +2,8 @@
 
 Authorization package for Meteor - compatible with built-in accounts package.
 
+> Available since Meteor 3.1.0
+
 ## Installation
 
 To add roles to your application, run this command in your terminal:
