@@ -251,6 +251,10 @@ export default defineConfig({
             text: "Top Level Await",
             link: "/api/top-level-await",
           },
+          {
+            text: "Roles",
+            link: "/api/roles",
+          },
         ],
         collapsed: true,
       },
