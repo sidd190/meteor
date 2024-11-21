@@ -3,7 +3,7 @@ import NotFound from './NotFound.vue'
 import GoToLatest from './GoToLatest.vue'
 import { useData, useRouter } from 'vitepress'
 import DefaultTheme from 'vitepress/theme'
-import { nextTick, onMounted, provide, ref } from 'vue'
+import { nextTick, provide, ref, onBeforeMount } from 'vue'
 import { redirect } from './redirects/script';
 const { isDark } = useData()
 const router = useRouter()
@@ -53,7 +53,7 @@ provide('toggle-appearance', async ({ clientX: x, clientY: y }: MouseEvent) => {
 
 const isLatestVersion = ref(false);
 
-onMounted(() => {
+onBeforeMount(() => {
   isLatestVersion.value = isClient && window.location.href.startsWith("https://docs.meteor.com/")
 });
 
