@@ -152,3 +152,8 @@ class AsynchronousQueue {
 }
 
 Meteor._AsynchronousQueue = AsynchronousQueue;
+
+/**
+ * Backwards compatibility
+ */
+Meteor._SynchronousQueue = AsynchronousQueue;
