@@ -1,5 +1,5 @@
-import { ObserveHandle } from './observe_handle';
 import isEmpty from 'lodash.isempty';
+import { ObserveHandle } from './observe_handle';
 
 interface ObserveMultiplexerOptions {
   ordered: boolean;
@@ -34,8 +34,7 @@ export class ObserveMultiplexer {
 
     this._ordered = ordered;
     this._onStop = onStop;
-    // @ts-ignore
-    this._queue = new Meteor._AsynchronousQueue();
+    this._queue = new Meteor._AsynchronousQueue({ orderMatters: true });
     this._handles = {};
     this._resolver = null;
     this._isReady = false;
