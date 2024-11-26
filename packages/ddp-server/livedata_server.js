@@ -1,6 +1,6 @@
 import isEmpty from 'lodash.isempty';
-import isString from 'lodash.isstring';
 import isObject from 'lodash.isobject';
+import isString from 'lodash.isstring';
 import { SessionCollectionView } from './session_collection_view';
 import { SessionDocumentView } from './session_document_view';
 
@@ -57,26 +57,7 @@ DDPServer.publicationStrategies = publicationStrategies;
 // Session and Subscription are file scope. For now, until we freeze
 // the interface, Server is package scope (in the future it should be
 // exported).
-var DummyDocumentView = function () {
-  var self = this;
-  self.existsIn = new Set(); // set of subscriptionHandle
-  self.dataByKey = new Map(); // key-> [ {subscriptionHandle, value} by precedence]
-};
 
-Object.assign(DummyDocumentView.prototype, {
-  getFields: function () {
-    return {}
-  },
-
-  clearField: function (subscriptionHandle, key, changeCollector) {
-    changeCollector[key] = undefined
-  },
-
-  changeField: function (subscriptionHandle, key, value,
-                         changeCollector, isAdd) {
-    changeCollector[key] = value
-  }
-});
 
 DDPServer._SessionDocumentView = SessionDocumentView;
 

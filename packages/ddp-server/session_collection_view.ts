@@ -1,77 +1,114 @@
-import { SessionDocumentView } from './session_document_view';
-import { LRUMap } from 'lru_map'
-import isEmpty from 'lodash.isempty';
+import { DummyDocumentView } from "./dummy_document_view";
+import { SessionDocumentView } from "./session_document_view";
 
-/**
- * Represents a client's view of documents within a single collection
- * @class SessionCollectionView
- */
+interface SessionCallbacks {
+  added: (collectionName: string, id: string, fields: Record<string, any>) => void;
+  changed: (collectionName: string, id: string, fields: Record<string, any>) => void;
+  removed: (collectionName: string, id: string) => void;
+}
+
+interface DiffSequence {
+  diffMaps: (
+    previous: Map<string, DocumentView>,
+    current: Map<string, DocumentView>,
+    callbacks: {
+      both: (id: string, prev: DocumentView, now: DocumentView) => void;
+      rightOnly: (id: string, now: DocumentView) => void;
+      leftOnly: (id: string, prev: DocumentView) => void;
+    }
+  ) => void;
+  diffObjects: (
+    previous: Record<string, any>,
+    current: Record<string, any>,
+    callbacks: {
+      both: (key: string, prev: any, now: any) => void;
+      rightOnly: (key: string, now: any) => void;
+      leftOnly: (key: string, prev: any) => void;
+    }
+  ) => void;
+}
+
+interface DocumentView {
+  existsIn: Set<string>;
+  dataByKey: Map<string, any>;
+  getFields: () => Record<string, any>;
+  changeField: (
+    subscriptionHandle: string,
+    key: string,
+    value: any,
+    changeCollector: Record<string, any>,
+    isAdd?: boolean
+  ) => void;
+  clearField: (
+    subscriptionHandle: string,
+    key: string,
+    changeCollector: Record<string, any>
+  ) => void;
+}
+
 export class SessionCollectionView {
   private readonly collectionName: string;
+  private readonly documents: Map<string, DocumentView>;
   private readonly callbacks: SessionCallbacks;
-  private readonly documents: LRUMap<string, SessionDocumentView>;
-  private readonly options: ViewOptions;
 
   /**
-   * @param collectionName - Name of the collection this view represents
-   * @param callbacks - Callbacks for document changes (added/changed/removed)
-   * @param options - Configuration options for the view
+   * Represents a client's view of a single collection
+   * @param collectionName - Name of the collection it represents
+   * @param sessionCallbacks - The callbacks for added, changed, removed
    */
-  constructor(
-    collectionName: string,
-    callbacks: SessionCallbacks,
-    options: ViewOptions = {}
-  ) {
+  constructor(collectionName: string, sessionCallbacks: SessionCallbacks) {
     this.collectionName = collectionName;
-    this.callbacks = callbacks;
-    this.options = {
-      maxDocuments: options.maxDocuments || 10000,
-      documentTTL: options.documentTTL || 3600000, // 1 hour in ms
-      cleanupInterval: options.cleanupInterval || 300000 // 5 minutes in ms
-    };
-
-    // Use LRU cache with max size limit
-    this.documents = new LRUMap<string, SessionDocumentView>(this.options.maxDocuments);
-
-    // Start periodic cleanup
-    this.startCleanup();
+    this.documents = new Map();
+    this.callbacks = sessionCallbacks;
   }
 
-  /**
-   * Periodically removes stale documents and frees memory
-   * @private
-   */
-  private startCleanup(): void {
-    const cleanup = (): void => {
-      const now = Date.now();
-      this.documents.forEach((doc, id) => {
-        if (now - doc.lastAccessed > this.options.documentTTL) {
-          this.documents.delete(id);
-        }
-      });
-    };
-
-    if (typeof setInterval !== 'undefined') {
-      setInterval(cleanup, this.options.cleanupInterval);
-    }
-  }
-
-  /**
-   * Checks if the view is empty
-   */
   public isEmpty(): boolean {
     return this.documents.size === 0;
   }
 
-  /**
-   * Adds or updates a document in the view
-   */
+  public diff(previous: SessionCollectionView): void {
+    DiffSequence.diffMaps(previous.documents, this.documents, {
+      both: this.diffDocument.bind(this),
+      rightOnly: (id: string, nowDV: DocumentView) => {
+        this.callbacks.added(this.collectionName, id, nowDV.getFields());
+      },
+      leftOnly: (id: string, prevDV: DocumentView) => {
+        this.callbacks.removed(this.collectionName, id);
+      }
+    });
+  }
+
+  private diffDocument(id: string, prevDV: DocumentView, nowDV: DocumentView): void {
+    const fields: Record<string, any> = {};
+    
+    DiffSequence.diffObjects(prevDV.getFields(), nowDV.getFields(), {
+      both: (key: string, prev: any, now: any) => {
+        if (!EJSON.equals(prev, now)) {
+          fields[key] = now;
+        }
+      },
+      rightOnly: (key: string, now: any) => {
+        fields[key] = now;
+      },
+      leftOnly: (key: string, prev: any) => {
+        fields[key] = undefined;
+      }
+    });
+    
+    this.callbacks.changed(this.collectionName, id, fields);
+  }
+
   public added(subscriptionHandle: string, id: string, fields: Record<string, any>): void {
     let docView = this.documents.get(id);
-    const added = !docView;
+    let added = false;
 
     if (!docView) {
-      docView = new SessionDocumentView();
+      added = true;
+      if (Meteor.server.getPublicationStrategy(this.collectionName).useDummyDocumentView) {
+        docView = new DummyDocumentView();
+      } else {
+        docView = new SessionDocumentView();
+      }
       this.documents.set(id, docView);
     }
 
@@ -79,7 +116,13 @@ export class SessionCollectionView {
     const changeCollector: Record<string, any> = {};
 
     Object.entries(fields).forEach(([key, value]) => {
-      docView.changeField(subscriptionHandle, key, value, changeCollector, true);
+      docView!.changeField(
+        subscriptionHandle,
+        key,
+        value,
+        changeCollector,
+        true
+      );
     });
 
     if (added) {
@@ -89,16 +132,14 @@ export class SessionCollectionView {
     }
   }
 
-  /**
-   * Updates an existing document in the view
-   */
   public changed(subscriptionHandle: string, id: string, changed: Record<string, any>): void {
+    const changedResult: Record<string, any> = {};
     const docView = this.documents.get(id);
+
     if (!docView) {
-      throw new Error(`Changed called on document ${id} that does not exist`);
+      throw new Error(`Could not find element with id ${id} to change`);
     }
 
-    const changedResult: Record<string, any> = {};
     Object.entries(changed).forEach(([key, value]) => {
       if (value === undefined) {
         docView.clearField(subscriptionHandle, key, changedResult);
@@ -107,94 +148,30 @@ export class SessionCollectionView {
       }
     });
 
-    if (!isEmpty(changedResult)) {
-      this.callbacks.changed(this.collectionName, id, changedResult);
-    }
+    this.callbacks.changed(this.collectionName, id, changedResult);
   }
 
-  /**
-   * Removes a document from the view
-   */
   public removed(subscriptionHandle: string, id: string): void {
     const docView = this.documents.get(id);
+
     if (!docView) {
-      throw new Error(`Removed called on document ${id} that does not exist`);
+      throw new Error(`Removed nonexistent document ${id}`);
     }
 
     docView.existsIn.delete(subscriptionHandle);
 
     if (docView.existsIn.size === 0) {
-      this.documents.delete(id);
+      // it is gone from everyone
       this.callbacks.removed(this.collectionName, id);
+      this.documents.delete(id);
     } else {
       const changed: Record<string, any> = {};
+      // remove this subscription from every precedence list
+      // and record the changes
       docView.dataByKey.forEach((precedenceList, key) => {
         docView.clearField(subscriptionHandle, key, changed);
       });
-
-      if (!isEmpty(changed)) {
-        this.callbacks.changed(this.collectionName, id, changed);
-      }
+      this.callbacks.changed(this.collectionName, id, changed);
     }
   }
-
-  /**
-   * Compares this view with another and sends appropriate callbacks
-   */
-  public diff(previous: SessionCollectionView): void {
-    DiffSequence.diffMaps(previous.documents, this.documents, {
-      both: (id, prevDocView, newDocView) => {
-        this.diffDocument(id, prevDocView, newDocView);
-      },
-      rightOnly: (id, newDocView) => {
-        this.callbacks.added(this.collectionName, id, newDocView.getFields());
-      },
-      leftOnly: (id) => {
-        this.callbacks.removed(this.collectionName, id);
-      }
-    });
-  }
-
-  /**
-   * Cleans up resources used by this view
-   */
-  public destroy(): void {
-    this.documents.clear();
-  }
-
-  /**
-   * @private
-   */
-  private diffDocument(id: string, prevDocView: SessionDocumentView, newDocView: SessionDocumentView): void {
-    const fields: Record<string, any> = {};
-    DiffSequence.diffObjects(prevDocView.getFields(), newDocView.getFields(), {
-      both: (key, prev, now) => {
-        if (!EJSON.equals(prev, now)) {
-          fields[key] = now;
-        }
-      },
-      rightOnly: (key, now) => {
-        fields[key] = now;
-      },
-      leftOnly: (key) => {
-        fields[key] = undefined;
-      }
-    });
-
-    if (!isEmpty(fields)) {
-      this.callbacks.changed(this.collectionName, id, fields);
-    }
-  }
-}
-
-interface ViewOptions {
-  maxDocuments?: number;
-  documentTTL?: number;
-  cleanupInterval?: number;
-}
-
-interface SessionCallbacks {
-  added: (collection: string, id: string, fields: Record<string, any>) => void;
-  changed: (collection: string, id: string, fields: Record<string, any>) => void;
-  removed: (collection: string, id: string) => void;
 }
