@@ -20,7 +20,7 @@ var websocketExtensions = once(function () {
 
   if (websocketCompressionConfig) {
     extensions.push(Npm.require('permessage-deflate2').configure({
-      threshold: 512,
+      threshold: 1024,
       level: zlib.constants.Z_BEST_SPEED,
       memLevel: zlib.constants.Z_MIN_MEMLEVEL,
       noContextTakeover: true,
