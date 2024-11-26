@@ -67,7 +67,7 @@ export class SessionDocumentView {
     key: string,
     value: any,
     changeCollector: ChangeCollector,
-    isAdd: boolean
+    isAdd: boolean = false
   ): void {
     // Publish API ignores _id if present in fields
     if (key === "_id") return;

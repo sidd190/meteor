@@ -7,44 +7,7 @@ interface SessionCallbacks {
   removed: (collectionName: string, id: string) => void;
 }
 
-interface DiffSequence {
-  diffMaps: (
-    previous: Map<string, DocumentView>,
-    current: Map<string, DocumentView>,
-    callbacks: {
-      both: (id: string, prev: DocumentView, now: DocumentView) => void;
-      rightOnly: (id: string, now: DocumentView) => void;
-      leftOnly: (id: string, prev: DocumentView) => void;
-    }
-  ) => void;
-  diffObjects: (
-    previous: Record<string, any>,
-    current: Record<string, any>,
-    callbacks: {
-      both: (key: string, prev: any, now: any) => void;
-      rightOnly: (key: string, now: any) => void;
-      leftOnly: (key: string, prev: any) => void;
-    }
-  ) => void;
-}
-
-interface DocumentView {
-  existsIn: Set<string>;
-  dataByKey: Map<string, any>;
-  getFields: () => Record<string, any>;
-  changeField: (
-    subscriptionHandle: string,
-    key: string,
-    value: any,
-    changeCollector: Record<string, any>,
-    isAdd?: boolean
-  ) => void;
-  clearField: (
-    subscriptionHandle: string,
-    key: string,
-    changeCollector: Record<string, any>
-  ) => void;
-}
+type DocumentView = SessionDocumentView | DummyDocumentView;
 
 export class SessionCollectionView {
   private readonly collectionName: string;
@@ -99,7 +62,7 @@ export class SessionCollectionView {
   }
 
   public added(subscriptionHandle: string, id: string, fields: Record<string, any>): void {
-    let docView = this.documents.get(id);
+    let docView: DocumentView | undefined = this.documents.get(id);
     let added = false;
 
     if (!docView) {
