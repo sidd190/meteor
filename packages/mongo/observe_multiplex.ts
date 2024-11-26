@@ -61,11 +61,11 @@ export class ObserveMultiplexer {
     Package['facts-base'] && Package['facts-base'].Facts.incrementServerFact(
       "mongo-livedata", "observe-handles", 1);
 
-    await this._queue.runTask(async () => {
+    await this._queue.unshiftTasks([async () => {
       this._handles![handle._id] = handle;
       await this._sendAdds(handle);
       --this._addHandleTasksScheduledButNotPerformed;
-    });
+    }]);
     await this._readyPromise;
   }
 
