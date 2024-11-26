@@ -139,7 +139,7 @@ export class ObserveMultiplexer {
     return !!this._isReady;
   }
 
-  async _applyCallback(callbackName: string, args: any[]) {
+  _applyCallback(callbackName: string, args: any[]) {
     this._queue.queueTask(async () => {
       if (!this._handles) return;
 
