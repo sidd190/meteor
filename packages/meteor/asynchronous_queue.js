@@ -6,7 +6,7 @@ class AsynchronousQueue {
   constructor({
                 batchSize = 50,
                 maxConcurrent = 10,
-                orderMatters = false
+                orderMatters = true
               } = {}) {
     this._taskHandles = new Meteor._DoubleEndedQueue();
     this._runningOrRunScheduled = false;

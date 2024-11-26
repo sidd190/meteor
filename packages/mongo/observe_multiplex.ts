@@ -34,7 +34,7 @@ export class ObserveMultiplexer {
 
     this._ordered = ordered;
     this._onStop = onStop;
-    this._queue = new Meteor._AsynchronousQueue({ orderMatters: true });
+    this._queue = new Meteor._AsynchronousQueue();
     this._handles = {};
     this._resolver = null;
     this._isReady = false;
