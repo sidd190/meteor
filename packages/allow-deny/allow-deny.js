@@ -174,9 +174,14 @@ CollectionPrototype._defineMutationMethods = function(options) {
           // single-ID selectors.
           if (!isInsert(method)) throwIfSelectorIsNotId(args[0], method);
 
+          const syncMethodName = method.replace('Async', '');
+          const syncValidatedMethodName = '_validated' + method.charAt(0).toUpperCase() + syncMethodName.slice(1);
+          // it forces to use async validated behavior
+          const validatedMethodName = syncValidatedMethodName + 'Async';
+
           if (self._restricted) {
             // short circuit if there is no way it will pass.
-            if (self._validators[method].allow.length === 0) {
+            if (self._validators[syncMethodName].allow.length === 0) {
               throw new Meteor.Error(
                 403,
                 'Access denied. No allow validators set on restricted ' +
@@ -185,11 +190,6 @@ CollectionPrototype._defineMutationMethods = function(options) {
                   "'."
               );
             }
-
-            const syncMethodName = method.replace('Async', '');
-            const syncValidatedMethodName = '_validated' + method.charAt(0).toUpperCase() + syncMethodName.slice(1);
-            // it forces to use async validated behavior on the server
-            const validatedMethodName = Meteor.isServer ? syncValidatedMethodName + 'Async' : syncValidatedMethodName;
 
             args.unshift(this.userId);
             isInsert(method) && args.push(generatedId);
@@ -292,7 +292,7 @@ CollectionPrototype._validatedInsertAsync = async function(userId, doc,
   const self = this;
   // call user validators.
   // Any deny returns true means denied.
-  if (await asyncSome(self._validators.insertAsync.deny, async (validator) => {
+  if (await asyncSome(self._validators.insert.deny, async (validator) => {
     const result = validator(userId, docToValidate(validator, doc, generatedId));
     return Meteor._isPromise(result) ? await result : result;
   })) {
@@ -300,7 +300,7 @@ CollectionPrototype._validatedInsertAsync = async function(userId, doc,
   }
   // Any allow returns true means proceed. Throw error if they all fail.
 
-  if (await asyncEvery(self._validators.insertAsync.allow, async (validator) => {
+  if (await asyncEvery(self._validators.insert.allow, async (validator) => {
     const result = validator(userId, docToValidate(validator, doc, generatedId));
     return !(Meteor._isPromise(result) ? await result : result);
   })) {
@@ -408,13 +408,12 @@ CollectionPrototype._validatedUpdateAsync = async function(
     });
   }
 
-  const doc = await self._collection.findOneAsync(selector, findOptions);
-  if (!doc)  // none satisfied!
-    return 0;
+
+  const doc = await self._collection.findOneAsync(selector, findOptions) || {};
 
   // call user validators.
   // Any deny returns true means denied.
-  if (await asyncSome(self._validators.updateAsync.deny, async (validator) => {
+  if (await asyncSome(self._validators.update.deny, async (validator) => {
     const factoriedDoc = transformDoc(validator, doc);
     const result = validator(userId,
       factoriedDoc,
@@ -424,8 +423,9 @@ CollectionPrototype._validatedUpdateAsync = async function(
   })) {
     throw new Meteor.Error(403, "Access denied");
   }
+
   // Any allow returns true means proceed. Throw error if they all fail.
-  if (await asyncEvery(self._validators.updateAsync.allow, async (validator) => {
+  if (await asyncEvery(self._validators.update.allow, async (validator) => {
     const factoriedDoc = transformDoc(validator, doc);
     const result = validator(userId,
       factoriedDoc,
@@ -435,6 +435,9 @@ CollectionPrototype._validatedUpdateAsync = async function(
   })) {
     throw new Meteor.Error(403, "Access denied");
   }
+
+  if (!doc)  // none satisfied!
+    return 0;
 
   options._forbidReplace = true;
 
@@ -567,25 +570,26 @@ CollectionPrototype._validatedRemoveAsync = async function(userId, selector) {
     });
   }
 
-  const doc = await self._collection.findOneAsync(selector, findOptions);
-  if (!doc)
-    return 0;
+  const doc = await self._collection.findOneAsync(selector, findOptions) || {};
 
   // call user validators.
   // Any deny returns true means denied.
-  if (await asyncSome(self._validators.removeAsync.deny, async (validator) => {
+  if (await asyncSome(self._validators.remove.deny, async (validator) => {
     const result = validator(userId, transformDoc(validator, doc));
     return Meteor._isPromise(result) ? await result : result;
   })) {
     throw new Meteor.Error(403, "Access denied");
   }
   // Any allow returns true means proceed. Throw error if they all fail.
-  if (await asyncEvery(self._validators.removeAsync.allow, async (validator) => {
+  if (await asyncEvery(self._validators.remove.allow, async (validator) => {
     const result = validator(userId, transformDoc(validator, doc));
     return !(Meteor._isPromise(result) ? await result : result);
   })) {
     throw new Meteor.Error(403, "Access denied");
   }
+
+  if (!doc)
+    return 0;
 
   // Back when we supported arbitrary client-provided selectors, we actually
   // rewrote the selector to {_id: {$in: [ids that we found]}} before passing to
@@ -713,6 +717,15 @@ function addValidator(collection, allowOrDeny, options) {
       throw new Error(allowOrDeny + ": Invalid key: " + key);
   });
 
+  Object.keys(options).forEach((key) => {
+    // TODO deprecated async config on future versions
+    const isAsyncKey = key.includes('Async');
+    if (isAsyncKey) {
+      const syncKey = key.replace('Async', '');
+      console.warn(allowOrDeny + `: The "${key}" key is deprecated. Use "${syncKey}" instead.`);
+    }
+  });
+
   collection._restricted = true;
 
   [
@@ -740,7 +753,9 @@ function addValidator(collection, allowOrDeny, options) {
           options.transform
         );
       }
-      collection._validators[name][allowOrDeny].push(options[name]);
+      const isAsyncName = name.includes('Async');
+      const validatorSyncName = isAsyncName ? name.replace('Async', '') : name;
+      collection._validators[validatorSyncName][allowOrDeny].push(options[name]);
     }
   });
 
