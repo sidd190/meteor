@@ -1,6 +1,6 @@
 # Community Packages
 
-There are some very popular community packages that do not have a documentation website or only a readme file.
+There are some very popular community packages that do not have a documentation website or only have a readme file.
 This section tries to list and add some information about usage, configuration, and examples for these packages.
 
 This section is a work in progress and it is community-driven.
