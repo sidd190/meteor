@@ -11,6 +11,7 @@ import { Profile } from '../tool-env/profile';
 import buildmessage from '../utils/buildmessage.js';
 import main from '../cli/main.js';
 import { execFileAsync } from '../utils/processes';
+var meteorNpm = require('../isobuild/meteor-npm');
 
 import { cordova as cordova_lib, events as cordova_events, CordovaError }
   from 'cordova-lib';
@@ -431,13 +432,15 @@ to build apps for ${displayNameForPlatform(platform)}.`);
   }
 
   async installedVersionForPlatform(platform) {
-    const command = files.convertToOSPath(files.pathJoin(
+    const file = files.convertToOSPath(files.pathJoin(
       this.projectRoot, 'platforms', platform, 'cordova', 'version'));
+    const command = process.platform === "win32" ? process.execPath : file;
+    const args = process.platform === "win32" ? [file] : [];
     // Make sure the command exists before trying to execute it
     if (files.exists(command)) {
       return this.runCommands(
         `getting installed version for platform ${platform} in Cordova project`,
-        execFileAsync(command, {
+        execFileAsync(command, args, {
           env: this.defaultEnvWithPathsAdded(),
           cwd: this.projectRoot}), null, null);
     } else {
@@ -460,6 +463,8 @@ to Cordova project`, async () => {
       let platformSpec = version ? `${platform}@${version}` : platform;
       await cordova_lib.platform('add', platformSpec, this.defaultOptions);
 
+      const installedPlugins = this.listInstalledPluginVersions();
+
       // As per Npm 8, we need now do inject a package.json file
       // with the dependencies so that when running any npm command
       // it keeps the dependencies installed.
@@ -479,10 +484,11 @@ to Cordova project`, async () => {
 
       const packageJsonObj = Object.entries(packages).reduce((acc, [key, value]) => {
         const name = getPackageName(key);
+        const originalPluginVersion = installedPlugins[name];
         return ({
           dependencies: {
             ...acc.dependencies,
-            [name]: value.version,
+            [name]: originalPluginVersion || value.version,
           }
         });
       }, { dependencies: { [`cordova-${platform}`]: version  } });
@@ -490,6 +496,8 @@ to Cordova project`, async () => {
         files.pathJoin(self.projectRoot, "package.json"),
         JSON.stringify(packageJsonObj, null, 2) + "\n"
       );
+
+      await meteorNpm.runNpmCommand(["install"], self.projectRoot);
     });
   }
 
