@@ -384,12 +384,7 @@ export default defineConfig({
       {
         text: "Community Packages",
         link: "/community-packages/index",
-        items: [
-          {
-            text: "React Meteor Data",
-            link: "/community-packages/react-meteor-data",
-          },
-        ],
+        items: [],
         collapsed: true,
       },
       {
