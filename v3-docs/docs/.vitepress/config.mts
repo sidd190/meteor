@@ -347,6 +347,10 @@ export default defineConfig({
             link: "/packages/random",
           },
           {
+            text: "react-meteor-data",
+            link: "/packages/react-meteor-data",
+          },
+          {
             text: "server-render",
             link: "/packages/server-render",
           },
@@ -373,6 +377,17 @@ export default defineConfig({
           {
             link: "packages/community-packages",
             text: "Community Packages",
+          },
+        ],
+        collapsed: true,
+      },
+      {
+        text: "Community Packages",
+        link: "/community-packages/index",
+        items: [
+          {
+            text: "React Meteor Data",
+            link: "/community-packages/react-meteor-data",
           },
         ],
         collapsed: true,
