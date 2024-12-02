@@ -4,7 +4,7 @@ class AsynchronousQueue {
    * when needed. Configurable batch size and concurrency limits help optimize throughput.
    */
   constructor({
-                batchSize = 256,
+                batchSize = 50,
                 maxConcurrent = 10,
                 orderMatters = true
               } = {}) {
@@ -148,23 +148,6 @@ class AsynchronousQueue {
     }
 
     this._draining = false;
-  }
-
-  unshiftTasks(tasks) {
-    const wrappedTasks = tasks.map(task => ({
-      task: Meteor.bindEnvironment(task, function (e) {
-        Meteor._debug('Exception from task', e);
-        throw e;
-      }),
-      name: task.name
-    }));
-
-    // Add all tasks to the front of the queue
-    wrappedTasks.reverse().forEach(wrappedTask => {
-      this._taskHandles.unshift(wrappedTask);
-    });
-
-    this._scheduleRun();
   }
 }
 
