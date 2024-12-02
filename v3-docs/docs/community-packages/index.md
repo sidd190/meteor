@@ -14,3 +14,7 @@ Please bear in mind if you are adding a package to this list, try providing as m
 - `examples/guide`
 
 ## List of Community Packages
+
+#### Method/Subscription helpers
+
+- [`meteor-rpc`](./meteor-rpc.md)
