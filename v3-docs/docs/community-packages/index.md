@@ -8,6 +8,7 @@ This section tries to list and add some information about usage, configuration, 
 If you use or have a package that you think would be useful to add to this list, please open a pull request.
 
 Please bear in mind if you are adding a package to this list, try providing as much information as possible, including:
+
 - `Who maintains the package` – how to get in touch to submit issues or questions
 - `Why is this package for?`
 - `API`
@@ -17,4 +18,4 @@ Please bear in mind if you are adding a package to this list, try providing as m
 
 #### Method/Subscription helpers
 
-- [`meteor-rpc`](./meteor-rpc.md)
+- [`meteor-rpc`](./meteor-rpc.md), Meteor Methods Evolved with type checking and runtime validation
