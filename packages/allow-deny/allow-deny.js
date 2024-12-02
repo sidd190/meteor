@@ -315,36 +315,6 @@ CollectionPrototype._validatedInsertAsync = async function(userId, doc,
   return self._collection.insertAsync.call(self._collection, doc);
 };
 
-CollectionPrototype._validatedInsert = function (userId, doc,
-                                                         generatedId) {
-  const self = this;
-
-  // call user validators.
-  // Any deny returns true means denied.
-  if (self._validators.insert.deny.some((validator) => {
-    return validator(userId, docToValidate(validator, doc, generatedId));
-  })) {
-    throw new Meteor.Error(403, "Access denied");
-  }
-  // Any allow returns true means proceed. Throw error if they all fail.
-
-  if (self._validators.insert.allow.every((validator) => {
-    return !validator(userId, docToValidate(validator, doc, generatedId));
-  })) {
-    throw new Meteor.Error(403, "Access denied");
-  }
-
-  // If we generated an ID above, insert it now: after the validation, but
-  // before actually inserting.
-  if (generatedId !== null)
-    doc._id = generatedId;
-
-  return (Meteor.isServer
-    ? self._collection.insertAsync
-    : self._collection.insert
-  ).call(self._collection, doc);
-};
-
 // Simulate a mongo `update` operation while validating that the access
 // control rules set by calls to `allow/deny` are satisfied. If all
 // pass, rewrite the mongo operation to use $in to set the list of
@@ -408,8 +378,9 @@ CollectionPrototype._validatedUpdateAsync = async function(
     });
   }
 
-
-  const doc = await self._collection.findOneAsync(selector, findOptions) || {};
+  const doc = await self._collection.findOneAsync(selector, findOptions);
+  if (!doc)  // none satisfied!
+    return 0;
 
   // call user validators.
   // Any deny returns true means denied.
@@ -436,9 +407,6 @@ CollectionPrototype._validatedUpdateAsync = async function(
     throw new Meteor.Error(403, "Access denied");
   }
 
-  if (!doc)  // none satisfied!
-    return 0;
-
   options._forbidReplace = true;
 
   // Back when we supported arbitrary client-provided selectors, we actually
@@ -447,102 +415,6 @@ CollectionPrototype._validatedUpdateAsync = async function(
   // don't have to any more.
 
   return self._collection.updateAsync.call(
-    self._collection, selector, mutator, options);
-};
-
-CollectionPrototype._validatedUpdate = function(
-    userId, selector, mutator, options) {
-  const self = this;
-
-  check(mutator, Object);
-
-  options = Object.assign(Object.create(null), options);
-
-  if (!LocalCollection._selectorIsIdPerhapsAsObject(selector))
-    throw new Error("validated update should be of a single ID");
-
-  // We don't support upserts because they don't fit nicely into allow/deny
-  // rules.
-  if (options.upsert)
-    throw new Meteor.Error(403, "Access denied. Upserts not " +
-                           "allowed in a restricted collection.");
-
-  const noReplaceError = "Access denied. In a restricted collection you can only" +
-        " update documents, not replace them. Use a Mongo update operator, such " +
-        "as '$set'.";
-
-  const mutatorKeys = Object.keys(mutator);
-
-  // compute modified fields
-  const modifiedFields = {};
-
-  if (mutatorKeys.length === 0) {
-    throw new Meteor.Error(403, noReplaceError);
-  }
-  mutatorKeys.forEach((op) => {
-    const params = mutator[op];
-    if (op.charAt(0) !== '$') {
-      throw new Meteor.Error(403, noReplaceError);
-    } else if (!hasOwn.call(ALLOWED_UPDATE_OPERATIONS, op)) {
-      throw new Meteor.Error(
-        403, "Access denied. Operator " + op + " not allowed in a restricted collection.");
-    } else {
-      Object.keys(params).forEach((field) => {
-        // treat dotted fields as if they are replacing their
-        // top-level part
-        if (field.indexOf('.') !== -1)
-          field = field.substring(0, field.indexOf('.'));
-
-        // record the field we are trying to change
-        modifiedFields[field] = true;
-      });
-    }
-  });
-
-  const fields = Object.keys(modifiedFields);
-
-  const findOptions = {transform: null};
-  if (!self._validators.fetchAllFields) {
-    findOptions.fields = {};
-    self._validators.fetch.forEach((fieldName) => {
-      findOptions.fields[fieldName] = 1;
-    });
-  }
-
-  const doc = self._collection.findOne(selector, findOptions);
-  if (!doc)  // none satisfied!
-    return 0;
-
-  // call user validators.
-  // Any deny returns true means denied.
-  if (self._validators.update.deny.some((validator) => {
-    const factoriedDoc = transformDoc(validator, doc);
-    return validator(userId,
-                     factoriedDoc,
-                     fields,
-                     mutator);
-  })) {
-    throw new Meteor.Error(403, "Access denied");
-  }
-  // Any allow returns true means proceed. Throw error if they all fail.
-  if (self._validators.update.allow.every((validator) => {
-    const factoriedDoc = transformDoc(validator, doc);
-    return !validator(userId,
-                      factoriedDoc,
-                      fields,
-                      mutator);
-  })) {
-    throw new Meteor.Error(403, "Access denied");
-  }
-
-  options._forbidReplace = true;
-
-  // Back when we supported arbitrary client-provided selectors, we actually
-  // rewrote the selector to include an _id clause before passing to Mongo to
-  // avoid races, but since selector is guaranteed to already just be an ID, we
-  // don't have to any more.
-
-  return self._collection.update.call(
     self._collection, selector, mutator, options);
 };
 
@@ -570,7 +442,9 @@ CollectionPrototype._validatedRemoveAsync = async function(userId, selector) {
     });
   }
 
-  const doc = await self._collection.findOneAsync(selector, findOptions) || {};
+  const doc = await self._collection.findOneAsync(selector, findOptions);
+  if (!doc)
+    return 0;
 
   // call user validators.
   // Any deny returns true means denied.
@@ -588,52 +462,12 @@ CollectionPrototype._validatedRemoveAsync = async function(userId, selector) {
     throw new Meteor.Error(403, "Access denied");
   }
 
-  if (!doc)
-    return 0;
-
   // Back when we supported arbitrary client-provided selectors, we actually
   // rewrote the selector to {_id: {$in: [ids that we found]}} before passing to
   // Mongo to avoid races, but since selector is guaranteed to already just be
   // an ID, we don't have to any more.
 
   return self._collection.removeAsync.call(self._collection, selector);
-};
-
-CollectionPrototype._validatedRemove = function(userId, selector) {
-  const self = this;
-
-  const findOptions = {transform: null};
-  if (!self._validators.fetchAllFields) {
-    findOptions.fields = {};
-    self._validators.fetch.forEach((fieldName) => {
-      findOptions.fields[fieldName] = 1;
-    });
-  }
-
-  const doc = self._collection.findOne(selector, findOptions);
-  if (!doc)
-    return 0;
-
-  // call user validators.
-  // Any deny returns true means denied.
-  if (self._validators.remove.deny.some((validator) => {
-    return validator(userId, transformDoc(validator, doc));
-  })) {
-    throw new Meteor.Error(403, "Access denied");
-  }
-  // Any allow returns true means proceed. Throw error if they all fail.
-  if (self._validators.remove.allow.every((validator) => {
-    return !validator(userId, transformDoc(validator, doc));
-  })) {
-    throw new Meteor.Error(403, "Access denied");
-  }
-
-  // Back when we supported arbitrary client-provided selectors, we actually
-  // rewrote the selector to {_id: {$in: [ids that we found]}} before passing to
-  // Mongo to avoid races, but since selector is guaranteed to already just be
-  // an ID, we don't have to any more.
-
-  return self._collection.remove.call(self._collection, selector);
 };
 
 CollectionPrototype._callMutatorMethodAsync = function _callMutatorMethodAsync(name, args, options = {}) {

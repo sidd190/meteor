@@ -874,6 +874,7 @@ if (Meteor.isClient) {
                 { returnServerResultPromise: true }
               )
               .then(async function(res) {
+                console.log('res', res);
                 test.equal(res, 0);
                 // nothing has changed
                 test.equal(await collection.find().countAsync(), 3);
@@ -1328,14 +1329,6 @@ function configAllSyncAllowDeny(collection, configType = 'allow', enabled) {
 async function runAllSyncExpect(test, collection, expected) {
   let id;
   /* sync tests */
-  const syncCallback = (error) => {
-    if (error) {
-      test.isTrue(!expected);
-      return;
-    }
-    test.isTrue(expected);
-  };
-
   await new Promise((resolve) => {
     id = collection.insert({ num: 2 }, (error, result) => {
       if (error) {
@@ -1349,6 +1342,7 @@ async function runAllSyncExpect(test, collection, expected) {
   });
 
   await new Promise((resolve) => {
+    id = collection.insert({ force: true });
     collection.update(id, { $set: { num: 22 } }, (error, result) => {
       if (error) {
         test.isTrue(!expected);
@@ -1361,6 +1355,7 @@ async function runAllSyncExpect(test, collection, expected) {
   });
 
   await new Promise((resolve) => {
+    id = collection.insert({ force: true });
     collection.remove(id, (error, result) => {
       if (error) {
         test.isTrue(!expected);
@@ -1384,7 +1379,7 @@ testAsyncMulti("collection - sync definitions on allow/deny rules", [
       await AllowDenySyncRulesCollections.allowed.removeAsync();
     }
 
-    configAllAsyncAllowDeny(AllowDenySyncRulesCollections.allowed, 'allow', true);
+    configAllSyncAllowDeny(AllowDenySyncRulesCollections.allowed, 'allow', true);
     if (Meteor.isClient) {
       await runAllSyncExpect(test, AllowDenySyncRulesCollections.allowed, true);
     }
