@@ -384,7 +384,12 @@ export default defineConfig({
       {
         text: "Community Packages",
         link: "/community-packages/index",
-        items: [],
+        items: [
+          {
+            text: "Meteor RPC",
+            link: "/community-packages/meteor-rpc",
+          },
+        ],
         collapsed: true,
       },
       {
