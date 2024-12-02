@@ -4,12 +4,15 @@ let nextObserveHandleId = 1;
 
 export type ObserveHandleCallbackInternal = '_added' | '_addedBefore' | '_changed' | '_movedBefore' | '_removed';
 
+
+export type Callback<T = any> = (...args: T[]) => Promise<void> | void;
+
 /**
  * The "observe handle" returned from observeChanges.
  * Contains a reference to an ObserveMultiplexer.
  * Used to stop observation and clean up resources.
  */
-export class ObserveHandle {
+export class ObserveHandle<T = any> {
   _id: number;
   _multiplexer: ObserveMultiplexer;
   nonMutatingCallbacks: boolean;
@@ -18,13 +21,13 @@ export class ObserveHandle {
   public initialAddsSentResolver: (value: void) => void = () => {};
   public initialAddsSent: Promise<void>
 
-  _added?: (...args: any[]) => Promise<void>;
-  _addedBefore?: (...args: any[]) => Promise<void>;
-  _changed?: (...args: any[]) => Promise<void>;
-  _movedBefore?: (...args: any[]) => Promise<void>;
-  _removed?: (...args: any[]) => Promise<void>;
+  _added?: Callback<T>;
+  _addedBefore?: Callback<T>;
+  _changed?: Callback<T>;
+  _movedBefore?: Callback<T>;
+  _removed?: Callback<T>;
 
-  constructor(multiplexer: any, callbacks: Record<ObserveHandleCallback, any>, nonMutatingCallbacks: boolean) {
+  constructor(multiplexer: any, callbacks: Record<ObserveHandleCallback, Callback<T>>, nonMutatingCallbacks: boolean) {
     this._multiplexer = multiplexer;
 
     multiplexer.callbackNames().forEach((name: ObserveHandleCallback) => {
