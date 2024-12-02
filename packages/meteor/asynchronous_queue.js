@@ -2,18 +2,30 @@ class AsynchronousQueue {
   /**
    * Creates a queue that processes tasks in parallel batches while preserving completion order
    * when needed. Configurable batch size and concurrency limits help optimize throughput.
+   * 
+   * Batch size and concurrency are configured via environment variables:
+   * - METEOR_ASYNC_QUEUE_BATCH_SIZE: Number of tasks to process in each batch (default: 128)
+   * - METEOR_ASYNC_QUEUE_MAX_CONCURRENT: Maximum number of concurrent tasks (default: 16)
+   * 
+   * @param {Object} options
+   * @param {boolean} [options.orderMatters=true] Whether task completion order should be preserved
    */
-  constructor({
-                batchSize = 50,
-                maxConcurrent = 10,
-                orderMatters = true
-              } = {}) {
+  constructor({ orderMatters = true } = {}) {
+    this._batchSize = parseInt(
+      process.env.METEOR_ASYNC_QUEUE_BATCH_SIZE ||
+      '128'
+    );
+    
+    this._maxConcurrent = parseInt(
+      process.env.METEOR_ASYNC_QUEUE_MAX_CONCURRENT ||
+      '16'
+    );
+    
+    this._orderMatters = orderMatters;
+
     this._taskHandles = new Meteor._DoubleEndedQueue();
     this._runningOrRunScheduled = false;
     this._draining = false;
-    this._batchSize = batchSize;
-    this._maxConcurrent = maxConcurrent;
-    this._orderMatters = orderMatters;
     this._activePromises = new Set();
   }
 
