@@ -124,13 +124,13 @@ Package.onTest(function (api) {
   ]);
   // XXX test order dependency: the allow_tests "partial allow" test
   // fails if it is run before mongo_livedata_tests.
-  // api.addFiles("tests/mongo_livedata_tests.js", ["client", "server"]);
-  // api.addFiles("tests/upsert_compatibility_test.js", "server");
+  api.addFiles("tests/mongo_livedata_tests.js", ["client", "server"]);
+  api.addFiles("tests/upsert_compatibility_test.js", "server");
   api.addFiles("tests/allow_tests.js", ["client", "server"]);
-  // api.addFiles("tests/collection_tests.js", ["client", "server"]);
-  // api.addFiles("tests/collection_async_tests.js", ["client", "server"]);
-  // api.addFiles("tests/observe_changes_tests.js", ["client", "server"]);
-  // api.addFiles("tests/oplog_tests.js", "server");
-  // api.addFiles("tests/oplog_v2_converter_tests.js", "server");
-  // api.addFiles("tests/doc_fetcher_tests.js", "server");
+  api.addFiles("tests/collection_tests.js", ["client", "server"]);
+  api.addFiles("tests/collection_async_tests.js", ["client", "server"]);
+  api.addFiles("tests/observe_changes_tests.js", ["client", "server"]);
+  api.addFiles("tests/oplog_tests.js", "server");
+  api.addFiles("tests/oplog_v2_converter_tests.js", "server");
+  api.addFiles("tests/doc_fetcher_tests.js", "server");
 });
