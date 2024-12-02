@@ -549,9 +549,7 @@ function addValidator(collection, allowOrDeny, options) {
   Object.keys(options).forEach((key) => {
     if (!validKeysRegEx.test(key))
       throw new Error(allowOrDeny + ": Invalid key: " + key);
-  });
 
-  Object.keys(options).forEach((key) => {
     // TODO deprecated async config on future versions
     const isAsyncKey = key.includes('Async');
     if (isAsyncKey) {
