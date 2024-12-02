@@ -1314,7 +1314,7 @@ testAsyncMulti("collection - async definitions on allow/deny rules", [
 function configAllSyncAllowDeny(collection, configType = 'allow', enabled) {
   collection[configType]({
     insert(selector, doc) {
-      if (doc.force) return true;
+      if (doc.force) return configType === 'allow';
       return enabled;
     },
     update() {
@@ -1409,6 +1409,32 @@ testAsyncMulti("collection - sync definitions on allow/deny rules", [
     configAllSyncAllowDeny(AllowDenySyncRulesCollections.denied, 'deny', true);
     if (Meteor.isClient) {
       await runAllSyncExpect(test, AllowDenySyncRulesCollections.denied, false);
+    }
+  },
+  async function (test) {
+    AllowDenySyncRulesCollections.noRules =
+      AllowDenySyncRulesCollections.noRules ||
+      new Mongo.Collection(`allowdeny-sync-rules-noRules`);
+    if (Meteor.isServer) {
+      await AllowDenySyncRulesCollections.noRules.removeAsync();
+    }
+
+    if (Meteor.isClient) {
+      await runAllSyncExpect(test, AllowDenySyncRulesCollections.noRules, false);
+    }
+  },
+  async function (test) {
+    AllowDenySyncRulesCollections.allowThenDeny =
+      AllowDenySyncRulesCollections.allowThenDeny ||
+      new Mongo.Collection(`allowdeny-sync-rules-allowThenDeny`);
+    if (Meteor.isServer) {
+      await AllowDenySyncRulesCollections.allowThenDeny.removeAsync();
+    }
+
+    configAllSyncAllowDeny(AllowDenySyncRulesCollections.allowThenDeny, 'allow', true);
+    configAllSyncAllowDeny(AllowDenySyncRulesCollections.allowThenDeny, 'deny', true);
+    if (Meteor.isClient) {
+      await runAllSyncExpect(test, AllowDenySyncRulesCollections.allowThenDeny, false);
     }
   },
 ]);
