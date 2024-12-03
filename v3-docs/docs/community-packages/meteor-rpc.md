@@ -38,18 +38,6 @@ Before continuing the installation make sure you have `react-query` all set in y
 
 There is a few concepts that are important while using this package:
 
-<!-- - `createModule` - used to create a module that will be used to call our methods and publications
-- `module.addPublication` - used to add a publication to the module
-- `module.addSubmodule` - used to add a submodule to the module
-- `module.addMiddlewares` - used to add middlewares to the module
-
-- `createClient` - used to create a client on the frontend, that will be used to call the methods and publications
-- `client.method(args)` - used to call the method, it uses `Meteor.callAsync` under the hood
-- `client.method.useMutation(args)` - used to call the method as a mutation, it uses `useMutation` from `react-query`
-- `client.method.useQuery(args)` - used to call the method as a query, it uses `useQuery` from `react-query`
-
-- `client.publication.useSubscription(args)` - used to subscribe to a publication, it uses `useSubscription` from [`react-meteor-data`](../packages/react-meteor-data.md#usesubscribe) -->
-
 - This package is built on top of [`Meteor.methods`](../api/meteor.md#method-apis-methods) and [`Meteor.publish`](../api/meteor.md#publish-and-subscribe-pubsub) but with types and runtime validation, their understanding is important to use this package.
 - Every method and publication use `zod` to validate the arguments, so you can be sure that the data you are receiving is the data you are expecting.
 
