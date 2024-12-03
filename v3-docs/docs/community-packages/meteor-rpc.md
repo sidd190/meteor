@@ -12,6 +12,18 @@ This package provides functions for building E2E type-safe RPCs, focused on Reac
 
 ## How to download it?
 
+::: warning
+
+This package works only with Meteor 2.8 or higher.
+
+If not sure about the version of Meteor you are using, you can check it by running the following command in your terminal within your project:
+
+```bash
+meteor --version
+```
+
+:::
+
 ```bash
 meteor npm i grubba-rpc @tanstack/react-query zod
 ```
