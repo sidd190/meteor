@@ -395,10 +395,6 @@ export default defineConfig({
             link: "/troubleshooting/expired-certificate",
           },
           { text: "Windows", link: "/troubleshooting/windows" },
-          {
-            text: "Known issues in 2.13",
-            link: "/troubleshooting/known-issues",
-          },
         ],
         collapsed: true,
       },
