@@ -5,7 +5,7 @@ Package.describe({
 });
 
 Npm.depends({
-  "permessage-deflate2": "0.1.8-alpha.1",
+  "permessage-deflate2": "0.1.8",
   sockjs: "0.3.24",
   "lodash.once": "4.1.1",
   "lodash.isempty": "4.4.0",
