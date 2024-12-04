@@ -1327,7 +1327,7 @@ function createAllowDenyRulesTest(collections, isAsync = true) {
       }
 
       if (Meteor.isClient) {
-        await runAllExpect(test, collections.noRules, false, isAsync);
+        await runAllExpect(test, collections.noRules, collections.noRules._isInsecure(), isAsync);
       }
     },
     async function (test) {
