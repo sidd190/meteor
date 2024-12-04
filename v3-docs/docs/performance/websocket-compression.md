@@ -29,6 +29,46 @@ Available configuration options:
 - `noContextTakeover`: When true, compressor resets for each message (default: true)
 - `maxWindowBits`: Window size for compression (9-15, lower uses less memory)
 
+## Configuration Examples
+
+Here are recommended configurations for different types of applications:
+
+### High-Frequency Updates / Real-Time Dashboard
+
+For applications with frequent small updates (e.g., real-time dashboards, trading platforms):
+
+```bash
+# Disable compression for optimal performance with small, frequent updates
+SERVER_WEBSOCKET_COMPRESSION=false
+```
+
+### Large Data Transfers
+
+For applications transferring large datasets (e.g., file sharing, data visualization):
+
+```bash
+# Optimize for large data transfers
+SERVER_WEBSOCKET_COMPRESSION='{"threshold": 1024, "level": 6, "memLevel": 8}'
+```
+
+### Memory-Constrained Environment
+
+For deployments with limited memory resources:
+
+```bash
+# Minimize memory usage while maintaining compression
+SERVER_WEBSOCKET_COMPRESSION='{"threshold": 2048, "level": 1, "memLevel": 1, "maxWindowBits": 9}'
+```
+
+### Balanced Configuration
+
+For typical applications with mixed message sizes:
+
+```bash
+# Balance between compression and performance
+SERVER_WEBSOCKET_COMPRESSION='{"threshold": 1536, "level": 3, "memLevel": 4}'
+```
+
 ## Verifying Compression Status
 
 You can check if compression is enabled through the Meteor shell:
