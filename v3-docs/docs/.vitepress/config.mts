@@ -431,6 +431,15 @@ export default defineConfig({
         ],
         collapsed: true,
       },
+      {
+        text: "Performance",
+        items: [
+          {
+            text: "WebSocket Compression",
+            link: "/performance/websocket-compression",
+          },
+        ],
+      },
     ],
 
     socialLinks: [
