@@ -1,5 +1,12 @@
 # Websocket Compression in Meteor
 
+::: warning
+Modifying websocket compression settings without understanding your application's DDP messaging patterns can negatively impact performance. Before changing these settings, you should:
+- Use [Meteor DevTools Evolved](https://chromewebstore.google.com/detail/meteor-devtools-evolved/ibniinmoafhgbifjojidlagmggecmpgf) or your browser's Network tab to monitor WebSocket traffic
+- Analyze your DDP message frequency and payload sizes  
+- Test changes in a staging environment with realistic data and user load
+:::
+
 Meteor's stream server uses the permessage-deflate extension for websocket compression by default. While compression can help reduce bandwidth usage, it may impact performance in reactivity-intensive applications due to the computational overhead of compressing numerous DDP messages.
 
 ## Configuration
