@@ -84,7 +84,7 @@ const sameDeepMembers = (test, value, expected) => {
   );
 };
 
-function sameDeepUnorderedMembers(test, value, expected) {
+const sameDeepUnorderedMembers = (test, value, expected) => {
   const sortAndStringify = (arr) => {
     return JSON.stringify(arr.map(item => JSON.stringify(sortObjectKeys(item))).sort());
   };
@@ -92,7 +92,7 @@ function sameDeepUnorderedMembers(test, value, expected) {
   const sortedExpected = sortAndStringify(expected);
 
   test.equal(sortedValue, sortedExpected, 'Arrays should have the same elements, regardless of order');
-}
+};
 
 const hasProp = (target, prop) => Object.hasOwnProperty.call(target, prop);
 
