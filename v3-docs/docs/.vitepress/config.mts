@@ -319,6 +319,10 @@ export default defineConfig({
             link: "/packages/fetch",
           },
           {
+            text: "roles",
+            link: "/packages/roles",
+          },
+          {
             text: "hot-module-replacement",
             link: "/packages/hot-module-replacement",
           },

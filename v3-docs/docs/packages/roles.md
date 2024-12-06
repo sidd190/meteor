@@ -214,7 +214,7 @@ Example:
 const roles = Roles.getAllRoles({ sort: { _id: 1 } });
 
 // Get roles with custom query
-const customRoles = Roles.getAllRoles({ 
+const customRoles = Roles.getAllRoles({
   fields: { _id: 1, children: 1 },
   sort: { _id: -1 }
 });
@@ -234,7 +234,7 @@ const scopedUsers = await Roles.getUsersInRoleAsync(['editor', 'writer'], 'blog'
 // Find users with custom options
 const users = await Roles.getUsersInRoleAsync('manager', {
   scope: 'department-a',
-  queryOptions: { 
+  queryOptions: {
     sort: { createdAt: -1 },
     limit: 10
   }
@@ -370,6 +370,10 @@ If you are currently using the `alanning:roles` package, follow these steps to m
    ```bash
    meteor add roles
    ```
+6. Update imports to use the new package:
+   ```js
+   import { Roles } from "meteor/roles";
+   ```
 
 The sync versions of these functions are still available on the client.
 
@@ -450,5 +454,3 @@ Meteor.methods({
   },
 });
 ```
-
-
