@@ -25,17 +25,14 @@ Package.onUse(function (api) {
   api.addFiles("roles_common_async.js", both);
   api.addFiles("roles_server.js", "server");
   api.addFiles(["client/debug.js", "client/uiHelpers.js"], "client");
+
+  api.addAssets("definitions.d.ts", both);
 });
 
 Package.onTest(function (api) {
   const both = ["client", "server"];
 
-  api.use([
-    "tinytest",
-    "ecmascript",
-    "mongo",
-    "roles"
-  ], both);
+  api.use(["tinytest", "ecmascript", "mongo", "roles"], both);
 
   api.addFiles("tests/serverAsync.js", "server");
   api.addFiles("tests/client.js", "client");
