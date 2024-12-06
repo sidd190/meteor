@@ -137,7 +137,7 @@ Example:
 
 ```js
 // Rename an existing role
-await Roles.renameRoleAsync('editor', 'content-editor');
+await Roles.renameRoleAsync("editor", "content-editor");
 ```
 
 ### Assigning Roles
@@ -193,7 +193,7 @@ Example:
 
 ```js
 // Rename a scope
-await Roles.renameScopeAsync('department-1', 'marketing');
+await Roles.renameScopeAsync("department-1", "marketing");
 ```
 
 <ApiBox name="Roles.removeScopeAsync" hasCustomExample />
@@ -202,7 +202,7 @@ Example:
 
 ```js
 // Remove a scope and all its role assignments
-await Roles.removeScopeAsync('old-department');
+await Roles.removeScopeAsync("old-department");
 ```
 
 <ApiBox name="Roles.getAllRoles" hasCustomExample />
@@ -216,7 +216,7 @@ const roles = Roles.getAllRoles({ sort: { _id: 1 } });
 // Get roles with custom query
 const customRoles = Roles.getAllRoles({
   fields: { _id: 1, children: 1 },
-  sort: { _id: -1 }
+  sort: { _id: -1 },
 });
 ```
 
@@ -226,18 +226,21 @@ Example:
 
 ```js
 // Find all admin users
-const adminUsers = await Roles.getUsersInRoleAsync('admin');
+const adminUsers = await Roles.getUsersInRoleAsync("admin");
 
 // Find users with specific roles in a scope
-const scopedUsers = await Roles.getUsersInRoleAsync(['editor', 'writer'], 'blog');
+const scopedUsers = await Roles.getUsersInRoleAsync(
+  ["editor", "writer"],
+  "blog"
+);
 
 // Find users with custom options
-const users = await Roles.getUsersInRoleAsync('manager', {
-  scope: 'department-a',
+const users = await Roles.getUsersInRoleAsync("manager", {
+  scope: "department-a",
   queryOptions: {
     sort: { createdAt: -1 },
-    limit: 10
-  }
+    limit: 10,
+  },
 });
 ```
 
@@ -291,10 +294,10 @@ Example:
 
 ```js
 // Check if admin is a parent of editor
-const isParent = await Roles.isParentOfAsync('admin', 'editor');
+const isParent = await Roles.isParentOfAsync("admin", "editor");
 
 // Can be used to check inheritance chains
-const hasPermission = await Roles.isParentOfAsync('super-admin', 'post-edit');
+const hasPermission = await Roles.isParentOfAsync("super-admin", "post-edit");
 ```
 
 <ApiBox name="Roles.getScopesForUserAsync" hasCustomExample />
@@ -306,7 +309,7 @@ Example:
 const allScopes = await Roles.getScopesForUserAsync(userId);
 
 // Get scopes where user has specific roles
-const editorScopes = await Roles.getScopesForUserAsync(userId, ['editor']);
+const editorScopes = await Roles.getScopesForUserAsync(userId, ["editor"]);
 ```
 
 ## Publishing Roles
@@ -330,6 +333,27 @@ Meteor.publish("scopeRoles", function (scope) {
   this.ready();
 });
 ```
+
+## Client only APIs
+
+On the client alongside the async methods, you can use the `sync` versions of the functions:
+
+- `Roles.userIsInRole(userId, roles, scope)`
+- `Roles.getRolesForUser(userId, scope)`
+- `Roles.getScopesForUser(userId)`
+- `Roles.isParentOf(parent, child)`
+- `Roles.getUsersInRole(role, scope)`
+- `Roles.getAllRoles(options)`
+- `Roles.createRole(role, options)`
+- `Roles.addUsersToRoles(userId, roles, scope)`
+- `Roles.setUserRoles(userId, roles, scope)`
+- `Roles.removeUsersFromRoles(userId, roles, scope)`
+- `Roles.addRolesToParent(child, parent)`
+- `Roles.removeRolesFromParent(child, parent)`
+- `Roles.deleteRole(role)`
+- `Roles.renameRole(oldRole, newRole)`
+- `Roles.renameScope(oldScope, newScope)`
+- `Roles.removeScope(scope)`
 
 ## Using with Templates
 
