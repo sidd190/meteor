@@ -82,10 +82,7 @@ Accounts.oauth.tryLoginAfterPopupClosed = (
   // In some case the function OAuth._retrieveCredentialSecret() can return null, because the local storage might not
   // be ready. So we retry after a timeout.
 
-  if (!credentialSecret) {
-    if (!shouldRetry) {
-      return;
-    }
+  if (!credentialSecret && shouldRetry) {
     Meteor.setTimeout(
       () =>
         Accounts.oauth.tryLoginAfterPopupClosed(
@@ -97,10 +94,11 @@ Accounts.oauth.tryLoginAfterPopupClosed = (
     );
     return;
   }
+
   // continue with the rest of the function
   Accounts.callLoginMethod({
     methodArguments: [{ oauth: { credentialToken, credentialSecret } }],
-    userCallback: callback && (err => callback(convertError(err))),
+    userCallback: callback ? err => callback(convertError(err)) : () => {},
   });
 };
 
@@ -112,4 +110,3 @@ Accounts.oauth.credentialRequestCompleteHandler = callback =>
       Accounts.oauth.tryLoginAfterPopupClosed(credentialTokenOrError, callback);
     }
   }
-
