@@ -8,7 +8,7 @@
 
 _Inspired on [zodern:relay](https://github.com/zodern/meteor-relay) and on [tRPC](https://trpc.io/)_
 
-This package provides functions for building E2E type-safe RPCs, focused on React front ends.
+This package provides functions for building E2E type-safe RPCs focused on React front ends.
 
 ## How to download it?
 
@@ -16,7 +16,7 @@ This package provides functions for building E2E type-safe RPCs, focused on Reac
 
 This package works only with Meteor 2.8 or higher.
 
-If not sure about the version of Meteor you are using, you can check it by running the following command in your terminal within your project:
+If you are not sure about the version of Meteor you are using, you can check it by running the following command in your terminal within your project:
 
 ```bash
 meteor --version
@@ -30,19 +30,19 @@ meteor npm i meteor-rpc @tanstack/react-query zod
 
 ::: warning
 
-Before continuing the installation make sure you have `react-query` all set in your project, for more info follow their [quick start guide](https://tanstack.com/query/latest/docs/framework/react/quick-start).
+Before continuing the installation, make sure you have `react-query` all set in your project; for more info, follow their [quick start guide](https://tanstack.com/query/latest/docs/framework/react/quick-start).
 
 :::
 
 ## How to use it?
 
-There is a few concepts that are important while using this package:
+There are a few concepts that are important while using this package:
 
 - This package is built on top of [`Meteor.methods`](../api/meteor.md#method-apis-methods) and [`Meteor.publish`](../api/meteor.md#publish-and-subscribe-pubsub) but with types and runtime validation, their understanding is important to use this package.
-- Every method and publication use `zod` to validate the arguments, so you can be sure that the data you are receiving is the data you are expecting.
+- Every method and publication uses `Zod` to validate the arguments, so you can be sure that the data you are receiving is what you expect.
 
 ::: tip
-If you are accepting any type of data you can use `z.any()` as the schema or `z.void` for when there is no argument
+If you are accepting any type of data, you can use `z.any()` as the schema or `z.void` when there is no argument
 :::
 
 ### `createModule`
@@ -53,7 +53,7 @@ This function is used to create a module that will be used to call our methods a
 
 `subModule` with a namespace: `createModule("namespace")` is used to create a submodule that will be added to the main module.
 
-> Remember to use `build` at the end of module creation to ensure that the module is going to be created.
+> Remember to use `build` at the end of module creation to ensure that the module will be created.
 
 Example:
 
@@ -90,7 +90,7 @@ import type { Server } from "/imports/api/server";
 
 const api = createClient<Server>();
 const bar: "bar" = await api.bar("some string");
-//   ?^ 'bar'
+// ?^ 'bar'
 const newChatId = await api.chat.createChat(); // with intellisense
 ```
 
@@ -191,7 +191,7 @@ export const chatModule = createModule("chat")
   .addMethod("createChat", z.void(), async () => {
     return ChatCollection.insertAsync({ createdAt: new Date(), messages: [] });
   })
-  .buildSubmodule(); // <-- this is important so that this module can be added as a submodule
+  .buildSubmodule(); // <-- This is important so that this module can be added as a submodule
 ```
 
 ```typescript [server/chat.ts]
@@ -219,9 +219,9 @@ type Middleware = (raw: unknown, parsed: unknown) => void;
 addMiddlewares(middlewares: Middleware[])
 ```
 
-This is used to add middlewares to the module, it can be used to add side effects logic to the methods and publications, ideal for logging or rate limiting.
+This is used to add middleware to the module; it should be used to add side effects logic to the methods and publications, which is ideal for logging or rate limiting.
 
-The middleware ordering is last in first out. Check the example below:
+The middleware ordering is last in, first out. Check the example below:
 
 ::: code-group
 
@@ -351,7 +351,7 @@ const server = createModule()
 
 ## Using in the client
 
-When using in the client you _have_ to use the `createModule` and `build` methods to create a module that will be used in the client
+When using in the client, you _have_ to use the `createModule` and `build` methods to create a module that will be used in the client
 and be sure that you are exporting the type of the module
 
 _You should only create one client in your application_
@@ -382,7 +382,7 @@ await app.bar("str"); // it will return "bar"
 
 ## React focused API
 
-Our package has a React focused API that uses `react-query` to handle the data fetching and mutations.
+Our package has a React-focused API that uses `react-query` to handle the data fetching and mutations.
 
 ### `method.useMutation`
 
@@ -500,15 +500,15 @@ export const Component = () => {
 
 ## Examples
 
-Currently we have:
+Currently, we have:
 
 - [chat-app](https://github.com/Grubba27/testing-meteor-rpc) that uses this package to create a chat-app
 - [askme](https://github.com/fredmaiaarantes/askme) that uses this package to create a Q&A app, you can check it live [here](https://askmeaquestion.meteorapp.com/)
 
 ## Advanced usage
 
-you can take advantage of the hooks to add custom logic to your methods, checking the raw and parsed data, and the result of the method,
-if the method has failed you can also check the error.
+You can take advantage of the hooks to add custom logic to your methods, checking the raw and parsed data and the result of the method,
+If the method fails, you can also check the error.
 
 ::: code-group
 
@@ -603,6 +603,6 @@ Node.js v20.18.0
 ```
 
 Please check if you are using `refapp:meteor-typescript` package, if so, you can remove it and use the `typescript` package instead.
-Currently, the `refapp:meteor-typescript` package is not compatible with the `meteor-rpc` package.
+The `refapp:meteor-typescript` package is currently incompatible with the `meteor-rpc` package.
 
 If it is still not working, please open an issue in the [repo](https://github.com/Grubba27/meteor-rpc)
