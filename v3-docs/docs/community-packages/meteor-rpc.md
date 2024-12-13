@@ -604,3 +604,5 @@ Node.js v20.18.0
 
 Please check if you are using `refapp:meteor-typescript` package, if so, you can remove it and use the `typescript` package instead.
 Currently, the `refapp:meteor-typescript` package is not compatible with the `meteor-rpc` package.
+
+If it is still not working, please open an issue in the [repo](https://github.com/Grubba27/meteor-rpc)
