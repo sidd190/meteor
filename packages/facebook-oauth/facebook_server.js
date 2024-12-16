@@ -26,11 +26,12 @@ Facebook.handleAuthFromAccessToken = async (accessToken, expiresAt) => {
   };
 };
 
-Accounts.registerLoginHandler(request => {
+Accounts.registerLoginHandler(async request => {
   if (request.facebookSignIn !== true) {
     return;
   }
-  const facebookData = Facebook.handleAuthFromAccessToken(request.accessToken, (+new Date) + (1000 * request.expirationTime));
+  const facebookData = await Facebook.handleAuthFromAccessToken(request.accessToken, (+new Date) + (1000 * request.expirationTime));
+  if (!facebookData) return;
   return Accounts.updateOrCreateUserFromExternalService('facebook', facebookData.serviceData, facebookData.options);
 });
 
