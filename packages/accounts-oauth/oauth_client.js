@@ -77,15 +77,19 @@ Accounts.oauth.tryLoginAfterPopupClosed = (
   timeout = 1000
 ) => {
   let startTime = Date.now();
+  let calledOnce = false;
   let intervalId;
   const checkForCredentialSecret = (clearInterval = false) => {
     const credentialSecret = OAuth._retrieveCredentialSecret(credentialToken);
-    if (clearInterval || credentialSecret) {
+    if (!calledOnce && (credentialSecret || clearInterval)) {
+      calledOnce = true;
       Meteor.clearInterval(intervalId);
       Accounts.callLoginMethod({
         methodArguments: [{ oauth: { credentialToken, credentialSecret } }],
         userCallback: callback ? err => callback(convertError(err)) : () => {},
       });
+    } else if (clearInterval) {
+      Meteor.clearInterval(intervalId);
     }
   };
 
