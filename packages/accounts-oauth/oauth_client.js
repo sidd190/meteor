@@ -74,32 +74,34 @@ Meteor.startup(() => {
 Accounts.oauth.tryLoginAfterPopupClosed = (
   credentialToken,
   callback,
-  shouldRetry = true
+  timeout = 1000
 ) => {
-  const credentialSecret =
-    OAuth._retrieveCredentialSecret(credentialToken);
+  let startTime = Date.now();
+  let intervalId;
+  const checkForCredentialSecret = (clearInterval = false) => {
+    const credentialSecret = OAuth._retrieveCredentialSecret(credentialToken);
+    if (clearInterval || credentialSecret) {
+      Meteor.clearInterval(intervalId);
+      Accounts.callLoginMethod({
+        methodArguments: [{ oauth: { credentialToken, credentialSecret } }],
+        userCallback: callback ? err => callback(convertError(err)) : () => {},
+      });
+    }
+  };
 
+  // Check immediately
+  checkForCredentialSecret();
+
+  // Then check on an interval
   // In some case the function OAuth._retrieveCredentialSecret() can return null, because the local storage might not
   // be ready. So we retry after a timeout.
-
-  if (!credentialSecret && shouldRetry) {
-    Meteor.setTimeout(
-      () =>
-        Accounts.oauth.tryLoginAfterPopupClosed(
-          credentialToken,
-          callback,
-          false
-        ),
-      500
-    );
-    return;
-  }
-
-  // continue with the rest of the function
-  Accounts.callLoginMethod({
-    methodArguments: [{ oauth: { credentialToken, credentialSecret } }],
-    userCallback: callback ? err => callback(convertError(err)) : () => {},
-  });
+  intervalId = Meteor.setInterval(() => {
+    if (Date.now() - startTime > timeout) {
+      checkForCredentialSecret(true);
+    } else {
+      checkForCredentialSecret();
+    }
+  }, 250);
 };
 
 Accounts.oauth.credentialRequestCompleteHandler = callback =>
