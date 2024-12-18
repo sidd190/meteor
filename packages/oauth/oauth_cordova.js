@@ -34,9 +34,17 @@ OAuth.showPopup = (url, callback, dimensions) => {
         throw new Error("No hash fragment in OAuth popup?");
       }
 
-      const credentials = JSON.parse(decodeURIComponent(hashFragment));
-      OAuth._handleCredentialSecret(credentials.credentialToken,
-                                    credentials.credentialSecret);
+      try {
+        const credentials = JSON.parse(decodeURIComponent(hashFragment));
+        OAuth._handleCredentialSecret(credentials.credentialToken,
+          credentials.credentialSecret);
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          // Ignore or a default value if parsing fails
+        } else {
+          throw error; // Re-throw if it's not a syntax error
+        }
+      }
 
       oauthFinished = true;
 
