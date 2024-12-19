@@ -2,12 +2,12 @@ function cleanStackTrace(stackTrace) {
   if (!stackTrace) return [];
   var lines = stackTrace.split('\n');
   var trace = [];
-  for (var line of lines) {
-    var _line = line.trim();
-    if (_line.includes('Meteor.deprecate')) continue;
-    if (_line.includes('packages/')) {
+  for (var i = 0; i < lines.length; i++) {
+    var _line = lines[i].trim();
+    if (_line.indexOf('Meteor.deprecate') !== -1) continue;
+    if (_line.indexOf('packages/') !== -1) {
       trace.push(_line);
-    } else if (_line && _line.includes('/')) {
+    } else if (_line && _line.indexOf('/') !== -1) {
       // Stop processing if a valid path that does not start with 'packages/**' is found
       break;
     }
