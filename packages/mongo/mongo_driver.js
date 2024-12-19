@@ -23,7 +23,7 @@ MongoInternals.NpmModule = new Proxy(MongoDB, {
     if (propertyKey === 'ObjectID') {
       console.warn(
         `Accessing 'MongoInternals.NpmModule.ObjectID' directly is deprecated. ` +
-        `Use 'MongoInternals.NpmModules.mongodb.module.ObjectId' instead.`
+        `Use 'MongoInternals.NpmModule.ObjectId' instead.`
       );
     }
     return Reflect.get(target, propertyKey, receiver);
