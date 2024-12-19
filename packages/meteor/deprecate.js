@@ -1,9 +1,9 @@
 function cleanStackTrace(stackTrace) {
   if (!stackTrace) return [];
-  const lines = stackTrace.split('\n');
-  const trace = [];
-  for (const line of lines) {
-    const _line = line.trim();
+  var lines = stackTrace.split('\n');
+  var trace = [];
+  for (var line of lines) {
+    var _line = line.trim();
     if (_line.includes('Meteor.deprecate')) continue;
     if (_line.includes('packages/')) {
       trace.push(_line);
@@ -20,7 +20,7 @@ Meteor.deprecate = function (...messages) {
     return;
   }
   if (typeof console !== 'undefined' && typeof console.warn !== 'undefined') {
-    const stackStrace = cleanStackTrace(new Error().stack || '');
+    var stackStrace = cleanStackTrace(new Error().stack || '');
     console.warn(
       '[DEPRECATION]',
       ...messages,
