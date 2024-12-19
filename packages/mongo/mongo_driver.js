@@ -21,7 +21,7 @@ MongoInternals.NpmModules = {
 MongoInternals.NpmModule = new Proxy(MongoDB, {
   get(target, propertyKey, receiver) {
     if (propertyKey === 'ObjectID') {
-      console.warn(
+      Meteor.deprecate(
         `Accessing 'MongoInternals.NpmModule.ObjectID' directly is deprecated. ` +
         `Use 'MongoInternals.NpmModule.ObjectId' instead.`
       );
