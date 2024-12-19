@@ -15,21 +15,18 @@ function cleanStackTrace(stackTrace) {
   return trace.join('\n');
 }
 
-Meteor.deprecate = function (...messages) {
+Meteor.deprecate = function () {
   if (!Meteor.isDevelopment) {
     return;
   }
   if (typeof console !== 'undefined' && typeof console.warn !== 'undefined') {
     var stackStrace = cleanStackTrace(new Error().stack || '');
-    console.warn(
-      '[DEPRECATION]',
-      ...messages,
-      ...stackStrace?.length > 0 && [
-        '\n\n',
-        'Trace:',
-        '\n',
-        stackStrace
-      ] || []
-    );
+    var messages = Array.prototype.slice.call(arguments); // Convert arguments to array
+
+    if (stackStrace.length > 0) {
+      messages.push('\n\n', 'Trace:', '\n', stackStrace);
+    }
+
+    console.warn.apply(console, ['[DEPRECATION]'].concat(messages));
   }
 };
