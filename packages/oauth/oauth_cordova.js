@@ -64,6 +64,12 @@ OAuth.showPopup = (url, callback, dimensions) => {
   };
 
   const onExit = () => {
+    // Force callback to throw cancel error when exit
+    // and oauth process didn't start
+    if (!oauthFinished) {
+      callback();
+    }
+
     popup.removeEventListener('loadstop', pageLoaded);
     popup.removeEventListener('loaderror', fail);
     popup.removeEventListener('exit', onExit);
