@@ -537,23 +537,43 @@ Tinytest.addAsync('livedata server - publication stop should not throw error', a
       this.added('issueUnreadCount', user._id, {count});
       this.onStop(() => {
         console.log('onStop');
-        return handle.stop();
+        handle.stop();
       });
       this.ready();
     }
   });
 
-  sub = conn.subscribe(publicationName);
+  // Create multiple competing subscriptions
+  const sub1 = conn.subscribe(publicationName);
+  const sub2 = conn.subscribe(publicationName);
+  const sub3 = conn.subscribe(publicationName);
 
-  await sleep(100);
-
+  // Make changes that will affect all subs
   await coll.insertAsync({ _id: 'item_10', title: 'Item #10' });
-  await sleep(100);
+  
+  // Stop middle subscription during changes
+  sub2.stop();
+  
+  await coll.insertAsync({ _id: 'item_11', title: 'Item #11' });
+  
+  // Create new subscription while changes happening
+  const sub4 = conn.subscribe(publicationName);
+  
+  await coll.removeAsync({ _id: 'item_10' });
+  
+  sub1.stop();
+  
+  await coll.insertAsync({ _id: 'item_12', title: 'Item #12' });
+  
+  // Final subscription during teardown of others
+  const sub5 = conn.subscribe(publicationName);
+  
+  sub3.stop();
+  sub4.stop();
 
-  await coll.removeAsync({ _id: 'item_0' });
-  await sleep(100);
+  await sleep(50);
 
-  sub.stop();
+  sub5.stop();
 
   console.log(messages);
 
