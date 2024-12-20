@@ -554,7 +554,7 @@ function addValidator(collection, allowOrDeny, options) {
     const isAsyncKey = key.includes('Async');
     if (isAsyncKey) {
       const syncKey = key.replace('Async', '');
-      console.warn(allowOrDeny + `: The "${key}" key is deprecated. Use "${syncKey}" instead.`);
+      Meteor.deprecate(allowOrDeny + `: The "${key}" key is deprecated. Use "${syncKey}" instead.`);
     }
   });
 
