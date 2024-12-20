@@ -1,16 +1,20 @@
 function cleanStackTrace(stackTrace) {
-  if (!stackTrace) return [];
+  if (!stackTrace || typeof stackTrace !== 'string') return [];
   var lines = stackTrace.split('\n');
   var trace = [];
-  for (var i = 0; i < lines.length; i++) {
-    var _line = lines[i].trim();
-    if (_line.indexOf('Meteor.deprecate') !== -1) continue;
-    if (_line.indexOf('packages/') !== -1) {
-      trace.push(_line);
-    } else if (_line && _line.indexOf('/') !== -1) {
-      // Stop processing if a valid path that does not start with 'packages/**' is found
-      break;
+  try {
+    for (var i = 0; i < lines.length; i++) {
+      var _line = lines[i].trim();
+      if (_line.indexOf('Meteor.deprecate') !== -1) continue;
+      if (_line.indexOf('packages/') !== -1) {
+        trace.push(_line);
+      } else if (_line && _line.indexOf('/') !== -1) {
+        // Stop processing if a valid path that does not start with 'packages/**' is found
+        break;
+      }
     }
+  } catch (e) {
+    console.error('Error cleaning stack trace: ', e);
   }
   return trace.join('\n');
 }
