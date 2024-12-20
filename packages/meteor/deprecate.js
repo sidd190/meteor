@@ -10,6 +10,7 @@ function cleanStackTrace(stackTrace) {
         trace.push(_line);
       } else if (_line && _line.indexOf('/') !== -1) {
         // Stop processing if a valid path that does not start with 'packages/**' is found
+        trace.push(_line);
         break;
       }
     }
