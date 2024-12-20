@@ -493,6 +493,73 @@ Tinytest.addAsync('livedata server - publish cursor is properly awaited', async 
   cleanup()
 });
 
+Tinytest.addAsync('livedata server - publication stop should not throw error', async function (test) {
+  let sub = null;
+
+  const { conn, messages, cleanup } = await captureConnectionMessages(test);
+
+  const coll = new Mongo.Collection('items', {
+    defineMutationMethods: false,
+  });
+
+  for (let i = 0; i < 10; i++) {
+    await coll.removeAsync({ _id: `item_${i}` })
+    await coll.insertAsync({ _id: `item_${i}`, title: `Item #${i}` });
+  }
+
+  const publicationName = `publication_${Random.id()}`
+
+  delete Meteor.server.publish_handlers[publicationName];
+
+  Meteor.publish(publicationName, async function () {
+    const user = {
+      _id: 'user_id',
+      customer: 'customer_id',
+    }
+
+    if (user) {
+      let count = 0;
+  
+      let initializing = true;
+      const handle = await coll.find({}).observeChangesAsync({
+        added: () => {
+          count += 1;
+          if (!initializing) this.changed('issueUnreadCount', user._id, {count});
+        },
+        removed: () => {
+          count -= 1;
+          this.changed('issueUnreadCount', user._id, {count});
+        }
+      });
+
+      initializing = false;
+  
+      this.added('issueUnreadCount', user._id, {count});
+      this.onStop(() => {
+        console.log('onStop');
+        return handle.stop();
+      });
+      this.ready();
+    }
+  });
+
+  sub = conn.subscribe(publicationName);
+
+  await sleep(100);
+
+  await coll.insertAsync({ _id: 'item_10', title: 'Item #10' });
+  await sleep(100);
+
+  await coll.removeAsync({ _id: 'item_0' });
+  await sleep(100);
+
+  sub.stop();
+
+  console.log(messages);
+
+  cleanup();
+});
+
 function getTestConnections(test) {
   return new Promise((resolve, reject) => {
     makeTestConnection(test, (clientConn, serverConn) => {
