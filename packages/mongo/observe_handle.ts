@@ -67,7 +67,10 @@ export class ObserveHandle<T = any> {
     });
   }
 
-  async stop() {
+  /**
+   * Using property syntax and arrow function syntax to avoid binding the wrong context on callbacks.
+   */
+  stop = async () => {
     if (this._stopped) return;
     this._stopped = true;
     await this._multiplexer.removeHandle(this._id);
