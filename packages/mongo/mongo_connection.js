@@ -840,10 +840,6 @@ Object.assign(MongoConnection.prototype, {
         }
       });
     }
-    
-    if (!multiplexer) {
-      throw new Error("multiplexer is required");
-    }
 
     var observeHandle = new ObserveHandle(multiplexer,
       callbacks,

@@ -28,11 +28,6 @@ export class ObserveHandle<T = any> {
   _removed?: Callback<T>;
 
   constructor(multiplexer: ObserveMultiplexer, callbacks: Record<ObserveHandleCallback, Callback<T>>, nonMutatingCallbacks: boolean) {
-
-    if (!multiplexer) {
-      throw new Error("Multiplexer is required");
-    }
-
     this._multiplexer = multiplexer;
 
     multiplexer.callbackNames().forEach((name: ObserveHandleCallback) => {
