@@ -493,7 +493,7 @@ Tinytest.addAsync('livedata server - publish cursor is properly awaited', async 
   cleanup()
 });
 
-Tinytest.addAsync('livedata server - publication stop should not throw error', async function (test) {
+Tinytest.addAsync('livedata server - stopping a handle should preserve its context on callbacks', async function (test) {
   let sub = null;
 
   const { conn, messages, cleanup } = await captureConnectionMessages(test);
@@ -535,7 +535,7 @@ Tinytest.addAsync('livedata server - publication stop should not throw error', a
       initializing = false;
 
       this.added('issueUnreadCount', user._id, {count});
-      
+
       this.onStop(handle.stop);
 
       this.onStop(() => {
@@ -577,6 +577,8 @@ Tinytest.addAsync('livedata server - publication stop should not throw error', a
   await sleep(50);
 
   sub5.stop();
+  
+  await sleep(50);
 
   cleanup();
 });
