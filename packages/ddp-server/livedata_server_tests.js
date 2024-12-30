@@ -533,12 +533,15 @@ Tinytest.addAsync('livedata server - publication stop should not throw error', a
       });
 
       initializing = false;
-  
+
       this.added('issueUnreadCount', user._id, {count});
+      
+      this.onStop(handle.stop);
+
       this.onStop(() => {
-        console.log('onStop');
-        handle.stop();
-      });
+        test.isTrue(handle._stopped)
+      })
+
       this.ready();
     }
   });
@@ -574,8 +577,6 @@ Tinytest.addAsync('livedata server - publication stop should not throw error', a
   await sleep(50);
 
   sub5.stop();
-
-  console.log(messages);
 
   cleanup();
 });
