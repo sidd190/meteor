@@ -494,8 +494,6 @@ Tinytest.addAsync('livedata server - publish cursor is properly awaited', async 
 });
 
 Tinytest.addAsync('livedata server - stopping a handle should preserve its context on callbacks', async function (test) {
-  let sub = null;
-
   const { conn, messages, cleanup } = await captureConnectionMessages(test);
 
   const coll = new Mongo.Collection('items', {
@@ -536,9 +534,11 @@ Tinytest.addAsync('livedata server - stopping a handle should preserve its conte
 
       this.added('issueUnreadCount', user._id, {count});
 
+      // Should be the same as `this.onStop(() => handle.stop())`
       this.onStop(handle.stop);
 
       this.onStop(() => {
+        // If stop is called and breaks for some reason, this will be false
         test.isTrue(handle._stopped)
       })
 
@@ -577,7 +577,7 @@ Tinytest.addAsync('livedata server - stopping a handle should preserve its conte
   await sleep(50);
 
   sub5.stop();
-  
+
   await sleep(50);
 
   cleanup();
