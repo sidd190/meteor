@@ -404,6 +404,7 @@ export default defineConfig({
             link: "/troubleshooting/expired-certificate",
           },
           { text: "Windows", link: "/troubleshooting/windows" },
+          { text: "MongoDB Connection", link: "/troubleshooting/mongodb-connection" }
         ],
         collapsed: true,
       },
