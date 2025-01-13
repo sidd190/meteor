@@ -9,12 +9,12 @@ if (Meteor.isServer && Meteor.isDevelopment) {
 }
 
 function oncePerArgument(func) {
-  const cache = new Map();
+  var cache = new Map();
 
-  return function (...args) {
-    const key = JSON.stringify(args);
+  return function _oncePerArgument() {
+    var key = JSON.stringify(arguments);
     if (!cache.has(key)) {
-      const result = func.apply(this, args);
+      var result = func.apply(this, arguments);
       cache.set(key, result);
     }
     return cache.get(key);
@@ -43,13 +43,13 @@ function cleanStackTrace(stackTrace) {
   return trace.join('\n');
 }
 
-const onceWarning = oncePerArgument((message) => {
+var onceWarning = oncePerArgument(function _onceWarning(message) {
   console.warn.apply(console, message);
 });
 
-const onceFixDeprecation = () => {
+function onceFixDeprecation() {
   onceWarning(['Deprecation warnings are hidden but crucial to address for future Meteor updates.', '\n', 'Remove the `METEOR_NO_DEPRECATION` env var to reveal them, then report or fix the issues.']);
-};
+}
 
 Meteor.deprecate = function () {
   if (!Meteor.isDevelopment) {
@@ -60,7 +60,7 @@ Meteor.deprecate = function () {
     var messages = Array.prototype.slice.call(arguments); // Convert arguments to array
 
     if (typeof __meteor_runtime_config__.noDeprecation === 'string') {
-      const noDeprecationPattern = new RegExp(__meteor_runtime_config__.noDeprecation);
+      var noDeprecationPattern = new RegExp(__meteor_runtime_config__.noDeprecation);
       if (noDeprecationPattern.test(stackStrace)) {
         onceFixDeprecation();
         return;
