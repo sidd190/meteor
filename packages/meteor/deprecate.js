@@ -1,11 +1,24 @@
 if (Meteor.isServer && Meteor.isDevelopment) {
   if (typeof __meteor_runtime_config__ === 'object') {
-    var noDeprecations = process.env.METEOR_NO_DEPRECATIONS;
-    if (noDeprecations === 'true' || noDeprecations === 'false') {
-      noDeprecations = noDeprecations === 'true';
+    var noDeprecation = process.env.METEOR_NO_DEPRECATION;
+    if (noDeprecation === 'true' || noDeprecation === 'false') {
+      noDeprecation = noDeprecation === 'true';
     }
-    __meteor_runtime_config__.noDeprecations = noDeprecations;
+    __meteor_runtime_config__.noDeprecation = noDeprecation;
   }
+}
+
+function oncePerArgument(func) {
+  const cache = new Map();
+
+  return function (...args) {
+    const key = JSON.stringify(args);
+    if (!cache.has(key)) {
+      const result = func.apply(this, args);
+      cache.set(key, result);
+    }
+    return cache.get(key);
+  };
 }
 
 function cleanStackTrace(stackTrace) {
@@ -30,6 +43,10 @@ function cleanStackTrace(stackTrace) {
   return trace.join('\n');
 }
 
+const onceWarning = oncePerArgument((message) => {
+  console.warn.apply(console, message);
+});
+
 Meteor.deprecate = function () {
   if (!Meteor.isDevelopment) {
     return;
@@ -38,18 +55,19 @@ Meteor.deprecate = function () {
     var stackStrace = cleanStackTrace(new Error().stack || '');
     var messages = Array.prototype.slice.call(arguments); // Convert arguments to array
 
-    if (typeof __meteor_runtime_config__.noDeprecations === 'string') {
-      const noDeprecationPattern = new RegExp(__meteor_runtime_config__.noDeprecations);
+    if (typeof __meteor_runtime_config__.noDeprecation === 'string') {
+      const noDeprecationPattern = new RegExp(__meteor_runtime_config__.noDeprecation);
       if (noDeprecationPattern.test(stackStrace)) {
         return;
       }
-    } else if (typeof __meteor_runtime_config__.noDeprecations === 'boolean' && __meteor_runtime_config__.noDeprecations) {
+    } else if (typeof __meteor_runtime_config__.noDeprecation === 'boolean' && __meteor_runtime_config__.noDeprecation) {
       return;
     }
     if (stackStrace.length > 0) {
       messages.push('\n\n', 'Trace:', '\n', stackStrace);
     }
+    messages.push('\n\n', 'To disable warnings, set the `METEOR_NO_DEPRECATION` to `true` or a regex pattern.', '\n');
 
-    console.warn.apply(console, ['[DEPRECATION]'].concat(messages));
+    onceWarning(['[DEPRECATION]'].concat(messages));
   }
 };
