@@ -1,6 +1,6 @@
 if (Meteor.isServer && Meteor.isDevelopment) {
   if (typeof __meteor_runtime_config__ === 'object') {
-    var noDeprecation = process.env.METEOR_NO_DEPRECATION;
+    var noDeprecation = process.env.METEOR_NO_DEPRECATION || process.noDeprecation;
     if (noDeprecation === 'true' || noDeprecation === 'false') {
       noDeprecation = noDeprecation === 'true';
     }
