@@ -47,6 +47,10 @@ const onceWarning = oncePerArgument((message) => {
   console.warn.apply(console, message);
 });
 
+const onceFixDeprecation = () => {
+  onceWarning(['Deprecation warnings are hidden but crucial to address for future Meteor updates.', '\n', 'Remove the `METEOR_NO_DEPRECATION` env var to reveal them, then report or fix the issues.']);
+};
+
 Meteor.deprecate = function () {
   if (!Meteor.isDevelopment) {
     return;
@@ -58,9 +62,11 @@ Meteor.deprecate = function () {
     if (typeof __meteor_runtime_config__.noDeprecation === 'string') {
       const noDeprecationPattern = new RegExp(__meteor_runtime_config__.noDeprecation);
       if (noDeprecationPattern.test(stackStrace)) {
+        onceFixDeprecation();
         return;
       }
     } else if (typeof __meteor_runtime_config__.noDeprecation === 'boolean' && __meteor_runtime_config__.noDeprecation) {
+      onceFixDeprecation();
       return;
     }
     if (stackStrace.length > 0) {
