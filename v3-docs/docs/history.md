@@ -12,17 +12,18 @@ This is a complete history of changes for Meteor releases.
 
 
 
-## v3.1.1, /date/
+## v3.1.1, 2025-01-15
 
 ### Highlights
 
+- Node upgrade: v22.13.0
 - Real-time Performance Boost: Refactored AsynchronousQueue for parallel processing and optimized MongoDB observers for faster initial document handling.
 - Allow/Deny Rules Update: Deprecated async rules and updated documentation and types.
 - Mongo Driver Downgrade: Reverted to a stable version to prevent issues in Meteor.
 - Support for Meteor.deprecate: Added deprecation warnings with stack trace for outdated code usage.
 - OAuth Fixes: Resolved issues with cancel popup event and callback.
+- Windows Fixes: Fixed issues with running from folders with spaces and post-npm install build errors on Windows.
 - Security Updates: Upgraded json5 and semver from babel compiler.
-- [...]
 
 #### Breaking Changes
 
@@ -38,7 +39,7 @@ Please run the following command to update your project:
 
 ```bash
 
-meteor update --release 3.1.1-beta.2
+meteor update --release 3.1.1
 
 ```
 
@@ -46,6 +47,7 @@ meteor update --release 3.1.1-beta.2
 
 - accounts-base@3.0.4
 - accounts-oauth@1.4.6
+- accounts-passwordless@3.0.1
 - allow-deny@2.1.0
 - babel-compiler@7.11.3
 - ddp-client@3.1.0
@@ -59,7 +61,6 @@ meteor update --release 3.1.1-beta.2
 - oauth@3.0.1
 - roles@@1.0.1
 - socket-stream-client@0.6.0
-- [...]
 
 #### Bumped NPM Packages
 
@@ -73,6 +74,11 @@ N/A
 - [@nachocodoner](https://github.com/nachocodoner)
 - [@Grubba27](https://github.com/Grubba27)
 - [@9Morello](https://github.com/9Morello)
+- [@perbergland](https://github.com/perbergland)
+- [@StorytellerCZ](https://github.com/StorytellerCZ)
+- [@MrSpark2591](https://github.com/MrSpark2591)
+- [@jstarpl](https://github.com/jstarpl)
+- [@minhna](https://github.com/minhna)
 
 ✨✨✨
 ## v3.1.0, 2024-11-20
