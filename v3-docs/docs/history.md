@@ -79,6 +79,8 @@ N/A
 - [@MrSpark2591](https://github.com/MrSpark2591)
 - [@jstarpl](https://github.com/jstarpl)
 - [@minhna](https://github.com/minhna)
+- [@svolkomorov](https://github.com/svolkomorov)
+- [@quyetdgroup](https://github.com/quyetdgroup)
 
 ✨✨✨
 ## v3.1.0, 2024-11-20
