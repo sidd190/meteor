@@ -81,7 +81,7 @@ export namespace Accounts {
     passwordEnrollTokenExpiration?: number | undefined;
     passwordEnrollTokenExpirationInDays?: number | undefined;
     ambiguousErrorMessages?: boolean | undefined;
-    bcryptRounds?: number | undefined;
+    argon2Iterations?: number | undefined;
     defaultFieldSelector?: { [key: string]: 0 | 1 } | undefined;
     collection?: string | undefined;
     loginTokenExpirationHours?: number | undefined;
@@ -353,10 +353,10 @@ export namespace Accounts {
 
   /**
    *
-   * Check whether the provided password matches the bcrypt'ed password in
+   * Check whether the provided password matches the argon2'ed password in
    * the database user record. `password` can be a string (in which case
-   * it will be run through SHA256 before bcrypt) or an object with
-   * properties `digest` and `algorithm` (in which case we bcrypt
+   * it will be run through SHA256 before argon2) or an object with
+   * properties `digest` and `algorithm` (in which case we argon2
    * `password.digest`).
    */
   function _checkPasswordAsync(

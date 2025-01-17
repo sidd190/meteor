@@ -1171,7 +1171,7 @@ if (Meteor.isServer) (() => {
       // set a new password.
       await Accounts.setPasswordAsync(userId, 'new password');
       user = await Meteor.users.findOneAsync(userId);
-      const oldSaltedHash = user.services.password.bcrypt;
+      const oldSaltedHash = user.services.password.argon2;
       test.isTrue(oldSaltedHash);
       // Send a reset password email (setting a reset token) and insert a login
       // token.
@@ -1184,7 +1184,7 @@ if (Meteor.isServer) (() => {
       // reset with the same password, see we get a different salted hash
       await Accounts.setPasswordAsync(userId, 'new password', { logout: false });
       user = await Meteor.users.findOneAsync(userId);
-      const newSaltedHash = user.services.password.bcrypt;
+      const newSaltedHash = user.services.password.argon2;
       test.isTrue(newSaltedHash);
       test.notEqual(oldSaltedHash, newSaltedHash);
       // No more reset token.
@@ -1196,7 +1196,7 @@ if (Meteor.isServer) (() => {
       // reset again, see that the login tokens are gone.
       await Accounts.setPasswordAsync(userId, 'new password');
       user = await Meteor.users.findOneAsync(userId);
-      const newerSaltedHash = user.services.password.bcrypt;
+      const newerSaltedHash = user.services.password.argon2;
       test.isTrue(newerSaltedHash);
       test.notEqual(oldSaltedHash, newerSaltedHash);
       test.notEqual(newSaltedHash, newerSaltedHash);
@@ -1822,28 +1822,32 @@ if (Meteor.isServer) (() => {
     ]);
   });
 
-  const getUserHashRounds = user =>
-    Number(user.services.password.bcrypt.substring(4, 6));
-  testAsyncMulti("passwords - allow custom bcrypt rounds",[
+  const getUserHashArgon2Iterations = function (user) {
+    const hash = user?.services?.password?.argon2;
+    return Accounts._getIterationsFromArgon2Hash(hash);
+  }
+
+  testAsyncMulti("passwords - allow custom argon2 iterations",[
     async function (test) {
-      // Verify that a bcrypt hash generated for a new account uses the
+      // Verify that a argon2 hash generated for a new account uses the
+      // default number of iterations.
       let username = Random.id();
       this.password = hashPassword('abc123');
       this.userId1 = await Accounts.createUser({ username, password: this.password });
       this.user1 =  await Meteor.users.findOneAsync(this.userId1);
-      let rounds = getUserHashRounds(this.user1);
-      test.equal(rounds, Accounts._bcryptRounds());
+      let rounds = getUserHashArgon2Iterations(this.user1);
+      test.equal(rounds, Accounts._argon2Iterations());
 
-      // When a custom number of bcrypt rounds is set via Accounts.config,
-      // and an account was already created using the default number of rounds,
+      // When a custom number of argon2 iterations is set via Accounts.config,
+      // and an account was already created using the default number of iterations,
       // make sure that a new hash is created (and stored) using the new number
-      // of rounds, the next time the password is checked.
-      this.customRounds = 11;
-      Accounts._options.bcryptRounds = this.customRounds;
+      // of iterations, the next time the password is checked.
+      this.customIterations = 4;
+      Accounts._options.argon2Iterations = this.customIterations;
       await Accounts._checkPasswordAsync(this.user1, this.password);
     },
     async function(test) {
-      const defaultRounds = Accounts._bcryptRounds();
+      const defaultRounds = Accounts._argon2Iterations();
       let rounds;
       let username;
 
@@ -1852,18 +1856,18 @@ if (Meteor.isServer) (() => {
 
       Meteor.setTimeout(async () => {
         this.user1 = await Meteor.users.findOneAsync(this.userId1);
-        rounds = getUserHashRounds(this.user1);
-        test.equal(rounds, this.customRounds);
-        // When a custom number of bcrypt rounds is set, make sure it's
-        // used for new bcrypt password hashes.
+        rounds = getUserHashArgon2Iterations(this.user1);
+        test.equal(rounds, this.customIterations);
+        // When a custom number of argon2 iterations is set, make sure it's
+        // used for new argon2 password hashes.
         username = Random.id();
         const userId2 = await Accounts.createUser({ username, password: this.password });
         const user2 = await Meteor.users.findOneAsync(userId2);
-        rounds = getUserHashRounds(user2);
-        test.equal(rounds, this.customRounds);
+        rounds = getUserHashArgon2Iterations(user2);
+        test.equal(rounds, this.customIterations);
 
         // Cleanup
-        Accounts._options.bcryptRounds = defaultRounds;
+        Accounts._options.argon2Iterations = defaultRounds;
         await Meteor.users.removeAsync(this.userId1);
         await Meteor.users.removeAsync(userId2);
         resolve();
@@ -1871,7 +1875,7 @@ if (Meteor.isServer) (() => {
 
       return promise;
     }
-  ]); // default number of rounds.
+  ]);
 
 
   Tinytest.addAsync('passwords - extra params in email urls',

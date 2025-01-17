@@ -773,7 +773,7 @@ sign-in process, it also supports email-based sign-in including
 address verification and password recovery emails.
 
 The Meteor server stores passwords using the
-[bcrypt](http://en.wikipedia.org/wiki/Bcrypt) algorithm. This helps
+[argon2](http://en.wikipedia.org/wiki/Argon2) algorithm. This helps
 protect against embarrassing password leaks if the server's database is
 compromised.
 
