@@ -1871,7 +1871,7 @@ if (Meteor.isServer) (() => {
         await Meteor.users.removeAsync(this.userId1);
         await Meteor.users.removeAsync(userId2);
         resolve();
-      }, 5000);
+      }, 1000);
 
       return promise;
     }
@@ -1927,5 +1927,46 @@ if (Meteor.isServer) (() => {
         password: password
       });
     }, 'already exists');
+  });
+
+  Tinytest.addAsync("passwords - migration from bcrypt encryption to argon2", async test => {
+    const username = Random.id();
+    const email = `${username}@bcrypt.com`;
+    const password = "password";
+    const bcryptPasswordHash = "$2b$10$XIz481R/8TTXqtl9igiPmeZexiLkhy7oTk4pfO/oN5ymQnS5mWilC";// = brcypt(sha256('password'))
+    const userId = await Meteor.users.insertAsync({
+      username,
+      emails: [{ address: email, verified: false }],
+      services: {
+        password: {
+          bcrypt: bcryptPasswordHash
+        }
+      }
+    });
+    let user = await Meteor.users.findOneAsync(userId);
+    const isValid = await Accounts._checkPasswordAsync(user, password);
+    test.equal(isValid.userId, userId, "checkPassword with bcrypt - User ID should be returned");
+    test.equal(typeof isValid.error, "undefined", "checkPassword with bcrypt - No error should be returned");
+
+
+    let resolve;
+    const promise = new Promise(res => resolve = res);
+
+    // wait for defered execution of user update inside _checkPasswordAsync
+    Meteor.setTimeout(async () => {
+      user = await Meteor.users.findOneAsync(userId);
+      // bcrypt has been unset and argon2 set
+      test.equal(typeof user.services.password.bcrypt, "undefined", "bcrypt should be unset");
+      test.equal(typeof user.services.password.argon2, "string", "argon2 should be set");
+      // password is still valid using argon2
+      const isValidArgon = await Accounts._checkPasswordAsync(user, password);
+      test.equal(isValidArgon.userId, userId, "checkPassword with argon2 - User ID should be returned");
+      test.equal(typeof isValidArgon.error, "undefined", "checkPassword with argon2 - No error should be returned");
+      resolve();
+    }, 1000);
+
+    return promise
+
+
   });
 })();
