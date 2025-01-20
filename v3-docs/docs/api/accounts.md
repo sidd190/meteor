@@ -789,23 +789,25 @@ The transition from `bcrypt` to `argon2` is handled seamlessly during user login
 
 **Configuring `argon2` parameters**
 
-The accounts-password package allows limited customization of the Argon2 algorithm's parameters. The configurable options include:
+The accounts-password package allows customization of the Argon2 algorithm's parameters. The configurable options include:
 
+- `type`: `argon2id` (provides a blend of resistance against GPU and side-channel attacks)
 - `timeCost` (default: 3) – This controls the computational cost of the hashing process, affecting both the security level and performance.
+- `memoryCost`: 65536 (64 MB) - The amount of memory used by the algorithm in KiB per thread
+- `parallelism`: 4 - The number of threads used by the algorithm
 
-To update the timeCost, use the following configuration:
-
+To update the values, use the following configuration:
 ```js
 Accounts.config({
-    argon2Iterations: 4
+    argon2Type: "argon2id",
+    argon2TimeCost: 4,
+    argon2MemoryCost: 65536,
+    argon2Parallelism: 4,
 });
 ```
 
-Other Argon2 parameters, such as `hashLength`, `memoryCost`, `parallelism`, and `type`, are set to default values:
-- `hashLength`: 32 bytes
-- `memoryCost`: 64 MB
-- `parallelism`: 4
-- `type`: Argon2id (provides a blend of resistance against GPU and side-channel attacks)
+Other Argon2 parameters, such as `hashLength`, are kept to default values:
+- `hashLength`: 32 bytes - The length of the hash output in bytes
 
 For more information about Argon2's parameters, refer to the [argon2 options documentation](https://github.com/ranisalt/node-argon2/wiki/Options).
 

@@ -81,7 +81,10 @@ export namespace Accounts {
     passwordEnrollTokenExpiration?: number | undefined;
     passwordEnrollTokenExpirationInDays?: number | undefined;
     ambiguousErrorMessages?: boolean | undefined;
-    argon2Iterations?: number | undefined;
+    argon2Type?: string | undefined;
+    argon2TimeCost: number | undefined;
+    argon2MemoryCost: number | undefined;
+    argon2Parallelism: number | undefined;
     defaultFieldSelector?: { [key: string]: 0 | 1 } | undefined;
     collection?: string | undefined;
     loginTokenExpirationHours?: number | undefined;

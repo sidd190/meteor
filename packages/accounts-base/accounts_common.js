@@ -13,7 +13,10 @@ const VALID_CONFIG_KEYS = [
   'passwordEnrollTokenExpirationInDays',
   'passwordEnrollTokenExpiration',
   'ambiguousErrorMessages',
-  'argon2Iterations',
+  'argon2Type',
+  'argon2TimeCost',
+  'argon2MemoryCost',
+  'argon2Parallelism',
   'defaultFieldSelector',
   'collection',
   'loginTokenExpirationHours',
@@ -210,7 +213,10 @@ export class AccountsCommon {
    * @param {Number} options.passwordEnrollTokenExpirationInDays The number of days from when a link to set initial password is sent until token expires and user can't set password with the link anymore. Defaults to 30.
    * @param {Number} options.passwordEnrollTokenExpiration The number of milliseconds from when a link to set initial password is sent until token expires and user can't set password with the link anymore. If `passwordEnrollTokenExpirationInDays` is set, it takes precedent.
    * @param {Boolean} options.ambiguousErrorMessages Return ambiguous error messages from login failures to prevent user enumeration. Defaults to `true`.
-   * @param {Number} options.argon2Iterations Allows override of number of argon2 iterations (aka time cost) used to store passwords. The default is 3.
+   * @param {'argon2id' | 'argon2i' | 'argon2d'} options.argon2Type Allows override of the argon2 algorithm type. The default is `argon2id`.
+   * @param {Number} options.argon2TimeCost Allows override of number of argon2 iterations (aka time cost) used to store passwords. The default is 3.
+   * @param {Number} options.argon2MemoryCost Allows override of the amount of memory (in KiB) used by the argon2 algorithm. The default is 65536 (64MB).
+   * @param {Number} options.argon2Parallelism Allows override of the number of threads used by the argon2 algorithm. The default is 4.
    * @param {MongoFieldSpecifier} options.defaultFieldSelector To exclude by default large custom fields from `Meteor.user()` and `Meteor.findUserBy...()` functions when called without a field selector, and all `onLogin`, `onLoginFailure` and `onLogout` callbacks.  Example: `Accounts.config({ defaultFieldSelector: { myBigArray: 0 }})`. Beware when using this. If, for instance, you do not include `email` when excluding the fields, you can have problems with functions like `forgotPassword` that will break because they won't have the required data available. It's recommend that you always keep the fields `_id`, `username`, and `email`.
    * @param {String|Mongo.Collection} options.collection A collection name or a Mongo.Collection object to hold the users.
    * @param {Number} options.loginTokenExpirationHours When using the package `accounts-2fa`, use this to set the amount of time a token sent is valid. As it's just a number, you can use, for example, 0.5 to make the token valid for just half hour. The default is 1 hour.

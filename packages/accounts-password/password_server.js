@@ -23,7 +23,16 @@ const getUserById =
 // receives a password as an object, it asserts that the algorithm is
 // "sha-256" and then passes the digest to argon2.
 
-Accounts._argon2Iterations = () => Accounts._options.argon2Iterations || 3;
+const ARGON2_TYPES = {
+  argon2i: argon2.argon2i,
+  argon2d: argon2.argon2d,
+  argon2id: argon2.argon2id
+};
+
+Accounts._argon2Type = () => ARGON2_TYPES[Accounts._options.argon2Type] || argon2.argon2id;
+Accounts._argon2TimeCost = () => Accounts._options.argon2TimeCost || 3;
+Accounts._argon2MemoryCost = () => Accounts._options.argon2MemoryCost || 65536;
+Accounts._argon2Parallelism = () => Accounts._options.argon2Parallelism || 4;
 
 /**
  * Extracts the string to be encrypted using Argon2 from the given `password`.
@@ -59,39 +68,39 @@ const getPasswordString = password => {
 const hashPassword = async password => {
   password = getPasswordString(password);
   return await argon2.hash(password, {
-    timeCost: Accounts._argon2Iterations(),
-    type: argon2.argon2id
+    type: Accounts._argon2Type(),
+    timeCost: Accounts._argon2TimeCost(),
+    memoryCost: Accounts._argon2MemoryCost(),
+    parallelism: Accounts._argon2Parallelism(),
   });
 };
 
 /**
- * Extract the number of iterations used in the specified argon2 hash
- * @param hash String
- * @returns {null|number}
+ * Extract readable parameters from an Argon2 hash string.
+ * @param {string} hash - The Argon2 hash string.
+ * @returns {object} An object containing the parsed parameters.
+ * @throws {Error} If the hash format is invalid.
  */
-const getIterationsFromArgon2Hash = function(hash) {
-  const parts = hash?.split("$") || [];
-  if (parts.length < 4 || !parts[1].startsWith("argon2")) {
-    throw new Error("Invalid Argon2 hash format");
+function getArgon2Params(hash) {
+  const regex = /^\$(argon2(?:i|d|id))\$v=\d+\$m=(\d+),t=(\d+),p=(\d+)/;
+
+  const match = hash.match(regex);
+
+  if (!match) {
+    throw new Error("Invalid Argon2 hash format.");
   }
 
-  const params = parts[3].split(",");
-  let iterations = null;
+  const [, type, memoryCost, timeCost, parallelism] = match;
 
-  for (const param of params) {
-    if (param.startsWith("t=")) {
-      iterations = parseInt(param.split("=")[1], 10);
-      break;
-    }
-  }
+  return {
+    type: ARGON2_TYPES[type],
+    timeCost: parseInt(timeCost, 10),
+    memoryCost: parseInt(memoryCost, 10),
+    parallelism: parseInt(parallelism, 10)
+  };
+}
 
-  if (iterations === null) {
-    throw new Error("Iterations parameter not found in the hash");
-  }
-
-  return iterations;
-};
-Accounts._getIterationsFromArgon2Hash = getIterationsFromArgon2Hash;
+Accounts._getArgon2Params = getArgon2Params;
 
 const getUserPasswordHash = user => {
   return user.services?.password?.argon2 || user.services?.password?.bcrypt;
@@ -157,24 +166,30 @@ const checkPasswordAsync = async (user, password) => {
   }
   else {
     // argon2 password
-    const argon2Iterations = getIterationsFromArgon2Hash(hash);
+    const argon2Params = getArgon2Params(hash);
 
     if (!(await argon2.verify(hash, formattedPassword))) {
       result.error = Accounts._handleError("Incorrect password", false);
     }
-    else if (hash && Accounts._argon2Iterations() !== argon2Iterations) {
-      // The password checks out, but the user's argon2 hash needs to be updated with the right number of iterations
-      Meteor.defer(async () => {
-        await Meteor.users.updateAsync(
-          { _id: user._id },
-          {
-            $set: {
-              "services.password.argon2":
-                await hashPassword(formattedPassword)
+    else if (hash) {
+      const paramsChanged = argon2Params.memoryCost !== Accounts._argon2MemoryCost() ||
+        argon2Params.timeCost !== Accounts._argon2TimeCost() ||
+        argon2Params.parallelism !== Accounts._argon2Parallelism() ||
+        argon2Params.type !== Accounts._argon2Type();
+      if (paramsChanged === true) {
+        // The password checks out, but the user's argon2 hash needs to be updated with the right params
+        Meteor.defer(async () => {
+          await Meteor.users.updateAsync(
+            { _id: user._id },
+            {
+              $set: {
+                "services.password.argon2":
+                  await hashPassword(formattedPassword)
+              }
             }
-          }
-        );
-      });
+          );
+        });
+      }
     }
   }
 
