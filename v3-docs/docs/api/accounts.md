@@ -777,6 +777,41 @@ The Meteor server stores passwords using the
 protect against embarrassing password leaks if the server's database is
 compromised.
 
+### Password encryption and security
+
+Passwords are hashed on the client using **SHA-256** algorithm before being sent to the server. This ensures that sensitive data is never transmitted in plain text. Once received by the server, the hashed value is further encrypted and securely stored in the `Meteor.users` collection.
+
+Starting from `accounts-passwords:4.0.0`, the encryption algorithm used is [Argon2](http://en.wikipedia.org/wiki/Argon2). This algorithm is specifically designed to resist GPU-based brute force attacks. Argon2 has replaced the previous [bcrypt](http://en.wikipedia.org/wiki/Bcrypt) algorithm as it's now regarded as a more robust option. For more details, see the [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+
+**Migrating from `bcrypt` to `argon2`**
+
+The transition from `bcrypt` to `argon2` is handled seamlessly during user logins. When a user logs in, their password is first verified against the existing bcrypt hash. If successful, the password is re-encrypted using Argon2 and the new hash is stored in the database.
+
+**Configuring `argon2` parameters**
+
+The accounts-password package allows limited customization of the Argon2 algorithm's parameters. The configurable options include:
+
+- `timeCost` (default: 3) – This controls the computational cost of the hashing process, affecting both the security level and performance.
+
+To update the timeCost, use the following configuration:
+
+```js
+Accounts.config({
+    argon2Iterations: 4
+});
+```
+
+Other Argon2 parameters, such as `hashLength`, `memoryCost`, `parallelism`, and `type`, are set to default values:
+- `hashLength`: 32 bytes
+- `memoryCost`: 64 MB
+- `parallelism`: 4
+- `type`: Argon2id (provides a blend of resistance against GPU and side-channel attacks)
+
+For more information about Argon2's parameters, refer to the [argon2 options documentation](https://github.com/ranisalt/node-argon2/wiki/Options).
+
+
+### Using passwords
+
 To add password support to your application, run this command in your terminal:
 
 ```bash
