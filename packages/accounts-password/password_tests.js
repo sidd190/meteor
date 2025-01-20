@@ -1822,33 +1822,47 @@ if (Meteor.isServer) (() => {
     ]);
   });
 
-  const getUserHashArgon2Iterations = function (user) {
+  const getUserHashArgon2Params = function (user) {
     const hash = user?.services?.password?.argon2;
-    return Accounts._getIterationsFromArgon2Hash(hash);
+    return Accounts._getArgon2Params(hash);
   }
 
-  testAsyncMulti("passwords - allow custom argon2 iterations",[
-    async function (test) {
+  testAsyncMulti("passwords - allow custom argon2 Params", [
+    async function(test) {
       // Verify that a argon2 hash generated for a new account uses the
-      // default number of iterations.
+      // default params.
       let username = Random.id();
-      this.password = hashPassword('abc123');
+      this.password = hashPassword("abc123");
       this.userId1 = await Accounts.createUser({ username, password: this.password });
-      this.user1 =  await Meteor.users.findOneAsync(this.userId1);
-      let rounds = getUserHashArgon2Iterations(this.user1);
-      test.equal(rounds, Accounts._argon2Iterations());
+      this.user1 = await Meteor.users.findOneAsync(this.userId1);
+      let argon2Params = getUserHashArgon2Params(this.user1);
+      test.equal(argon2Params.type, Accounts._argon2Type());
+      test.equal(argon2Params.memoryCost, Accounts._argon2MemoryCost());
+      test.equal(argon2Params.timeCost, Accounts._argon2TimeCost());
+      test.equal(argon2Params.parallelism, Accounts._argon2Parallelism());
 
-      // When a custom number of argon2 iterations is set via Accounts.config,
-      // and an account was already created using the default number of iterations,
+
+      // When a custom number of argon2 TimeCost is set via Accounts.config,
+      // and an account was already created using the default number of TimeCost,
       // make sure that a new hash is created (and stored) using the new number
-      // of iterations, the next time the password is checked.
-      this.customIterations = 4;
-      Accounts._options.argon2Iterations = this.customIterations;
+      // of TimeCost, the next time the password is checked.
+      this.customType = "argon2d"; // argon2.argon2d = 2
+      this.customTimeCost = 4;
+      this.customMemoryCost = 32768;
+      this.customParallelism = 1;
+      Accounts._options.argon2Type = this.customType;
+      Accounts._options.argon2TimeCost = this.customTimeCost;
+      Accounts._options.argon2MemoryCost = this.customMemoryCost;
+      Accounts._options.argon2Parallelism = this.customParallelism;
+
       await Accounts._checkPasswordAsync(this.user1, this.password);
     },
     async function(test) {
-      const defaultRounds = Accounts._argon2Iterations();
-      let rounds;
+      const defaultType = Accounts._argon2Type();
+      const defaultTimeCost = Accounts._argon2TimeCost();
+      const defaultMemoryCost = Accounts._argon2MemoryCost();
+      const defaultParallelism = Accounts._argon2Parallelism();
+      let params;
       let username;
 
       let resolve;
@@ -1856,18 +1870,28 @@ if (Meteor.isServer) (() => {
 
       Meteor.setTimeout(async () => {
         this.user1 = await Meteor.users.findOneAsync(this.userId1);
-        rounds = getUserHashArgon2Iterations(this.user1);
-        test.equal(rounds, this.customIterations);
-        // When a custom number of argon2 iterations is set, make sure it's
+        params = getUserHashArgon2Params(this.user1);
+        test.equal(params.type, 2);
+        test.equal(params.timeCost, this.customTimeCost);
+        test.equal(params.memoryCost, this.customMemoryCost);
+        test.equal(params.parallelism, this.customParallelism);
+
+        // When a custom number of argon2 TimeCost is set, make sure it's
         // used for new argon2 password hashes.
         username = Random.id();
         const userId2 = await Accounts.createUser({ username, password: this.password });
         const user2 = await Meteor.users.findOneAsync(userId2);
-        rounds = getUserHashArgon2Iterations(user2);
-        test.equal(rounds, this.customIterations);
+        params = getUserHashArgon2Params(user2);
+        test.equal(params.type, 2);
+        test.equal(params.timeCost, this.customTimeCost);
+        test.equal(params.memoryCost, this.customMemoryCost);
+        test.equal(params.parallelism, this.customParallelism);
 
         // Cleanup
-        Accounts._options.argon2Iterations = defaultRounds;
+        Accounts._options.argon2Type = defaultType;
+        Accounts._options.argon2TimeCost = defaultTimeCost;
+        Accounts._options.argon2MemoryCost = defaultMemoryCost;
+        Accounts._options.argon2Parallelism = defaultParallelism;
         await Meteor.users.removeAsync(this.userId1);
         await Meteor.users.removeAsync(userId2);
         resolve();
