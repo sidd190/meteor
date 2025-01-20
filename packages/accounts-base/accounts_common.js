@@ -194,41 +194,6 @@ export class AccountsCommon {
       ? this.users.findOneAsync(userId, this._addDefaultFieldSelector(options))
       : null;
   }
-  // Set up config for the accounts system. Call this on both the client
-  // and the server.
-  //
-  // Note that this method gets overridden on AccountsServer.prototype, but
-  // the overriding method calls the overridden method.
-  //
-  // XXX we should add some enforcement that this is called on both the
-  // client and the server. Otherwise, a user can
-  // 'forbidClientAccountCreation' only on the client and while it looks
-  // like their app is secure, the server will still accept createUser
-  // calls. https://github.com/meteor/meteor/issues/828
-  //
-  // @param options {Object} an object with fields:
-  // - sendVerificationEmail {Boolean}
-  //     Send email address verification emails to new users created from
-  //     client signups.
-  // - forbidClientAccountCreation {Boolean}
-  //     Do not allow clients to create accounts directly.
-  // - restrictCreationByEmailDomain {Function or String}
-  //     Require created users to have an email matching the function or
-  //     having the string as domain.
-  // - loginExpirationInDays {Number}
-  //     Number of days since login until a user is logged out (login token
-  //     expires).
-  // - collection {String|Mongo.Collection}
-  //     A collection name or a Mongo.Collection object to hold the users.
-  // - passwordResetTokenExpirationInDays {Number}
-  //     Number of days since password reset token creation until the
-  //     token can't be used any longer (password reset token expires).
-  // - ambiguousErrorMessages {Boolean}
-  //     Return ambiguous error messages from login failures to prevent
-  //     user enumeration.
-  // - argon2Iterations {Number}
-  //     Allows override of number of argon2 iterations (aka time cost) used
-  //     to store passwords.
 
   /**
    * @summary Set global accounts options. You can also set these in `Meteor.settings.packages.accounts` without the need to call this function.
