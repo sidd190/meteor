@@ -12,6 +12,11 @@ Tinytest.add('modern-browsers - versions - basic', function (test) {
     major: 60,
   }));
 
+  test.isTrue(isModern({
+    name: "edgeMobile",
+    major: 120,
+  }));
+
   test.isFalse(isModern({
     name: "firefox",
     major: 25,
