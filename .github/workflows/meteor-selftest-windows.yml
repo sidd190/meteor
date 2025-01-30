@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Cleanup
-        uses: asilbek99/action-cleanup@v1
+        uses: rtCamp/action-cleanup@master
 
       - name: Checkout code
         uses: actions/checkout@v4
