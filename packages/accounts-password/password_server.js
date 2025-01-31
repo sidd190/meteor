@@ -697,7 +697,7 @@ Accounts.sendResetPasswordEmail =
     const options = await Accounts.generateOptionsForEmail(realEmail, user, url, 'resetPassword');
     await Email.sendAsync(options);
 
-    if (Meteor.isDevelopment) {
+    if (Meteor.isDevelopment && !Meteor.isPackageTest) {
       console.log(`\nReset password URL: ${ url }`);
     }
     return { email: realEmail, user, token, url, options };
@@ -733,7 +733,7 @@ Accounts.sendEnrollmentEmail =
       await Accounts.generateOptionsForEmail(realEmail, user, url, 'enrollAccount');
 
     await Email.sendAsync(options);
-    if (Meteor.isDevelopment) {
+    if (Meteor.isDevelopment && !Meteor.isPackageTest) {
       console.log(`\nEnrollment email URL: ${ url }`);
     }
     return { email: realEmail, user, token, url, options };
@@ -919,7 +919,7 @@ Accounts.sendVerificationEmail =
     const url = Accounts.urls.verifyEmail(token, extraParams);
     const options = await Accounts.generateOptionsForEmail(realEmail, user, url, 'verifyEmail');
     await Email.sendAsync(options);
-    if (Meteor.isDevelopment) {
+    if (Meteor.isDevelopment && !Meteor.isPackageTest) {
       console.log(`\nVerification email URL: ${ url }`);
     }
     return { email: realEmail, user, token, url, options };
