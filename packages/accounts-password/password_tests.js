@@ -802,7 +802,7 @@ if (Meteor.isClient) (() => {
       // Can update own profile using ID.
       await Meteor.users.updateAsync(
         this.userId, { $set: { 'profile.updated': 42 } },
-       );
+      );
       test.equal(42, Meteor.user().profile.updated);
     },
     logoutStep
@@ -1171,7 +1171,7 @@ if (Meteor.isServer) (() => {
       // set a new password.
       await Accounts.setPasswordAsync(userId, 'new password');
       user = await Meteor.users.findOneAsync(userId);
-      const oldSaltedHash = user.services.password.argon2;
+      const oldSaltedHash = user.services.password.bcrypt;
       test.isTrue(oldSaltedHash);
       // Send a reset password email (setting a reset token) and insert a login
       // token.
@@ -1184,7 +1184,7 @@ if (Meteor.isServer) (() => {
       // reset with the same password, see we get a different salted hash
       await Accounts.setPasswordAsync(userId, 'new password', { logout: false });
       user = await Meteor.users.findOneAsync(userId);
-      const newSaltedHash = user.services.password.argon2;
+      const newSaltedHash = user.services.password.bcrypt;
       test.isTrue(newSaltedHash);
       test.notEqual(oldSaltedHash, newSaltedHash);
       // No more reset token.
@@ -1196,7 +1196,7 @@ if (Meteor.isServer) (() => {
       // reset again, see that the login tokens are gone.
       await Accounts.setPasswordAsync(userId, 'new password');
       user = await Meteor.users.findOneAsync(userId);
-      const newerSaltedHash = user.services.password.argon2;
+      const newerSaltedHash = user.services.password.bcrypt;
       test.isTrue(newerSaltedHash);
       test.notEqual(oldSaltedHash, newerSaltedHash);
       test.notEqual(newSaltedHash, newerSaltedHash);
@@ -1727,142 +1727,124 @@ if (Meteor.isServer) (() => {
     });
 
   Tinytest.addAsync("passwords - add email when user has not an existing email",
-      async test => {
-    const userId = await Accounts.createUser({
-      username: `user${ Random.id() }`
-    });
+    async test => {
+      const userId = await Accounts.createUser({
+        username: `user${ Random.id() }`
+      });
 
-    const newEmail = `${ Random.id() }@turing.com`;
-    await Accounts.addEmailAsync(userId, newEmail);
-    const u1 = await Accounts._findUserByQuery({ id: userId })
-    test.equal(u1.emails, [
-      { address: newEmail, verified: false },
-    ]);
-  });
+      const newEmail = `${ Random.id() }@turing.com`;
+      await Accounts.addEmailAsync(userId, newEmail);
+      const u1 = await Accounts._findUserByQuery({ id: userId })
+      test.equal(u1.emails, [
+        { address: newEmail, verified: false },
+      ]);
+    });
 
   Tinytest.addAsync("passwords - add email when the user has an existing email " +
     "only differing in case",
     async test => {
-    const origEmail = `${ Random.id() }@turing.com`;
-    const userId = await Accounts.createUser({
-      email: origEmail
+      const origEmail = `${ Random.id() }@turing.com`;
+      const userId = await Accounts.createUser({
+        email: origEmail
+      });
+
+      const newEmail = `${ Random.id() }@turing.com`;
+      await Accounts.addEmailAsync(userId, newEmail);
+
+      const thirdEmail = origEmail.toUpperCase();
+      await Accounts.addEmailAsync(userId, thirdEmail, true);
+      const u1 = await Accounts._findUserByQuery({ id: userId })
+      test.equal(u1.emails, [
+        { address: thirdEmail, verified: true },
+        { address: newEmail, verified: false }
+      ]);
     });
-
-    const newEmail = `${ Random.id() }@turing.com`;
-    await Accounts.addEmailAsync(userId, newEmail);
-
-    const thirdEmail = origEmail.toUpperCase();
-    await Accounts.addEmailAsync(userId, thirdEmail, true);
-    const u1 = await Accounts._findUserByQuery({ id: userId })
-    test.equal(u1.emails, [
-      { address: thirdEmail, verified: true },
-      { address: newEmail, verified: false }
-    ]);
-  });
 
   Tinytest.addAsync("passwords - add email should fail when there is an existing " +
     "user with an email only differing in case",
     async test => {
-    const user1Email = `${ Random.id() }@turing.com`;
-    const userId1 = await Accounts.createUser({
-      email: user1Email
+      const user1Email = `${ Random.id() }@turing.com`;
+      const userId1 = await Accounts.createUser({
+        email: user1Email
+      });
+
+      const user2Email = `${ Random.id() }@turing.com`;
+      const userId2 = await Accounts.createUser({
+        email: user2Email
+      });
+
+      const dupEmail = user1Email.toUpperCase();
+      await test.throwsAsync(
+        async () => await Accounts.addEmailAsync(userId2, dupEmail),
+        /Email already exists/
+      );
+
+      const u1 = await Accounts._findUserByQuery({ id: userId1 })
+      test.equal(u1.emails, [
+        { address: user1Email, verified: false }
+      ]);
+      const u2 = await Accounts._findUserByQuery({ id: userId2 })
+      test.equal(u2.emails, [
+        { address: user2Email, verified: false }
+      ]);
     });
-
-    const user2Email = `${ Random.id() }@turing.com`;
-    const userId2 = await Accounts.createUser({
-      email: user2Email
-    });
-
-    const dupEmail = user1Email.toUpperCase();
-    await test.throwsAsync(
-     async () => await Accounts.addEmailAsync(userId2, dupEmail),
-      /Email already exists/
-    );
-
-    const u1 = await Accounts._findUserByQuery({ id: userId1 })
-    test.equal(u1.emails, [
-      { address: user1Email, verified: false }
-    ]);
-    const u2 = await Accounts._findUserByQuery({ id: userId2 })
-    test.equal(u2.emails, [
-      { address: user2Email, verified: false }
-    ]);
-  });
 
   Tinytest.addAsync("passwords - remove email",
     async test => {
-    const origEmail = `${ Random.id() }@turing.com`;
-    const userId = await Accounts.createUser({
-      email: origEmail
+      const origEmail = `${ Random.id() }@turing.com`;
+      const userId = await Accounts.createUser({
+        email: origEmail
+      });
+
+      const newEmail = `${ Random.id() }@turing.com`;
+      await Accounts.addEmailAsync(userId, newEmail);
+
+      const thirdEmail = `${ Random.id() }@turing.com`;
+      await Accounts.addEmailAsync(userId, thirdEmail, true);
+      const u1 = await Accounts._findUserByQuery({ id: userId })
+      test.equal(u1.emails, [
+        { address: origEmail, verified: false },
+        { address: newEmail, verified: false },
+        { address: thirdEmail, verified: true }
+      ]);
+
+      await Accounts.removeEmail(userId, newEmail);
+      const u2 = await Accounts._findUserByQuery({ id: userId })
+      test.equal(u2.emails, [
+        { address: origEmail, verified: false },
+        { address: thirdEmail, verified: true }
+      ]);
+
+      await Accounts.removeEmail(userId, origEmail);
+      const u3 = await Accounts._findUserByQuery({ id: userId })
+      test.equal(u3.emails, [
+        { address: thirdEmail, verified: true }
+      ]);
     });
 
-    const newEmail = `${ Random.id() }@turing.com`;
-    await Accounts.addEmailAsync(userId, newEmail);
-
-    const thirdEmail = `${ Random.id() }@turing.com`;
-    await Accounts.addEmailAsync(userId, thirdEmail, true);
-    const u1 = await Accounts._findUserByQuery({ id: userId })
-    test.equal(u1.emails, [
-      { address: origEmail, verified: false },
-      { address: newEmail, verified: false },
-      { address: thirdEmail, verified: true }
-    ]);
-
-    await Accounts.removeEmail(userId, newEmail);
-    const u2 = await Accounts._findUserByQuery({ id: userId })
-    test.equal(u2.emails, [
-      { address: origEmail, verified: false },
-      { address: thirdEmail, verified: true }
-    ]);
-
-    await Accounts.removeEmail(userId, origEmail);
-    const u3 = await Accounts._findUserByQuery({ id: userId })
-    test.equal(u3.emails, [
-      { address: thirdEmail, verified: true }
-    ]);
-  });
-
-  const getUserHashArgon2Params = function (user) {
-    const hash = user?.services?.password?.argon2;
-    return Accounts._getArgon2Params(hash);
-  }
-
-  testAsyncMulti("passwords - allow custom argon2 Params", [
-    async function(test) {
-      // Verify that a argon2 hash generated for a new account uses the
-      // default params.
+  const getUserHashRounds = user =>
+    Number(user.services.password.bcrypt.substring(4, 6));
+  testAsyncMulti("passwords - allow custom bcrypt rounds",[
+    async function (test) {
+      // Verify that a bcrypt hash generated for a new account uses the
       let username = Random.id();
-      this.password = hashPassword("abc123");
+      this.password = hashPassword('abc123');
       this.userId1 = await Accounts.createUser({ username, password: this.password });
-      this.user1 = await Meteor.users.findOneAsync(this.userId1);
-      let argon2Params = getUserHashArgon2Params(this.user1);
-      test.equal(argon2Params.type, Accounts._argon2Type());
-      test.equal(argon2Params.memoryCost, Accounts._argon2MemoryCost());
-      test.equal(argon2Params.timeCost, Accounts._argon2TimeCost());
-      test.equal(argon2Params.parallelism, Accounts._argon2Parallelism());
+      this.user1 =  await Meteor.users.findOneAsync(this.userId1);
+      let rounds = getUserHashRounds(this.user1);
+      test.equal(rounds, Accounts._bcryptRounds());
 
-
-      // When a custom number of argon2 TimeCost is set via Accounts.config,
-      // and an account was already created using the default number of TimeCost,
+      // When a custom number of bcrypt rounds is set via Accounts.config,
+      // and an account was already created using the default number of rounds,
       // make sure that a new hash is created (and stored) using the new number
-      // of TimeCost, the next time the password is checked.
-      this.customType = "argon2d"; // argon2.argon2d = 2
-      this.customTimeCost = 4;
-      this.customMemoryCost = 32768;
-      this.customParallelism = 1;
-      Accounts._options.argon2Type = this.customType;
-      Accounts._options.argon2TimeCost = this.customTimeCost;
-      Accounts._options.argon2MemoryCost = this.customMemoryCost;
-      Accounts._options.argon2Parallelism = this.customParallelism;
-
+      // of rounds, the next time the password is checked.
+      this.customRounds = 11;
+      Accounts._options.bcryptRounds = this.customRounds;
       await Accounts._checkPasswordAsync(this.user1, this.password);
     },
     async function(test) {
-      const defaultType = Accounts._argon2Type();
-      const defaultTimeCost = Accounts._argon2TimeCost();
-      const defaultMemoryCost = Accounts._argon2MemoryCost();
-      const defaultParallelism = Accounts._argon2Parallelism();
-      let params;
+      const defaultRounds = Accounts._bcryptRounds();
+      let rounds;
       let username;
 
       let resolve;
@@ -1870,59 +1852,49 @@ if (Meteor.isServer) (() => {
 
       Meteor.setTimeout(async () => {
         this.user1 = await Meteor.users.findOneAsync(this.userId1);
-        params = getUserHashArgon2Params(this.user1);
-        test.equal(params.type, 2);
-        test.equal(params.timeCost, this.customTimeCost);
-        test.equal(params.memoryCost, this.customMemoryCost);
-        test.equal(params.parallelism, this.customParallelism);
-
-        // When a custom number of argon2 TimeCost is set, make sure it's
-        // used for new argon2 password hashes.
+        rounds = getUserHashRounds(this.user1);
+        test.equal(rounds, this.customRounds);
+        // When a custom number of bcrypt rounds is set, make sure it's
+        // used for new bcrypt password hashes.
         username = Random.id();
         const userId2 = await Accounts.createUser({ username, password: this.password });
         const user2 = await Meteor.users.findOneAsync(userId2);
-        params = getUserHashArgon2Params(user2);
-        test.equal(params.type, 2);
-        test.equal(params.timeCost, this.customTimeCost);
-        test.equal(params.memoryCost, this.customMemoryCost);
-        test.equal(params.parallelism, this.customParallelism);
+        rounds = getUserHashRounds(user2);
+        test.equal(rounds, this.customRounds);
 
         // Cleanup
-        Accounts._options.argon2Type = defaultType;
-        Accounts._options.argon2TimeCost = defaultTimeCost;
-        Accounts._options.argon2MemoryCost = defaultMemoryCost;
-        Accounts._options.argon2Parallelism = defaultParallelism;
+        Accounts._options.bcryptRounds = defaultRounds;
         await Meteor.users.removeAsync(this.userId1);
         await Meteor.users.removeAsync(userId2);
         resolve();
-      }, 1000);
+      }, 5000);
 
       return promise;
     }
-  ]);
+  ]); // default number of rounds.
 
 
   Tinytest.addAsync('passwords - extra params in email urls',
     async (test) => {
-    const username = Random.id();
-    const email = `${ username }-intercept@example.com`;
+      const username = Random.id();
+      const email = `${ username }-intercept@example.com`;
 
-    const userId = await Accounts.createUser({
-      username: username,
-      email: email
+      const userId = await Accounts.createUser({
+        username: username,
+        email: email
+      });
+
+      const extraParams = { test: 'success' };
+      await Accounts.sendEnrollmentEmail(userId, email, null, extraParams);
+
+      const [enrollPasswordEmailOptions] =
+        await Meteor.callAsync("getInterceptedEmails", email);
+
+      const re = new RegExp(`${Meteor.absoluteUrl()}(\\S*)`);
+      const match = enrollPasswordEmailOptions.text.match(re);
+      const url = new URL(match)
+      test.equal(url.searchParams.get('test'), extraParams.test);
     });
-
-    const extraParams = { test: 'success' };
-    await Accounts.sendEnrollmentEmail(userId, email, null, extraParams);
-
-    const [enrollPasswordEmailOptions] =
-     await Meteor.callAsync("getInterceptedEmails", email);
-
-    const re = new RegExp(`${Meteor.absoluteUrl()}(\\S*)`);
-    const match = enrollPasswordEmailOptions.text.match(re);
-    const url = new URL(match)
-    test.equal(url.searchParams.get('test'), extraParams.test);
-  });
 
   Tinytest.addAsync('passwords - createUserAsync', async test => {
     const username = Random.id();
@@ -1951,46 +1923,5 @@ if (Meteor.isServer) (() => {
         password: password
       });
     }, 'already exists');
-  });
-
-  Tinytest.addAsync("passwords - migration from bcrypt encryption to argon2", async test => {
-    const username = Random.id();
-    const email = `${username}@bcrypt.com`;
-    const password = "password";
-    const bcryptPasswordHash = "$2b$10$XIz481R/8TTXqtl9igiPmeZexiLkhy7oTk4pfO/oN5ymQnS5mWilC";// = brcypt(sha256('password'))
-    const userId = await Meteor.users.insertAsync({
-      username,
-      emails: [{ address: email, verified: false }],
-      services: {
-        password: {
-          bcrypt: bcryptPasswordHash
-        }
-      }
-    });
-    let user = await Meteor.users.findOneAsync(userId);
-    const isValid = await Accounts._checkPasswordAsync(user, password);
-    test.equal(isValid.userId, userId, "checkPassword with bcrypt - User ID should be returned");
-    test.equal(typeof isValid.error, "undefined", "checkPassword with bcrypt - No error should be returned");
-
-
-    let resolve;
-    const promise = new Promise(res => resolve = res);
-
-    // wait for defered execution of user update inside _checkPasswordAsync
-    Meteor.setTimeout(async () => {
-      user = await Meteor.users.findOneAsync(userId);
-      // bcrypt has been unset and argon2 set
-      test.equal(typeof user.services.password.bcrypt, "undefined", "bcrypt should be unset");
-      test.equal(typeof user.services.password.argon2, "string", "argon2 should be set");
-      // password is still valid using argon2
-      const isValidArgon = await Accounts._checkPasswordAsync(user, password);
-      test.equal(isValidArgon.userId, userId, "checkPassword with argon2 - User ID should be returned");
-      test.equal(typeof isValidArgon.error, "undefined", "checkPassword with argon2 - No error should be returned");
-      resolve();
-    }, 1000);
-
-    return promise
-
-
   });
 })();
