@@ -92,7 +92,43 @@ if (Meteor.isServer) {
         await Meteor.users.removeAsync(userId);
     });
 
+    Tinytest.addAsync("passwords Argon - migration from argon2 encryption to bcrypt", async (test) => {
+        Accounts._options.argon2Enabled = true;
+        const username = Random.id();
+        const email = `${username}@bcrypt.com`;
+        const password = "password";
+        const userId = await Accounts.createUser(
+            {
+                username: username,
+                email: email,
+                password: password
+            }
+        );
+        Accounts._options.argon2Enabled = false;
+        let user = await Meteor.users.findOneAsync(userId);
+        const isValidArgon = await Accounts._checkPasswordAsync(user, password);
+        test.equal(isValidArgon.userId, userId, "checkPassword with argon2 - User ID should be returned");
+        test.equal(typeof isValidArgon.error, "undefined", "checkPassword with argon2 - No error should be returned");
 
+
+        // wait for defered execution of user update inside _checkPasswordAsync
+        await new Promise((resolve) => {
+            Meteor.setTimeout(async () => {
+                user = await Meteor.users.findOneAsync(userId);
+                // bcrypt has been unset and argon2 set
+                test.equal(typeof user.services.password.argon2, "undefined", "argon2 should be unset");
+                test.equal(typeof user.services.password.bcrypt, "string", "bcrypt should be set");
+                // password is still valid using argon2
+                const isValidBcrypt = await Accounts._checkPasswordAsync(user, password);
+                test.equal(isValidBcrypt.userId, userId, "checkPassword with argon2 - User ID should be returned");
+                test.equal(typeof isValidBcrypt.error, "undefined", "checkPassword with argon2 - No error should be returned");
+                resolve();
+            }, 100);
+        });
+
+        // cleanup
+        await Meteor.users.removeAsync(userId);
+    });
 
     const getUserHashArgon2Params = function (user) {
         const hash = user?.services?.password?.argon2;

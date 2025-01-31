@@ -134,9 +134,13 @@ Accounts._checkPasswordUserFields = { _id: 1, services: 1 };
 
 const isBcrypt = (hash) => {
   // bcrypt hashes start with $2a$ or $2b$
-  // argon2 hashes start with $argon2i$, $argon2d$ or $argon2id$
   return hash.startsWith("$2");
 };
+
+const isArgon = (hash) => {
+    // argon2 hashes start with $argon2i$, $argon2d$ or $argon2id$
+    return hash.startsWith("$argon2");
+}
 
 const updateUserPasswordDefered = (user, formattedPassword) => {
   Meteor.defer(async () => {
@@ -155,6 +159,9 @@ const getUpdatorForUserPassword = async (formattedPassword) => {
     return {
       $set: {
         "services.password.bcrypt": encryptedPassword
+      },
+      $unset: {
+        "services.password.argon2": 1
       }
     };
   }
@@ -208,17 +215,32 @@ const checkPasswordAsync = async (user, password) => {
 
   const argon2Enabled = Accounts._argon2Enabled();
   if (argon2Enabled === false) {
-    const hashRounds = getRoundsFromBcryptHash(hash);
-    const match = await bcryptCompare(formattedPassword, hash);
-    if (!match) {
-      result.error = Accounts._handleError("Incorrect password", false);
-    }
-    else if (hash) {
-      const paramsChanged = hashRounds !== Accounts._bcryptRounds();
-      // The password checks out, but the user's bcrypt hash needs to be updated
-      // to match current bcrypt settings
-      if (paramsChanged === true) {
+    if (isArgon(hash)) {
+      // this is a rollback feature, enabling to switch back from argon2 to bcrypt if needed
+      // TODO : deprecate this
+      console.warn("User has an argon2 password and argon2 is not enabled, rolling back to bcrypt encryption");
+      const match = await argon2.verify(hash, formattedPassword);
+      if (!match) {
+        result.error = Accounts._handleError("Incorrect password", false);
+      }
+      else{
+        // The password checks out, but the user's stored password needs to be updated to argon2
         updateUserPasswordDefered(user, { digest: formattedPassword, algorithm: "sha-256" });
+      }
+    }
+    else {
+      const hashRounds = getRoundsFromBcryptHash(hash);
+      const match = await bcryptCompare(formattedPassword, hash);
+      if (!match) {
+        result.error = Accounts._handleError("Incorrect password", false);
+      }
+      else if (hash) {
+        const paramsChanged = hashRounds !== Accounts._bcryptRounds();
+        // The password checks out, but the user's bcrypt hash needs to be updated
+        // to match current bcrypt settings
+        if (paramsChanged === true) {
+          updateUserPasswordDefered(user, { digest: formattedPassword, algorithm: "sha-256" });
+        }
       }
     }
   }
