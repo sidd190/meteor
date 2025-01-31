@@ -10,7 +10,7 @@ const makeTestConnAsync =
     })
 const simplePollAsync = (fn) =>
   new Promise((resolve, reject) => simplePoll(fn,resolve,reject))
-function hashPassword(password) {
+function hashPasswordWithSha(password) {
   return {
     digest: SHA256(password),
     algorithm: "sha-256"
@@ -486,7 +486,7 @@ if (Meteor.isClient) (() => {
     function (test, expect) {
       this.secondConn = DDP.connect(Meteor.absoluteUrl());
       this.secondConn.call('login',
-        { user: { username: this.username }, password: hashPassword(this.password) },
+        { user: { username: this.username }, password: hashPasswordWithSha(this.password) },
         expect((err, result) => {
           test.isFalse(err);
           this.secondConn.setUserId(result.id);
@@ -1230,7 +1230,7 @@ if (Meteor.isServer) (() => {
       const username = Random.id();
       const id = await Accounts.createUser({
         username: username,
-        password: hashPassword('password')
+        password: hashPasswordWithSha('password')
       });
 
       const {
@@ -1245,7 +1245,7 @@ if (Meteor.isServer) (() => {
 
       const result = await clientConn.callAsync('login', {
         user: { username: username },
-        password: hashPassword('password')
+        password: hashPasswordWithSha('password')
       });
 
       test.isTrue(result);
@@ -1278,7 +1278,7 @@ if (Meteor.isServer) (() => {
       const userId = await Accounts.createUser({
         username: username,
         email: email,
-        password: hashPassword("old-password")
+        password: hashPasswordWithSha("old-password")
       });
       const user = await Meteor.users.findOneAsync(userId);
 
@@ -1297,7 +1297,7 @@ if (Meteor.isServer) (() => {
 
       await test.throwsAsync(
         async () =>
-          await Meteor.callAsync("resetPassword", resetPasswordToken, hashPassword("new-password")),
+          await Meteor.callAsync("resetPassword", resetPasswordToken, hashPasswordWithSha("new-password")),
         /Token has invalid email address/
       );
       await test.throwsAsync(
@@ -1306,7 +1306,7 @@ if (Meteor.isServer) (() => {
             "login",
             {
               user: { username: username },
-              password: hashPassword("new-password")
+              password: hashPasswordWithSha("new-password")
             }
           ),
         /Something went wrong. Please check your credentials./);
@@ -1321,7 +1321,7 @@ if (Meteor.isServer) (() => {
       const userId = await Accounts.createUser({
         username: username,
         email: email,
-        password: hashPassword("old-password")
+        password: hashPasswordWithSha("old-password")
       });
 
       const user = await Meteor.users.findOneAsync(userId);
@@ -1338,11 +1338,11 @@ if (Meteor.isServer) (() => {
       test.isTrue(await clientConn.callAsync(
         "resetPassword",
         resetPasswordToken,
-        hashPassword("new-password")
+        hashPasswordWithSha("new-password")
       ));
       test.isTrue(await clientConn.callAsync("login", {
         user: { username },
-        password: hashPassword("new-password")
+        password: hashPasswordWithSha("new-password")
       }));
     });
 
@@ -1355,7 +1355,7 @@ if (Meteor.isServer) (() => {
       const userId = await Accounts.createUser({
         username: username,
         email: email,
-        password: hashPassword("old-password")
+        password: hashPasswordWithSha("old-password")
       });
 
       const user = await Meteor.users.findOneAsync(userId);
@@ -1373,7 +1373,7 @@ if (Meteor.isServer) (() => {
       await Meteor.users.updateAsync(userId, { $set: { "services.password.reset.when": new Date(Date.now() + -5 * 24 * 3600 * 1000) } });
 
       try {
-        await Meteor.callAsync("resetPassword", resetPasswordToken, hashPassword("new-password"))
+        await Meteor.callAsync("resetPassword", resetPasswordToken, hashPasswordWithSha("new-password"))
       } catch (e) {
         test.throws(() => {
           throw e;
@@ -1385,7 +1385,7 @@ if (Meteor.isServer) (() => {
           "login",
           {
             user: { username: username },
-            password: hashPassword("new-password")
+            password: hashPasswordWithSha("new-password")
           }
         ),
         /Something went wrong. Please check your credentials./);
@@ -1405,7 +1405,7 @@ if (Meteor.isServer) (() => {
         {
           username: username,
           email: email,
-          password: hashPassword(password)
+          password: hashPasswordWithSha(password)
         },
       );
 
@@ -1432,7 +1432,7 @@ if (Meteor.isServer) (() => {
         await Accounts.createUser(
           {
             email: email,
-            password: hashPassword('password')
+            password: hashPasswordWithSha('password')
           }
         );
       await Accounts.sendResetPasswordEmail(userId, email);
@@ -1452,7 +1452,7 @@ if (Meteor.isServer) (() => {
         await Accounts.createUser(
           {
             email: email,
-            password: hashPassword('password')
+            password: hashPasswordWithSha('password')
           }
         );
       await Accounts.sendResetPasswordEmail(userId, email);
@@ -1498,12 +1498,12 @@ if (Meteor.isServer) (() => {
         await clientConn.callAsync(
           "resetPassword",
           enrollPasswordToken,
-          hashPassword("new-password"))
+          hashPasswordWithSha("new-password"))
       );
       test.isTrue(
         await clientConn.callAsync("login", {
           user: { username },
-          password: hashPassword("new-password")
+          password: hashPasswordWithSha("new-password")
         })
       );
 
@@ -1535,7 +1535,7 @@ if (Meteor.isServer) (() => {
       await Meteor.users.updateAsync(userId, { $set: { "services.password.enroll.when": new Date(Date.now() + -35 * 24 * 3600 * 1000) } });
 
       await test.throwsAsync(
-        async () => await Meteor.callAsync("resetPassword", enrollPasswordToken, hashPassword("new-password")),
+        async () => await Meteor.callAsync("resetPassword", enrollPasswordToken, hashPasswordWithSha("new-password")),
         /Token expired/
       );
     });
@@ -1544,7 +1544,7 @@ if (Meteor.isServer) (() => {
     async test => {
       const email = `${ test.id }-intercept@example.com`;
       const userId =
-        await Accounts.createUser({ email: email, password: hashPassword('password') });
+        await Accounts.createUser({ email: email, password: hashPasswordWithSha('password') });
 
       await Accounts.sendEnrollmentEmail(userId, email);
       const user1 = await Meteor.users.findOneAsync(userId);
@@ -1561,7 +1561,7 @@ if (Meteor.isServer) (() => {
       const userId =
         await Accounts.createUser({
           email: email,
-          password: hashPassword('password')
+          password: hashPasswordWithSha('password')
         });
 
       await Accounts.sendEnrollmentEmail(userId, email);
@@ -1580,7 +1580,7 @@ if (Meteor.isServer) (() => {
     async test => {
       const email = `${ test.id }-intercept@example.com`;
       const userId =
-        await Accounts.createUser({ email: email, password: hashPassword('password') });
+        await Accounts.createUser({ email: email, password: hashPasswordWithSha('password') });
 
       await Accounts.sendResetPasswordEmail(userId, email);
       const user1 = await Meteor.users.findOneAsync(userId);
@@ -1828,7 +1828,7 @@ if (Meteor.isServer) (() => {
     async function (test) {
       // Verify that a bcrypt hash generated for a new account uses the
       let username = Random.id();
-      this.password = hashPassword('abc123');
+      this.password = hashPasswordWithSha('abc123');
       this.userId1 = await Accounts.createUser({ username, password: this.password });
       this.user1 =  await Meteor.users.findOneAsync(this.userId1);
       let rounds = getUserHashRounds(this.user1);
