@@ -1,5 +1,5 @@
 import argon2 from "argon2";
-import { compare as bcryptCompare } from "bcrypt";
+import { hash as bcryptHash, compare as bcryptCompare } from "bcrypt";
 import { Accounts } from "meteor/accounts-base";
 
 // Utility for grabbing user
@@ -8,7 +8,7 @@ const getUserById =
     await Meteor.users.findOneAsync(id, Accounts._addDefaultFieldSelector(options));
 
 // User records have two fields that are used for password-based login:
-// - 'services.password.bcrypt', which stores the bcrypt password, which is now deprecated
+// - 'services.password.bcrypt', which stores the bcrypt password, which will be deprecated
 // - 'services.password.argon2', which stores the argon2 password
 //
 // When the client sends a password to the server, it can either be a
@@ -19,9 +19,13 @@ const getUserById =
 // strings.
 //
 // When the server receives a plaintext password as a string, it always
-// hashes it with SHA256 before passing it into argon2. When the server
+// hashes it with SHA256 before passing it into bcrypt / argon2. When the server
 // receives a password as an object, it asserts that the algorithm is
-// "sha-256" and then passes the digest to argon2.
+// "sha-256" and then passes the digest to bcrypt / argon2.
+
+Accounts._bcryptRounds = () => Accounts._options.bcryptRounds || 10;
+
+Accounts._argon2Enabled = () => Accounts._options.argon2Enabled || false;
 
 const ARGON2_TYPES = {
   argon2i: argon2.argon2i,
@@ -35,7 +39,7 @@ Accounts._argon2MemoryCost = () => Accounts._options.argon2MemoryCost || 65536;
 Accounts._argon2Parallelism = () => Accounts._options.argon2Parallelism || 4;
 
 /**
- * Extracts the string to be encrypted using Argon2 from the given `password`.
+ * Extracts the string to be encrypted using bcrypt or Argon2 from the given `password`.
  *
  * @param {string|Object} password - The password provided by the client. It can be:
  *  - A plaintext string password.
@@ -50,30 +54,50 @@ Accounts._argon2Parallelism = () => Accounts._options.argon2Parallelism || 4;
 const getPasswordString = password => {
   if (typeof password === "string") {
     password = SHA256(password);
-  } else { // 'password' is an object
+  }
+  else { // 'password' is an object
     if (password.algorithm !== "sha-256") {
       throw new Error("Invalid password hash algorithm. " +
-                      "Only 'sha-256' is allowed.");
+        "Only 'sha-256' is allowed.");
     }
     password = password.digest;
   }
   return password;
 };
 
-// Use argon2 to hash the password for storage in the database.
-// `password` can be a string (in which case it will be run through
-// SHA256 before argon2) or an object with properties `digest` and
-// `algorithm` (in which case we argon2 `password.digest`).
-//
-const hashPassword = async password => {
+/**
+ * Encrypt the given `password` using either bcrypt or Argon2.
+ * @param password can be a string (in which case it will be run through SHA256 before encryption) or an object with properties `digest` and `algorithm` (in which case we bcrypt or Argon2 `password.digest`).
+ * @returns {Promise<string>} The encrypted password.
+ */
+const hashPassword = async (password) => {
   password = getPasswordString(password);
-  return await argon2.hash(password, {
-    type: Accounts._argon2Type(),
-    timeCost: Accounts._argon2TimeCost(),
-    memoryCost: Accounts._argon2MemoryCost(),
-    parallelism: Accounts._argon2Parallelism(),
-  });
+  if (Accounts._argon2Enabled() === true) {
+    return await argon2.hash(password, {
+      type: Accounts._argon2Type(),
+      timeCost: Accounts._argon2TimeCost(),
+      memoryCost: Accounts._argon2MemoryCost(),
+      parallelism: Accounts._argon2Parallelism()
+    });
+  }
+  else {
+    return await bcryptHash(password, Accounts._bcryptRounds());
+  }
 };
+
+// Extract the number of rounds used in the specified bcrypt hash.
+const getRoundsFromBcryptHash = (hash) => {
+  let rounds;
+  if (hash) {
+    const hashSegments = hash.split("$");
+    if (hashSegments.length > 2) {
+      rounds = parseInt(hashSegments[2], 10);
+    }
+  }
+  return rounds;
+};
+Accounts._getRoundsFromBcryptHash = getRoundsFromBcryptHash;
+
 
 /**
  * Extract readable parameters from an Argon2 hash string.
@@ -108,6 +132,49 @@ const getUserPasswordHash = user => {
 
 Accounts._checkPasswordUserFields = { _id: 1, services: 1 };
 
+const isBcrypt = (hash) => {
+  // bcrypt hashes start with $2a$ or $2b$
+  // argon2 hashes start with $argon2i$, $argon2d$ or $argon2id$
+  return hash.startsWith("$2");
+};
+
+const updateUserPasswordDefered = (user, formattedPassword) => {
+  Meteor.defer(async () => {
+    await updateUserPassword(user, formattedPassword);
+  });
+};
+
+/**
+ * Hashes the provided password and returns an object that can be used to update the user's password.
+ * @param formattedPassword
+ * @returns {Promise<{$set: {"services.password.bcrypt": string}}|{$unset: {"services.password.bcrypt": number}, $set: {"services.password.argon2": string}}>}
+ */
+const getUpdatorForUserPassword = async (formattedPassword) => {
+  const encryptedPassword = await hashPassword(formattedPassword);
+  if (Accounts._argon2Enabled() === false) {
+    return {
+      $set: {
+        "services.password.bcrypt": encryptedPassword
+      }
+    };
+  }
+  else if (Accounts._argon2Enabled() === true) {
+    return {
+      $set: {
+        "services.password.argon2": encryptedPassword
+      },
+      $unset: {
+        "services.password.bcrypt": 1
+      }
+    };
+  }
+};
+
+const updateUserPassword = async (user, formattedPassword) => {
+  const updator = await getUpdatorForUserPassword(formattedPassword);
+  await Meteor.users.updateAsync({ _id: user._id }, updator);
+};
+
 /**
  * Checks whether the provided password matches the hashed password stored in the user's database record.
  *
@@ -138,60 +205,55 @@ const checkPasswordAsync = async (user, password) => {
   const formattedPassword = getPasswordString(password);
   const hash = getUserPasswordHash(user);
 
-  // bcrypt hashes start with $2a$ or $2b$
-  // argon2 hashes start with $argon2i$, $argon2d$ or $argon2id$
-  if (hash.startsWith("$2")) {
-    // migration code from bcrypt to argon2
+
+  const argon2Enabled = Accounts._argon2Enabled();
+  if (argon2Enabled === false) {
+    const hashRounds = getRoundsFromBcryptHash(hash);
     const match = await bcryptCompare(formattedPassword, hash);
     if (!match) {
       result.error = Accounts._handleError("Incorrect password", false);
     }
-    else {
-      // The password checks out, but the user's stored password needs to be updated to argon2
-      Meteor.defer(async () => {
-        await Meteor.users.updateAsync(
-          { _id: user._id },
-          {
-            $set: {
-              "services.password.argon2":
-                await hashPassword(password)
-            },
-            $unset: {
-              "services.password.bcrypt": 1
-            }
-          }
-        );
-      });
-    }
-  }
-  else {
-    // argon2 password
-    const argon2Params = getArgon2Params(hash);
-
-    if (!(await argon2.verify(hash, formattedPassword))) {
-      result.error = Accounts._handleError("Incorrect password", false);
-    }
     else if (hash) {
-      const paramsChanged = argon2Params.memoryCost !== Accounts._argon2MemoryCost() ||
-        argon2Params.timeCost !== Accounts._argon2TimeCost() ||
-        argon2Params.parallelism !== Accounts._argon2Parallelism() ||
-        argon2Params.type !== Accounts._argon2Type();
+      const paramsChanged = hashRounds !== Accounts._bcryptRounds();
+      // The password checks out, but the user's bcrypt hash needs to be updated
+      // to match current bcrypt settings
       if (paramsChanged === true) {
-        // The password checks out, but the user's argon2 hash needs to be updated with the right params
-        Meteor.defer(async () => {
-          await Meteor.users.updateAsync(
-            { _id: user._id },
-            {
-              $set: {
-                "services.password.argon2":
-                  await hashPassword(formattedPassword)
-              }
-            }
-          );
-        });
+        updateUserPasswordDefered(user, { digest: formattedPassword, algorithm: "sha-256" });
       }
     }
   }
+  else if (argon2Enabled === true) {
+    if (isBcrypt(hash)) {
+      // migration code from bcrypt to argon2
+      const match = await bcryptCompare(formattedPassword, hash);
+      if (!match) {
+        result.error = Accounts._handleError("Incorrect password", false);
+      }
+      else {
+        // The password checks out, but the user's stored password needs to be updated to argon2
+        updateUserPasswordDefered(user, { digest: formattedPassword, algorithm: "sha-256" });
+      }
+    }
+    else {
+      // argon2 password
+      const argon2Params = getArgon2Params(hash);
+      const match = await argon2.verify(hash, formattedPassword);
+      if (!match) {
+        result.error = Accounts._handleError("Incorrect password", false);
+      }
+      else if (hash) {
+        const paramsChanged = argon2Params.memoryCost !== Accounts._argon2MemoryCost() ||
+          argon2Params.timeCost !== Accounts._argon2TimeCost() ||
+          argon2Params.parallelism !== Accounts._argon2Parallelism() ||
+          argon2Params.type !== Accounts._argon2Type();
+        if (paramsChanged === true) {
+          // The password checks out, but the user's argon2 hash needs to be updated with the right params
+          updateUserPasswordDefered(user, { digest: formattedPassword, algorithm: "sha-256" });
+        }
+      }
+    }
+  }
+
 
   return result;
 };
@@ -361,54 +423,54 @@ Accounts.setUsername =
 // `digest` and `algorithm` (representing the SHA256 of the password).
 Meteor.methods(
   {
-    changePassword: async function (oldPassword, newPassword) {
-  check(oldPassword, passwordValidator);
-  check(newPassword, passwordValidator);
+    changePassword: async function(oldPassword, newPassword) {
+      check(oldPassword, passwordValidator);
+      check(newPassword, passwordValidator);
 
-  if (!this.userId) {
-    throw new Meteor.Error(401, "Must be logged in");
-  }
-
-  const user = await getUserById(this.userId, {fields: {
-    services: 1,
-    ...Accounts._checkPasswordUserFields,
-  }});
-  if (!user) {
-    Accounts._handleError("User not found");
-  }
-
-  if (!getUserPasswordHash(user)) {
-    Accounts._handleError("User has no password set");
-  }
-
-  const result = await checkPasswordAsync(user, oldPassword);
-  if (result.error) {
-    throw result.error;
-  }
-
-  const hashed = await hashPassword(newPassword);
-
-  // It would be better if this removed ALL existing tokens and replaced
-  // the token for the current connection with a new one, but that would
-  // be tricky, so we'll settle for just replacing all tokens other than
-  // the one for the current connection.
-  const currentToken = Accounts._getLoginToken(this.connection.id);
-  await Meteor.users.updateAsync(
-    { _id: this.userId },
-    {
-      $set: { 'services.password.argon2': hashed },
-      $pull: {
-        'services.resume.loginTokens': { hashedToken: { $ne: currentToken } }
-      },
-      $unset: {
-        'services.password.reset': 1,
-        'services.password.bcrypt': 1
+      if (!this.userId) {
+        throw new Meteor.Error(401, "Must be logged in");
       }
-    }
-  );
 
-  return {passwordChanged: true};
-}});
+      const user = await getUserById(this.userId, {
+        fields: {
+          services: 1,
+          ...Accounts._checkPasswordUserFields
+        }
+      });
+      if (!user) {
+        Accounts._handleError("User not found");
+      }
+
+      if (!getUserPasswordHash(user)) {
+        Accounts._handleError("User has no password set");
+      }
+
+      const result = await checkPasswordAsync(user, oldPassword);
+      if (result.error) {
+        throw result.error;
+      }
+
+      // It would be better if this removed ALL existing tokens and replaced
+      // the token for the current connection with a new one, but that would
+      // be tricky, so we'll settle for just replacing all tokens other than
+      // the one for the current connection.
+      const currentToken = Accounts._getLoginToken(this.connection.id);
+      const updator = await getUpdatorForUserPassword(newPassword);
+
+      await Meteor.users.updateAsync(
+        { _id: this.userId },
+        {
+          $set: updator.$set,
+          $pull: {
+            "services.resume.loginTokens": { hashedToken: { $ne: currentToken } }
+          },
+          $unset: { "services.password.reset": 1, ...updator.$unset }
+        }
+      );
+
+      return { passwordChanged: true };
+    }
+  });
 
 
 // Force change the users password.
@@ -424,32 +486,26 @@ Meteor.methods(
  */
 Accounts.setPasswordAsync =
   async (userId, newPlaintextPassword, options) => {
-  check(userId, String);
-  check(newPlaintextPassword, Match.Where(str => Match.test(str, String) && str.length <= Meteor.settings?.packages?.accounts?.passwordMaxLength || 256));
-  check(options, Match.Maybe({ logout: Boolean }));
-  options = { logout: true , ...options };
+    check(userId, String);
+    check(newPlaintextPassword, Match.Where(str => Match.test(str, String) && str.length <= Meteor.settings?.packages?.accounts?.passwordMaxLength || 256));
+    check(options, Match.Maybe({ logout: Boolean }));
+    options = { logout: true, ...options };
 
-  const user = await getUserById(userId, { fields: { _id: 1 } });
-  if (!user) {
-    throw new Meteor.Error(403, "User not found");
-  }
-
-  const update = {
-    $unset: {
-      'services.password.reset': 1,
-      'services.password.bcrypt': 1
-    },
-    $set: {
-      'services.password.argon2': await hashPassword(newPlaintextPassword)
+    const user = await getUserById(userId, { fields: { _id: 1 } });
+    if (!user) {
+      throw new Meteor.Error(403, "User not found");
     }
+
+    let updator = await getUpdatorForUserPassword(newPlaintextPassword);
+    updator.$unset = updator.$unset || {};
+    updator.$unset["services.password.reset"] = 1;
+
+    if (options.logout) {
+      updator.$unset["services.resume.loginTokens"] = 1;
+    }
+
+    await Meteor.users.updateAsync({ _id: user._id }, updator);
   };
-
-  if (options.logout) {
-    update.$unset['services.resume.loginTokens'] = 1;
-  }
-
-  await Meteor.users.updateAsync({_id: user._id}, update);
-};
 
 ///
 /// RESETTING VIA EMAIL
@@ -749,8 +805,6 @@ Meteor.methods(
                 error: new Meteor.Error(403, "Token has invalid email address")
               };
 
-            const hashed = await hashPassword(newPassword);
-
             // NOTE: We're about to invalidate tokens on the user, who we might be
             // logged in as. Make sure to avoid logging ourselves out if this
             // happens. But also make sure not to leave the connection in a state
@@ -759,6 +813,8 @@ Meteor.methods(
             Accounts._setLoginToken(user._id, this.connection, null);
             const resetToOldToken = () =>
               Accounts._setLoginToken(user._id, this.connection, oldToken);
+
+            const updator = await getUpdatorForUserPassword(newPassword);
 
             try {
               // Update the user record by:
@@ -771,34 +827,35 @@ Meteor.methods(
                 affectedRecords = await Meteor.users.updateAsync(
                   {
                     _id: user._id,
-                    'emails.address': email,
-                    'services.password.enroll.token': token
+                    "emails.address": email,
+                    "services.password.enroll.token": token
                   },
                   {
                     $set: {
-                      'services.password.argon2': hashed,
-                      'emails.$.verified': true
+                      "emails.$.verified": true,
+                      ...updator.$set
                     },
                     $unset: {
-                      'services.password.enroll': 1,
-                      'services.password.bcrypt': 1,
+                      "services.password.enroll": 1,
+                      ...updator.$unset
                     }
                   });
-              } else {
+              }
+              else {
                 affectedRecords = await Meteor.users.updateAsync(
                   {
                     _id: user._id,
-                    'emails.address': email,
-                    'services.password.reset.token': token
+                    "emails.address": email,
+                    "services.password.reset.token": token
                   },
                   {
                     $set: {
-                      'services.password.argon2': hashed,
-                      'emails.$.verified': true
+                      "emails.$.verified": true,
+                      ...updator.$set
                     },
                     $unset: {
-                      'services.password.reset': 1,
-                      'services.password.bcrypt': 1,
+                      "services.password.reset": 1,
+                      ...updator.$unset
                     }
                   });
               }
@@ -817,15 +874,16 @@ Meteor.methods(
             await Accounts._clearAllLoginTokens(user._id);
 
             if (Accounts._check2faEnabled?.(user)) {
-        return {
-          userId: user._id,
-          error: Accounts._handleError(
-            'Changed password, but user not logged in because 2FA is enabled',
-            false,
-            '2fa-enabled'
-          ),
-        };
-      }return { userId: user._id };
+              return {
+                userId: user._id,
+                error: Accounts._handleError(
+                  'Changed password, but user not logged in because 2FA is enabled',
+                  false,
+                  '2fa-enabled'
+                ),
+              };
+            }
+            return { userId: user._id };
           }
         );
       }
@@ -1103,7 +1161,13 @@ const createUser =
     const user = { services: {} };
     if (password) {
       const hashed = await hashPassword(password);
-      user.services.password = { argon2: hashed };
+      const argon2Enabled = Accounts._argon2Enabled();
+      if (argon2Enabled === false) {
+        user.services.password = { bcrypt: hashed };
+      }
+      else {
+        user.services.password = { argon2: hashed };
+      }
     }
 
     return await Accounts._createUserCheckingDuplicates({ user, email, username, options });
