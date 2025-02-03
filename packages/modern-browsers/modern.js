@@ -22,11 +22,15 @@ const browserAliases = {
     'headlesschrome',
   ],
 
-  // If a call to setMinimumBrowserVersions specifies Edge 12 as a minimum
-  // version, that means no version of Internet Explorer pre-Edge should
-  // be classified as modern. This edge:["ie"] alias effectively enforces
-  // that logic, because there is no IE12. #9818 #9839
-  edge: ['ie'],
+  edge: [
+    // If a call to setMinimumBrowserVersions specifies Edge 12 as a minimum
+    // version, that means no version of Internet Explorer pre-Edge should
+    // be classified as modern. This edge:["ie"] alias effectively enforces
+    // that logic, because there is no IE12. #9818 #9839
+    'ie',
+    // Detected by recent useragent-ng as a new browser family when it sees EdgiOS or EdgA in the user agent #13592
+    'edgeMobile'
+  ],
 
   firefox: ['firefoxMobile'],
 
