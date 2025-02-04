@@ -17,21 +17,22 @@ if (Meteor.isServer) {
         test.equal(isValid.userId, userId, "checkPassword with bcrypt - User ID should be returned");
         test.equal(typeof isValid.error, "undefined", "checkPassword with bcrypt - No error should be returned");
 
+        // wait for the migration to happen
+        await waitUntil(
+          async () => {
+            user = await Meteor.users.findOneAsync(userId);
+            return (
+              typeof user.services.password.bcrypt === "undefined" &&
+              typeof user.services.password.argon2 === "string"
+            );
+          },
+          { description: "bcrypt should be unset and argon2 should be set" }
+        );
 
-        // wait for defered execution of user update inside _checkPasswordAsync
-        await new Promise((resolve) => {
-            Meteor.setTimeout(async () => {
-                user = await Meteor.users.findOneAsync(userId);
-                // bcrypt has been unset and argon2 set
-                test.equal(typeof user.services.password.bcrypt, "undefined", "bcrypt should be unset");
-                test.equal(typeof user.services.password.argon2, "string", "argon2 should be set");
-                // password is still valid using argon2
-                const isValidArgon = await Accounts._checkPasswordAsync(user, password);
-                test.equal(isValidArgon.userId, userId, "checkPassword with argon2 - User ID should be returned");
-                test.equal(typeof isValidArgon.error, "undefined", "checkPassword with argon2 - No error should be returned");
-                resolve();
-            }, 100);
-        });
+        // password is still valid using argon2
+        const isValidArgon = await Accounts._checkPasswordAsync(user, password);
+        test.equal(isValidArgon.userId, userId, "checkPassword with argon2 - User ID should be returned");
+        test.equal(typeof isValidArgon.error, "undefined", "checkPassword with argon2 - No error should be returned");
 
         // cleanup
         Accounts._options.argon2Enabled = false;
@@ -110,21 +111,22 @@ if (Meteor.isServer) {
         test.equal(isValidArgon.userId, userId, "checkPassword with argon2 - User ID should be returned");
         test.equal(typeof isValidArgon.error, "undefined", "checkPassword with argon2 - No error should be returned");
 
+        // wait for the migration to happen
+        await waitUntil(
+          async () => {
+              user = await Meteor.users.findOneAsync(userId);
+              return (
+                typeof user.services.password.bcrypt === "string" &&
+                typeof user.services.password.argon2 === "undefined"
+              );
+          },
+          { description: "bcrypt should be string and argon2 should be undefined" }
+        );
 
-        // wait for defered execution of user update inside _checkPasswordAsync
-        await new Promise((resolve) => {
-            Meteor.setTimeout(async () => {
-                user = await Meteor.users.findOneAsync(userId);
-                // bcrypt has been unset and argon2 set
-                test.equal(typeof user.services.password.argon2, "undefined", "argon2 should be unset");
-                test.equal(typeof user.services.password.bcrypt, "string", "bcrypt should be set");
-                // password is still valid using argon2
-                const isValidBcrypt = await Accounts._checkPasswordAsync(user, password);
-                test.equal(isValidBcrypt.userId, userId, "checkPassword with argon2 - User ID should be returned");
-                test.equal(typeof isValidBcrypt.error, "undefined", "checkPassword with argon2 - No error should be returned");
-                resolve();
-            }, 100);
-        });
+        // password is still valid using bcrypt
+        const isValidBcrypt = await Accounts._checkPasswordAsync(user, password);
+        test.equal(isValidBcrypt.userId, userId, "checkPassword with argon2 - User ID should be returned");
+        test.equal(typeof isValidBcrypt.error, "undefined", "checkPassword with argon2 - No error should be returned");
 
         // cleanup
         await Meteor.users.removeAsync(userId);
