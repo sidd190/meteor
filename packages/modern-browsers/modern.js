@@ -73,14 +73,18 @@ function applyAliases(versions) {
 function isModern(browser) {
   const lowerCaseName =
     browser && typeof browser.name === 'string' && browser.name.toLowerCase();
-
-  return (
-    !!lowerCaseName &&
-    hasOwn.call(minimumVersions, lowerCaseName) &&
-    greaterThanOrEqualTo(
+  if (!lowerCaseName) {
+    return false;
+  }
+  const entry = hasOwn.call(minimumVersions, lowerCaseName) ? minimumVersions[lowerCaseName] : undefined;
+  if (!entry) {
+    const packageSettings = Meteor.settings.packages ? Meteor.settings.packages["modern-browsers"] : undefined;
+    // false if no package setting exists
+    return !!(packageSettings && packageSettings.unknownBrowsersAssumedModern);
+  }
+  return greaterThanOrEqualTo(
       [~~browser.major, ~~browser.minor, ~~browser.patch],
-      minimumVersions[lowerCaseName].version
-    )
+      entry.version
   );
 }
 
