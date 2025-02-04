@@ -17,3 +17,17 @@ You can read more about this in [Meteor 1.7 announcement blog](https://blog.mete
 <ApiBox name="ModernBrowsers.getMinimumBrowserVersions" />
 
 <ApiBox name="ModernBrowsers.calculateHashOfMinimumVersions" />
+
+## Configure Unknown Browsers to default to Modern
+
+Browsers not explicitly listed in `setMinimumBrowserVersions` are considered "legacy" by default.
+
+To change this and treat unknown browsers as "modern," update the relevant option in your settings file:
+
+``` js
+Meteor.settings.packages = {
+    "modern-browsers": {
+        "unknownBrowsersAssumedModern": true
+    }
+};
+```
