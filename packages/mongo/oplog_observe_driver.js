@@ -545,7 +545,7 @@ Object.assign(OplogObserveDriver.prototype, {
                   if (self._phase !== PHASE.QUERYING) {
                     self._needToPollQuery();
                   }
-                  reject(err);
+                  resolve();
                   return;
                 }
 
@@ -574,7 +574,7 @@ Object.assign(OplogObserveDriver.prototype, {
         });
         // Wait for all fetch operations to complete
         try {
-          await Promise.all(fetchPromises);
+          await Promise.allSettled(fetchPromises);
         } catch (err) {
           Meteor._debug('Got an exception in a fetch query', err);
         }
