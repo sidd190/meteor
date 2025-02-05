@@ -14,10 +14,10 @@ Npm.depends({
 });
 
 Package.onUse((api) => {
-  api.use(["accounts-base", "sha", "ejson", "ddp"], ["client", "server"]);
+  api.use(["accounts-base@3.1.0-alpha.0", "sha", "ejson", "ddp"], ["client", "server"]);
 
   // Export Accounts (etc) to packages using this one.
-  api.imply("accounts-base", ["client", "server"]);
+  api.imply("accounts-base@3.1.0-alpha.0", ["client", "server"]);
 
   api.use("email", "server");
   api.use("random", "server");
