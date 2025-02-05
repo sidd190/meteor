@@ -1,4 +1,4 @@
-import C_MINISAT from "./minisat.js"
+var C_MINISAT = require("./minisat.js");
 MiniSat = function () {
   // A MiniSat object wraps an instance of "native" MiniSat.  You can
   // have as many MiniSat objects as you want, and they are all
