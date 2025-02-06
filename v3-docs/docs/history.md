@@ -10,7 +10,7 @@ This is a complete history of changes for Meteor releases.
 
 [//]: # (go to meteor/docs/generators/changelog/docs)
 
-## v3.1.2, <date>
+## v3.1.2, 2025-02-06
 
 ### Highlights
 
@@ -33,7 +33,7 @@ Please run the following command to update your project:
 
 ```bash
 
-meteor update --release 3.1.2-beta.0
+meteor update --release 3.1.2
 
 ```
 
