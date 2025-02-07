@@ -5,7 +5,7 @@ Package.describe({
   // 2.2.x in the future. The version was also bumped to 2.0.0 temporarily
   // during the Meteor 1.5.1 release process, so versions 2.0.0-beta.2
   // through -beta.5 and -rc.0 have already been published.
-  version: "4.0.0-alpha.0",
+  version: "4.0.0-beta320.0",
 });
 
 Npm.depends({
@@ -14,10 +14,10 @@ Npm.depends({
 });
 
 Package.onUse((api) => {
-  api.use(["accounts-base@3.1.0-alpha.0", "sha", "ejson", "ddp"], ["client", "server"]);
+  api.use(["accounts-base", "sha", "ejson", "ddp"], ["client", "server"]);
 
   // Export Accounts (etc) to packages using this one.
-  api.imply("accounts-base@3.1.0-alpha.0", ["client", "server"]);
+  api.imply("accounts-base", ["client", "server"]);
 
   api.use("email", "server");
   api.use("random", "server");
