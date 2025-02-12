@@ -29,7 +29,7 @@ Besides passing in strings, you can also pass in objects. This has few exception
 First in the root of the object the following keys are not allowed:
 
 ```javascript
-"time",
+  "time",
   "timeInexact",
   "level",
   "file",
