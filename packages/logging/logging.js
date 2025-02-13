@@ -47,7 +47,7 @@ Log.outputFormat = 'json';
 // Defaults to true for local development and for backwards compatibility.
 // for cloud environments is interesting to leave it false as most of them have the timestamp in the console.
 // Only works in server with colored-text
-Log.shouldShowTime = true;
+Log.showTime = true;
 
 const LEVEL_COLORS = {
   debug: 'green',
@@ -301,7 +301,7 @@ Log.format = (obj, options = {}) => {
 
   const stderrIndicator = stderr ? '(STDERR) ' : '';
 
-  const timeString = Log.shouldShowTime
+  const timeString = Log.showTime
     ? `${dateStamp}-${timeStamp}${utcOffsetStr}${timeInexact ? '? ' : ' '}`
     : ' ';
 

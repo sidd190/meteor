@@ -311,7 +311,7 @@ Tinytest.add("logging - format", function (test) {
 Tinytest.add("logging - formats - without time", function (test) {
   const time = new Date(2012, 9 - 1 /*0-based*/, 8, 7, 6, 5, 4);
   // even tho time and offset are provided they should not be included in the output
-  Log.shouldShowTime = false;
+  Log.showTime = false;
   const levels = ["debug", "info", "warn", "error"];
   for (const level of levels) {
     test.equal(
@@ -413,5 +413,5 @@ Tinytest.add("logging - formats - without time", function (test) {
       `${level.charAt(0).toUpperCase()} (app.js:42) message`
     );
   }
-  Log.shouldShowTime = true; // reset
+  Log.showTime = true; // reset
 });
