@@ -160,7 +160,9 @@
 //     B: 250.0
 //
 // In both reports the grand total is 600ms.
+import { AsyncLocalStorage } from 'async_hooks';
 
+const asyncLocalStorage = new AsyncLocalStorage<string[]>();
 
 const filter = parseFloat(process.env.METEOR_PROFILE || "100"); // ms
 
@@ -230,7 +232,6 @@ function decodeEntryKey(key: string) {
   return key.split('\t');
 }
 
-const globalEntry: string[] = [];
 let running = false;
 
 export function Profile<
@@ -238,45 +239,65 @@ export function Profile<
   TResult,
 >(
   bucketName: string | ((...args: TArgs) => string),
-  f: (...args: TArgs) => TResult,
+  f: (...args: TArgs) => TResult | Promise<TResult>,
 ): typeof f {
   if (! Profile.enabled) {
     return f;
   }
 
   return Object.assign(function profileWrapper(this: any) {
-    if (! running) {
-      return f.apply(this, arguments as any);
+    const args = arguments as unknown as TArgs;  // Capture the arguments passed to the function
+
+    if (!running) {
+      return f.apply(this, args);
     }
 
-    const name = typeof bucketName === "function"
-      ? bucketName.apply(this, arguments as any)
-      : bucketName;
+    const existingStore = asyncLocalStorage.getStore();
 
-    // TODO Test with Profile / use __METEOR_ASYNC_LOCAL_STORAGE
-    //const currentStore = asyncLo
-    // const currentEntry = Fiber.current
-    //   ? Fiber.current.profilerEntry || (Fiber.current.profilerEntry = [])
-    //   : globalEntry;
-    const currentEntry = globalEntry;
-
-    currentEntry.push(name);
-    const key = encodeEntryKey(currentEntry);
-    const start = process.hrtime();
-    try {
-      return f.apply(this, arguments as any);
-    } finally {
-      const elapsed = process.hrtime(start);
-      const stats = (bucketStats[key] || (bucketStats[key] = {
-        time: 0.0,
-        count: 0,
-        isOther: false,
-      }));
-      stats.time += (elapsed[0] * 1000 + elapsed[1] / 1000000);
-      stats.count++;
-      currentEntry.pop();
+    // If a context already exists, reuse it, otherwise, create a new one.
+    if (existingStore) {
+      return runWithContext(bucketName, existingStore, f, this, args);
     }
+
+    return asyncLocalStorage.run([], () => runWithContext(bucketName, [], f, this, args));
   }, f) as typeof f;
+}
+
+async function runWithContext<TArgs extends any[], TResult>(
+    bucketName: string | ((...args: TArgs) => string),
+    currentEntry: string[],
+    f: (...args: TArgs) => TResult | Promise<TResult>,
+    context: any,
+    args: IArguments,  // Using `arguments` type here
+): Promise<TResult> {
+  const name = typeof bucketName === "function" ? bucketName.apply(context, args) : bucketName;
+  currentEntry.push(name);
+  const key = encodeEntryKey(currentEntry);
+  const start = process.hrtime();
+
+  try {
+    const result = f.apply(context, args);
+    console.log("=>(profile.ts:280) result", result, result instanceof Promise);
+
+    if (result instanceof Promise) {
+      return result.finally(() => finalizeProfiling(key, start, currentEntry));
+    }
+    return result;
+  } finally {
+    finalizeProfiling(key, start, currentEntry);
+  }
+}
+
+function finalizeProfiling(key: string, start: [number, number], currentEntry: string[]) {
+  const elapsed = process.hrtime(start);
+  const stats = (bucketStats[key] || (bucketStats[key] = {
+    time: 0.0,
+    count: 0,
+    isOther: false,
+  }));
+  stats.time += elapsed[0] * 1000 + elapsed[1] / 1_000_000;
+  stats.count++;
+  currentEntry.pop();
 }
 
 export namespace Profile {
