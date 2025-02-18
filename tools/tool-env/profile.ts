@@ -160,9 +160,7 @@
 //     B: 250.0
 //
 // In both reports the grand total is 600ms.
-import { AsyncLocalStorage } from 'async_hooks';
-
-const asyncLocalStorage = new AsyncLocalStorage<string[]>();
+const { makeGlobalAsyncLocalStorage } = require("../utils/fiber-helpers");
 
 const filter = parseFloat(process.env.METEOR_PROFILE || "100"); // ms
 
@@ -252,27 +250,34 @@ export function Profile<
       return f.apply(this, args);
     }
 
-    const existingStore = asyncLocalStorage.getStore();
+    const asyncLocalStorage = makeGlobalAsyncLocalStorage();
+    let existingStore = asyncLocalStorage.getStore();
 
-    // If a context already exists, reuse it; otherwise, create a new one.
-    if (existingStore) {
-      return runWithContext(bucketName, existingStore, f, this, args);
+    // Ensure `existingStore` is an object, initialize it if not present
+    if (!existingStore) {
+      existingStore = { currentEntry: [] };
+      return asyncLocalStorage.run(existingStore, () => runWithContext(bucketName, existingStore, f, this, args));
     }
 
-    return asyncLocalStorage.run([], () => runWithContext(bucketName, [], f, this, args));
+    // Ensure `existingStore.currentEntry` exists
+    if (!existingStore.currentEntry) {
+      existingStore.currentEntry = [];
+    }
+
+    return runWithContext(bucketName, existingStore, f, this, args);
   }, f) as typeof f;
 }
 
 function runWithContext<TArgs extends any[], TResult>(
     bucketName: string | ((...args: TArgs) => string),
-    currentEntry: string[],
+    store: { currentEntry: string[]; [key: string]: any }, // Keep other properties intact
     f: (...args: TArgs) => TResult | Promise<TResult>,
     context: any,
     args: IArguments,
 ): TResult | Promise<TResult> {
   const name = typeof bucketName === "function" ? bucketName.apply(context, args) : bucketName;
-  currentEntry.push(name);
-  const key = encodeEntryKey(currentEntry);
+  store.currentEntry.push(name);
+  const key = encodeEntryKey(store.currentEntry);
   const start = process.hrtime();
 
   try {
@@ -280,14 +285,14 @@ function runWithContext<TArgs extends any[], TResult>(
 
     if (result instanceof Promise) {
       // Return a promise if async
-      return result.finally(() => finalizeProfiling(key, start, currentEntry));
+      return result.finally(() => finalizeProfiling(key, start, store.currentEntry));
     }
 
     // Return directly if sync
     return result;
   } finally {
     if (!(f.apply(context, args) instanceof Promise)) {
-      finalizeProfiling(key, start, currentEntry);
+      finalizeProfiling(key, start, store.currentEntry);
     }
   }
 }
