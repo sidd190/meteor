@@ -292,7 +292,9 @@ function runWithContext<TArgs extends any[], TResult>(
     // Return directly if sync
     return result;
   } finally {
-    finalizeProfiling(key, start, store.currentEntry);
+    if (!(result instanceof Promise)) {
+      finalizeProfiling(key, start, store.currentEntry);
+    }
   }
 }
 
