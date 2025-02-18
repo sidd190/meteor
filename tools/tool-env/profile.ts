@@ -160,7 +160,6 @@
 //     B: 250.0
 //
 // In both reports the grand total is 600ms.
-const { makeGlobalAsyncLocalStorage } = require("../utils/fiber-helpers");
 
 const filter = parseFloat(process.env.METEOR_PROFILE || "100"); // ms
 
@@ -250,7 +249,7 @@ export function Profile<
       return f.apply(this, args);
     }
 
-    const asyncLocalStorage = makeGlobalAsyncLocalStorage();
+    const asyncLocalStorage = global.__METEOR_ASYNC_LOCAL_STORAGE;
     let existingStore = asyncLocalStorage.getStore();
 
     // Ensure `existingStore` is an object, initialize it if not present
