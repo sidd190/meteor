@@ -280,8 +280,9 @@ function runWithContext<TArgs extends any[], TResult>(
   const key = encodeEntryKey(store.currentEntry);
   const start = process.hrtime();
 
+  let result: TResult | Promise<TResult>;
   try {
-    const result = f.apply(context, args);
+    result = f.apply(context, args);
 
     if (result instanceof Promise) {
       // Return a promise if async
@@ -291,9 +292,7 @@ function runWithContext<TArgs extends any[], TResult>(
     // Return directly if sync
     return result;
   } finally {
-    if (!(f.apply(context, args) instanceof Promise)) {
-      finalizeProfiling(key, start, store.currentEntry);
-    }
+    finalizeProfiling(key, start, store.currentEntry);
   }
 }
 
