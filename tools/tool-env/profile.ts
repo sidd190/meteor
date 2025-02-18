@@ -246,7 +246,7 @@ export function Profile<
   }
 
   return Object.assign(function profileWrapper(this: any) {
-    const args = arguments as unknown as TArgs;  // Capture the arguments passed to the function
+    const args = arguments as unknown as TArgs;
 
     if (!running) {
       return f.apply(this, args);
@@ -254,7 +254,7 @@ export function Profile<
 
     const existingStore = asyncLocalStorage.getStore();
 
-    // If a context already exists, reuse it, otherwise, create a new one.
+    // If a context already exists, reuse it; otherwise, create a new one.
     if (existingStore) {
       return runWithContext(bucketName, existingStore, f, this, args);
     }
@@ -263,13 +263,13 @@ export function Profile<
   }, f) as typeof f;
 }
 
-async function runWithContext<TArgs extends any[], TResult>(
+function runWithContext<TArgs extends any[], TResult>(
     bucketName: string | ((...args: TArgs) => string),
     currentEntry: string[],
     f: (...args: TArgs) => TResult | Promise<TResult>,
     context: any,
-    args: IArguments,  // Using `arguments` type here
-): Promise<TResult> {
+    args: IArguments,
+): TResult | Promise<TResult> {
   const name = typeof bucketName === "function" ? bucketName.apply(context, args) : bucketName;
   currentEntry.push(name);
   const key = encodeEntryKey(currentEntry);
@@ -277,14 +277,18 @@ async function runWithContext<TArgs extends any[], TResult>(
 
   try {
     const result = f.apply(context, args);
-    console.log("=>(profile.ts:280) result", result, result instanceof Promise);
 
     if (result instanceof Promise) {
+      // Return a promise if async
       return result.finally(() => finalizeProfiling(key, start, currentEntry));
     }
+
+    // Return directly if sync
     return result;
   } finally {
-    finalizeProfiling(key, start, currentEntry);
+    if (!(f.apply(context, args) instanceof Promise)) {
+      finalizeProfiling(key, start, currentEntry);
+    }
   }
 }
 
