@@ -574,7 +574,14 @@ Object.assign(OplogObserveDriver.prototype, {
         });
         // Wait for all fetch operations to complete
         try {
-          await Promise.allSettled(fetchPromises);
+          const results = await Promise.allSettled(fetchPromises);
+          const errors = results
+            .filter(result => result.status === 'rejected')
+            .map(result => result.reason);
+
+          if (errors.length > 0) {
+            Meteor._debug('Some fetch queries failed:', errors);
+          }
         } catch (err) {
           Meteor._debug('Got an exception in a fetch query', err);
         }
