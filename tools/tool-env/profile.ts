@@ -275,7 +275,7 @@ function runWithContext<TArgs extends any[], TResult>(
     args: IArguments,
 ): TResult | Promise<TResult> {
   const name = typeof bucketName === "function" ? bucketName.apply(context, args) : bucketName;
-  store.currentEntry.push(name);
+  store.currentEntry = [...store.currentEntry || [], name];
   const key = encodeEntryKey(store.currentEntry);
   const start = process.hrtime();
 
