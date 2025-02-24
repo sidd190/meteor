@@ -499,13 +499,9 @@ var runMain = Profile("Run main()", async function () {
   }
 
   await Profile.run('Server startup', async function() {
-    const asyncLocalStorage = global.__METEOR_ASYNC_LOCAL_STORAGE;
-    const existingStore = asyncLocalStorage.getStore();
-    return global.__METEOR_ASYNC_LOCAL_STORAGE.run(existingStore || {}, async () => {
-      await loadServerBundles();
-      await callStartupHooks();
-      await runMain();
-    });
+    await loadServerBundles();
+    await callStartupHooks();
+    await runMain();
   });
 })().catch(e => {
   console.log('error on boot.js',  e )
