@@ -1739,6 +1739,10 @@ main.registerCommand({
                  "MONGO_URL will NOT be reset.");
   }
 
+  const resetMeteorNmCachePromise = files.rm_recursive_async(
+    files.pathJoin(options.appDir, "node_modules", ".cache", "meteor")
+  );
+
   if (options.db) {
     // XXX detect the case where Meteor is running the app, but
     // MONGO_URL was set, so we don't see a Mongo process
@@ -1753,9 +1757,13 @@ main.registerCommand({
       return 1;
     }
 
-    await files.rm_recursive_async(
-      files.pathJoin(options.appDir, '.meteor', 'local')
-    );
+    await Promise.all([
+      files.rm_recursive_async(
+        files.pathJoin(options.appDir, ".meteor", "local")
+      ),
+      resetMeteorNmCachePromise,
+    ]);
+
     Console.info("Project reset.");
     return;
   }
@@ -1767,9 +1775,12 @@ main.registerCommand({
     return !path.includes('.meteor/local/db');
   });
 
-  var allRemovePromises = allExceptDb.map(_path => files.rm_recursive_async(
-    files.pathJoin(options.appDir, _path)
-  ));
+  var allRemovePromises = [
+    ...allExceptDb.map((_path) =>
+      files.rm_recursive_async(files.pathJoin(options.appDir, _path))
+    ),
+    resetMeteorNmCachePromise
+  ];
   await Promise.all(allRemovePromises);
   Console.info("Project reset.");
 });
@@ -3266,3 +3277,68 @@ main.registerCommand({
 }, function () {
   throw new Error("testing stack traces!"); // #StackTraceTest this line is found in tests/source-maps.js
 });
+
+const setupBenchmarkSuite = async (benchmarkPath) => {
+  if (await files.exists(benchmarkPath)) {
+    return;
+  }
+  const [, err] = await bash`git --version`;
+  if (err) throw new Error("git is not installed");
+  // Set GIT_TERMINAL_PROMPT=0 to disable prompting
+  process.env.GIT_TERMINAL_PROMPT = 0;
+
+  const repoUrl = "https://github.com/meteor/performance";
+  const branch = "monitor-bundler";
+  const gitCommand = [
+    `mkdir -p ${benchmarkPath}`,
+    `git clone --no-checkout --depth 1 --filter=tree:0 --sparse --progress --branch ${branch} --single-branch ${repoUrl} ${benchmarkPath}`,
+    `cd ${benchmarkPath}`,
+    `git sparse-checkout init --cone`,
+    `git sparse-checkout set scripts`,
+    `git checkout ${branch}`,
+    `find ${benchmarkPath} -maxdepth 1 -type f -delete`,
+  ].join(" && ");
+  const [, errClone] = await bash`${gitCommand}`;
+  const errorMessage = errClone && typeof errClone === "string" ? errClone : errClone?.message;
+  if (errorMessage && errorMessage.includes("Cloning into")) {
+    throw new Error("error cloning benchmark");
+  }
+  // remove .git folder from the example
+  await files.rm_recursive_async(files.pathJoin(benchmarkPath, ".git"));
+  Console.info(
+    "Benchmark suite cloned to:" + Console.path(benchmarkPath),
+  );
+};
+
+async function doBenchmarkCommand(options) {
+  const isWindows = process.platform === "win32";
+  if (isWindows) {
+    throw new Error('Benchmarks are not supported on Windows');
+  }
+
+  const args = process.argv.slice(3);
+  var projectContext = new projectContextModule.ProjectContext({
+    projectDir: options.appDir,
+    allowIncompatibleUpdate: options['allow-incompatible-update'],
+    lintAppAndLocalPackages: !options['no-lint'],
+  });
+  const benchmarkPath = `${projectContext.projectDir}/node_modules/.cache/meteor/benchmark`;
+  await setupBenchmarkSuite(benchmarkPath);
+
+  const benchmarkCommand = [
+    `${benchmarkPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${args.join(' ')}`,
+  ].join(" && ");
+  const [okBenchmark, errBenchmark] = await bash`${benchmarkCommand}`;
+  if (errBenchmark) {
+    throw new Error(errBenchmark);
+  }
+  Console.info(okBenchmark);
+}
+
+main.registerCommand(
+{
+  name: 'benchmark',
+  maxArgs: Infinity,
+  options: runCommandOptions.options,
+  catalogRefresh: new catalog.Refresh.Never(),
+}, doBenchmarkCommand);
