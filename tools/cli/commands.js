@@ -73,21 +73,15 @@ const bash =
  */
 const runLiveCommand = (command, args = []) => {
   return new Promise((resolve, reject) => {
-    const childProcess = spawn(command, args, { shell: true, env: process.env });
+    const childProcess = spawn(command, args, {
+      shell: true,
+      env: { ...process.env, FORCE_COLOR: "1", TERM: "xterm-256color" },
+      stdio: "inherit",
+    });
 
     const cleanup = () => {
-      childProcess.stdout.removeAllListeners();
-      childProcess.stderr.removeAllListeners();
       childProcess.removeAllListeners();
     };
-
-    childProcess.stdout.on("data", (data) => {
-      console.log(data.toString().trim());
-    });
-
-    childProcess.stderr.on("data", (data) => {
-      Console.error(data.toString().trim());
-    });
 
     childProcess.on("close", (code) => {
       cleanup();
