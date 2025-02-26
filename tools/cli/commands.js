@@ -20,6 +20,7 @@ const {
   yellow
 } = require('../console/console.js').colors;
 const inquirer = require('inquirer');
+const semver = require("semver");
 
 var projectContextModule = require('../project-context.js');
 var release = require('../packaging/release.js');
@@ -27,7 +28,7 @@ var release = require('../packaging/release.js');
 const { Profile } = require("../tool-env/profile");
 const open = require('open')
 
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 /**
  * Run a command in the shell.
  * @param command
@@ -63,6 +64,65 @@ const tryRun = async (fn) => {
 const bash =
   (text, ...values) =>
     tryRun(() => runCommand(String.raw({ raw: text }, ...values)));
+
+/**
+ * Run a command in the shell and stream output in real-time.
+ * @param {string} command The command to execute.
+ * @param {string[]} args Arguments for the command.
+ * @return {Promise<number>} Resolves with the exit code.
+ */
+const runLiveCommand = (command, args = []) => {
+  return new Promise((resolve, reject) => {
+    const childProcess = spawn(command, args, { shell: true, env: process.env });
+
+    const cleanup = () => {
+      childProcess.stdout.removeAllListeners();
+      childProcess.stderr.removeAllListeners();
+      childProcess.removeAllListeners();
+    };
+
+    childProcess.stdout.on("data", (data) => {
+      console.log(data.toString().trim());
+    });
+
+    childProcess.stderr.on("data", (data) => {
+      Console.error(data.toString().trim());
+    });
+
+    childProcess.on("close", (code) => {
+      cleanup();
+      resolve(code);
+    });
+
+    childProcess.on("error", (error) => {
+      Console.error(error.message);
+      cleanup();
+      reject(error);
+    });
+  });
+};
+
+/**
+ * Executes an async function and captures success or error.
+ * @param {() => Promise<T>} fn The async function to execute.
+ * @returns {Promise<[T, null] | [null, Error]>} Result or Error tuple.
+ */
+const tryRunLive = async (fn) => {
+  try {
+    return [await fn(), null];
+  } catch (e) {
+    return [null, e];
+  }
+};
+
+/**
+ * Runs a Bash command with live logging.
+ * @param {string} text The bash command to execute.
+ * @param {...string} values Additional arguments.
+ * @returns {Promise<[number, null] | [null, Error]>} Exit code or Error.
+ */
+const bashLive = (text, ...values) =>
+  tryRunLive(() => runLiveCommand(String.raw({ raw: text }, ...values)));
 
 import { ensureDevBundleDependencies } from '../cordova/index.js';
 import { CordovaRunner } from '../cordova/runner.js';
@@ -3282,8 +3342,15 @@ const setupBenchmarkSuite = async (benchmarkPath) => {
   if (await files.exists(benchmarkPath)) {
     return;
   }
-  const [, err] = await bash`git --version`;
-  if (err) throw new Error("git is not installed");
+  const [okGitVersion, errGitVersion] = await bash`git --version`;
+  if (errGitVersion) throw new Error("git is not installed");
+
+  const parsedGitVersion = semver.coerce(okGitVersion.match(/\d+\.\d+\.\d+/)[0] || '')?.version;
+  const checkInvalidGitVersion = parsedGitVersion == null || semver.lt(parsedGitVersion, '2.25.0');
+  if (checkInvalidGitVersion) {
+    throw new Error("git version is too old. Please upgrade to at least 2.25");
+  }
+
   // Set GIT_TERMINAL_PROMPT=0 to disable prompting
   process.env.GIT_TERMINAL_PROMPT = 0;
 
@@ -3306,7 +3373,7 @@ const setupBenchmarkSuite = async (benchmarkPath) => {
   // remove .git folder from the example
   await files.rm_recursive_async(files.pathJoin(benchmarkPath, ".git"));
   Console.info(
-    "Benchmark suite cloned to:" + Console.path(benchmarkPath),
+    "Meteor benchmark suite cloned to: " + Console.path(benchmarkPath),
   );
 };
 
@@ -3328,7 +3395,7 @@ async function doBenchmarkCommand(options) {
   const benchmarkCommand = [
     `${benchmarkPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${args.join(' ')}`,
   ].join(" && ");
-  const [okBenchmark, errBenchmark] = await bash`${benchmarkCommand}`;
+  const [okBenchmark, errBenchmark] = await bashLive`${benchmarkCommand}`;
   if (errBenchmark) {
     throw new Error(errBenchmark);
   }
