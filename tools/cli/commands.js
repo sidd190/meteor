@@ -3395,11 +3395,10 @@ async function doBenchmarkCommand(options) {
   const benchmarkCommand = [
     `${benchmarkPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${args.join(' ')}`,
   ].join(" && ");
-  const [okBenchmark, errBenchmark] = await bashLive`${benchmarkCommand}`;
+  const [, errBenchmark] = await bashLive`${benchmarkCommand}`;
   if (errBenchmark) {
     throw new Error(errBenchmark);
   }
-  Console.info(okBenchmark);
 }
 
 main.registerCommand(
