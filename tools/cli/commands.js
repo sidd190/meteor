@@ -3332,8 +3332,8 @@ main.registerCommand({
   throw new Error("testing stack traces!"); // #StackTraceTest this line is found in tests/source-maps.js
 });
 
-const setupBenchmarkSuite = async (benchmarkPath) => {
-  if (await files.exists(benchmarkPath)) {
+const setupBenchmarkSuite = async (profilingPath) => {
+  if (await files.exists(profilingPath)) {
     return;
   }
   const [okGitVersion, errGitVersion] = await bash`git --version`;
@@ -3351,13 +3351,13 @@ const setupBenchmarkSuite = async (benchmarkPath) => {
   const repoUrl = "https://github.com/meteor/performance";
   const branch = "monitor-bundler";
   const gitCommand = [
-    `mkdir -p ${benchmarkPath}`,
-    `git clone --no-checkout --depth 1 --filter=tree:0 --sparse --progress --branch ${branch} --single-branch ${repoUrl} ${benchmarkPath}`,
-    `cd ${benchmarkPath}`,
+    `mkdir -p ${profilingPath}`,
+    `git clone --no-checkout --depth 1 --filter=tree:0 --sparse --progress --branch ${branch} --single-branch ${repoUrl} ${profilingPath}`,
+    `cd ${profilingPath}`,
     `git sparse-checkout init --cone`,
     `git sparse-checkout set scripts`,
     `git checkout ${branch}`,
-    `find ${benchmarkPath} -maxdepth 1 -type f -delete`,
+    `find ${profilingPath} -maxdepth 1 -type f -delete`,
   ].join(" && ");
   const [, errClone] = await bash`${gitCommand}`;
   const errorMessage = errClone && typeof errClone === "string" ? errClone : errClone?.message;
@@ -3365,16 +3365,16 @@ const setupBenchmarkSuite = async (benchmarkPath) => {
     throw new Error("error cloning benchmark");
   }
   // remove .git folder from the example
-  await files.rm_recursive_async(files.pathJoin(benchmarkPath, ".git"));
+  await files.rm_recursive_async(files.pathJoin(profilingPath, ".git"));
   Console.info(
-    "Meteor benchmark suite cloned to: " + Console.path(benchmarkPath),
+    "Meteor profiling suite cloned to: " + Console.path(profilingPath),
   );
 };
 
 async function doBenchmarkCommand(options) {
   const isWindows = process.platform === "win32";
   if (isWindows) {
-    throw new Error('Benchmarks are not supported on Windows');
+    throw new Error('Profiling is not supported on Windows');
   }
 
   const args = process.argv.slice(3);
@@ -3383,13 +3383,13 @@ async function doBenchmarkCommand(options) {
     allowIncompatibleUpdate: options['allow-incompatible-update'],
     lintAppAndLocalPackages: !options['no-lint'],
   });
-  const benchmarkPath = `${projectContext.projectDir}/node_modules/.cache/meteor/benchmark`;
-  await setupBenchmarkSuite(benchmarkPath);
+  const profilingPath = `${projectContext.projectDir}/node_modules/.cache/meteor/benchmark`;
+  await setupBenchmarkSuite(profilingPath);
 
-  const benchmarkCommand = [
-    `${benchmarkPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${args.join(' ')}`,
+  const profilingCommand = [
+    `${profilingPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${args.join(' ')}`,
   ].join(" && ");
-  const [, errBenchmark] = await bashLive`${benchmarkCommand}`;
+  const [, errBenchmark] = await bashLive`${profilingCommand}`;
   if (errBenchmark) {
     throw new Error(errBenchmark);
   }
@@ -3397,7 +3397,7 @@ async function doBenchmarkCommand(options) {
 
 main.registerCommand(
 {
-  name: 'benchmark',
+  name: 'profile',
   maxArgs: Infinity,
   options: runCommandOptions.options,
   catalogRefresh: new catalog.Refresh.Never(),
