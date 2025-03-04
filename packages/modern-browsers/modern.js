@@ -102,7 +102,7 @@ function isModern(browser) {
   }
   return greaterThanOrEqualTo(
     [~~browser.major, ~~browser.minor, ~~browser.patch],
-    entry.version
+    entry.version,
   );
 }
 
@@ -243,7 +243,7 @@ setMinimumBrowserVersions(
     // https://github.com/Kilian/electron-to-chromium/blob/master/full-versions.js
     electron: 1,
   },
-  makeSource('classes')
+  makeSource('classes'),
 );
 
 setMinimumBrowserVersions(
@@ -259,7 +259,7 @@ setMinimumBrowserVersions(
     phantomjs: Infinity,
     electron: [0, 20],
   },
-  makeSource('generator functions')
+  makeSource('generator functions'),
 );
 
 setMinimumBrowserVersions(
@@ -273,7 +273,7 @@ setMinimumBrowserVersions(
     safari: [9, 1],
     electron: [0, 24],
   },
-  makeSource('template literals')
+  makeSource('template literals'),
 );
 
 setMinimumBrowserVersions(
@@ -287,5 +287,5 @@ setMinimumBrowserVersions(
     safari: 9,
     electron: [0, 20],
   },
-  makeSource('symbols')
+  makeSource('symbols'),
 );
