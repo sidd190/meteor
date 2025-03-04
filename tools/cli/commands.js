@@ -3383,7 +3383,7 @@ async function doBenchmarkCommand(options) {
     allowIncompatibleUpdate: options['allow-incompatible-update'],
     lintAppAndLocalPackages: !options['no-lint'],
   });
-  const profilingPath = `${projectContext.projectDir}/node_modules/.cache/meteor/benchmark`;
+  const profilingPath = `${projectContext.projectDir}/node_modules/.cache/meteor/performance`;
   await setupBenchmarkSuite(profilingPath);
 
   const profilingCommand = [
