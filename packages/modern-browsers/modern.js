@@ -6,9 +6,9 @@ const hasOwn = Object.prototype.hasOwnProperty;
 const browserAliases = {
   chrome: [
     // chromeMobile*, per https://github.com/meteor/meteor/pull/9793,
-    "chromeMobile",
-    "chromeMobileIOS",
-    "chromeMobileWebView",
+    'chromeMobile',
+    'chromeMobileIOS',
+    'chromeMobileWebView',
 
     // The major version number of Chromium and Headless Chrome track with the
     // releases of Chrome Dev, Canary and Stable, so we should be okay to
@@ -18,8 +18,8 @@ const browserAliases = {
     // Chromium is particularly important to list here since, unlike macOS
     // builds, Linux builds list Chromium in the userAgent along with Chrome:
     //   e.g. Chromium/70.0.3538.77 Chrome/70.0.3538.77
-    "chromium",
-    "headlesschrome",
+    'chromium',
+    'headlesschrome',
   ],
 
   edge: [
@@ -29,17 +29,17 @@ const browserAliases = {
     // that logic, because there is no IE12. #9818 #9839
     'ie',
     // Detected by recent useragent-ng as a new browser family when it sees EdgiOS or EdgA in the user agent #13592
-    'edgeMobile'
+    'edgeMobile',
   ],
 
-  firefox: ["firefoxMobile"],
+  firefox: ['firefoxMobile'],
 
   // The webapp package converts browser names to camel case, so
   // mobile_safari and mobileSafari should be synonymous.
-  mobile_safari: ["mobileSafari", "mobileSafariUI", "mobileSafariUI/WKWebView"],
+  mobile_safari: ['mobileSafari', 'mobileSafariUI', 'mobileSafariUI/WKWebView'],
 
   // Embedded WebViews on iPads will be reported as Apple Mail
-  safari: ["appleMail"],
+  safari: ['appleMail'],
 };
 
 /**
@@ -86,19 +86,23 @@ function applyAliases(versions) {
  */
 function isModern(browser) {
   const lowerCaseName =
-    browser && typeof browser.name === "string" && browser.name.toLowerCase();
+    browser && typeof browser.name === 'string' && browser.name.toLowerCase();
   if (!lowerCaseName) {
     return false;
   }
-  const entry = hasOwn.call(minimumVersions, lowerCaseName) ? minimumVersions[lowerCaseName] : undefined;
+  const entry = hasOwn.call(minimumVersions, lowerCaseName)
+    ? minimumVersions[lowerCaseName]
+    : undefined;
   if (!entry) {
-    const packageSettings = Meteor.settings.packages ? Meteor.settings.packages["modern-browsers"] : undefined;
+    const packageSettings = Meteor.settings.packages
+      ? Meteor.settings.packages['modern-browsers']
+      : undefined;
     // false if no package setting exists
     return !!(packageSettings && packageSettings.unknownBrowsersAssumedModern);
   }
   return greaterThanOrEqualTo(
-      [~~browser.major, ~~browser.minor, ~~browser.patch],
-      entry.version
+    [~~browser.major, ~~browser.minor, ~~browser.patch],
+    entry.version
   );
 }
 
@@ -137,7 +141,7 @@ function setMinimumBrowserVersions(versions, source) {
 
     minimumVersions[lowerCaseName] = {
       version: copy(version),
-      source: source || getCaller("setMinimumBrowserVersions"),
+      source: source || getCaller('setMinimumBrowserVersions'),
     };
   }
 }
@@ -145,7 +149,7 @@ function setMinimumBrowserVersions(versions, source) {
 function getCaller(calleeName) {
   const error = new Error();
   Error.captureStackTrace(error);
-  const lines = error.stack.split("\n");
+  const lines = error.stack.split('\n');
   let caller;
   lines.some((line, i) => {
     if (line.indexOf(calleeName) >= 0) {
@@ -176,17 +180,17 @@ Object.assign(exports, {
    * @return {string}
    */
   calculateHashOfMinimumVersions() {
-    const { createHash } = require("crypto");
-    return createHash("sha1")
+    const { createHash } = require('crypto');
+    return createHash('sha1')
       .update(JSON.stringify(minimumVersions))
-      .digest("hex");
+      .digest('hex');
   },
 });
 
 // For making defensive copies of [major, minor, ...] version arrays, so
 // they don't change unexpectedly.
 function copy(version) {
-  if (typeof version === "number") {
+  if (typeof version === 'number') {
     return version;
   }
 
@@ -202,8 +206,8 @@ function greaterThanOrEqualTo(a, b) {
 }
 
 function greaterThan(a, b) {
-  const as = typeof a === "number" ? [a] : a;
-  const bs = typeof b === "number" ? [b] : b;
+  const as = typeof a === 'number' ? [a] : a;
+  const bs = typeof b === 'number' ? [b] : b;
   const maxLen = Math.max(as.length, bs.length);
 
   for (let i = 0; i < maxLen; ++i) {
@@ -223,7 +227,7 @@ function greaterThan(a, b) {
 }
 
 function makeSource(feature) {
-  return module.id + " (" + feature + ")";
+  return module.id + ' (' + feature + ')';
 }
 
 setMinimumBrowserVersions(
@@ -239,7 +243,7 @@ setMinimumBrowserVersions(
     // https://github.com/Kilian/electron-to-chromium/blob/master/full-versions.js
     electron: 1,
   },
-  makeSource("classes")
+  makeSource('classes')
 );
 
 setMinimumBrowserVersions(
@@ -255,7 +259,7 @@ setMinimumBrowserVersions(
     phantomjs: Infinity,
     electron: [0, 20],
   },
-  makeSource("generator functions")
+  makeSource('generator functions')
 );
 
 setMinimumBrowserVersions(
@@ -269,7 +273,7 @@ setMinimumBrowserVersions(
     safari: [9, 1],
     electron: [0, 24],
   },
-  makeSource("template literals")
+  makeSource('template literals')
 );
 
 setMinimumBrowserVersions(
@@ -283,5 +287,5 @@ setMinimumBrowserVersions(
     safari: 9,
     electron: [0, 20],
   },
-  makeSource("symbols")
+  makeSource('symbols')
 );
