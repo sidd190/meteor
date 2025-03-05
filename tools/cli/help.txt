@@ -1151,3 +1151,20 @@ To see the requirements for this compilation step, consult the
 platform requirements for 'node-gyp':
 
   https://github.com/nodejs/node-gyp
+
+>>> profile
+Run performance profiling for the Meteor application.
+Usage: meteor profile [<meteor-run-options>...]
+
+This command runs a performance profile for the Meteor application, monitoring the
+bundler process and tracking key performance metrics to help analyze the build and
+bundling performance.
+
+Optionally, you can set the environment variable METEOR_BUNDLE_SIZE=true to gather
+bundle size data, allowing you to assess the impact of changes on the overall build
+size.
+
+Options:
+The options for this command are the same as those for the meteor run command.
+You can pass typical runtime options (such as --settings, --exclude-archs, etc.)
+to customize the profiling process.
