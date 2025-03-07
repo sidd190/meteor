@@ -23,7 +23,7 @@ Contributors are encouraged to focus their efforts on work that aligns with the 
 
 - Support package.json exports fields ([Discussion](https://github.com/meteor/meteor/discussions/11727))
 - Tree-shaking
-> Tree sharking and exports fields may be implemented by integrating with more modern build tools, see previous items.
+> Tree-shaking and exports fields may be implemented by integrating with more modern build tools.
 
 - Capacitor support
 > Capacitor is a modern alternative to Cordova; we should provide an easy way to build mobile apps using Capacitor.
@@ -41,11 +41,14 @@ Contributors are encouraged to focus their efforts on work that aligns with the 
 
 We need to discuss further to decide whether to proceed with these implementations.
 
+- Performance improvements (Async Hooks/Async Local Storage optimization)
+- HTTP/3 Support
 - Improve DDP Client
 - Improve Passwordless package ([Discussion](https://github.com/meteor/meteor/discussions/12075))
 - Integrate with Tauri, it might replace Cordova and Electron in a single tool
 - Bring Redis-oplog to core ([Repository](https://github.com/Meteor-Community-Packages/redis-oplog))
 - Better file upload support via DDP ([Discussion](https://github.com/meteor/meteor/discussions/11523))
+- Improve usage in Windows environments
 
 ### Finished items
 
