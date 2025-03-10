@@ -817,23 +817,25 @@ Accounts.config({
 One enabled, the `accounts-password` package allows customization of Argon2's parameters. The configurable options include:
 
 - `type`: `argon2id` (provides a blend of resistance against GPU and side-channel attacks)
-- `timeCost` (default: 3) – This controls the computational cost of the hashing process, affecting both the security level and performance.
-- `memoryCost`: 65536 (64 MB) - The amount of memory used by the algorithm in KiB per thread
-- `parallelism`: 4 - The number of threads used by the algorithm
+- `timeCost` (default: 2) – This controls the computational cost of the hashing process, affecting both the security level and performance.
+- `memoryCost`: 19456 (19 MiB) - The amount of memory used by the algorithm in KiB per thread
+- `parallelism`: 1 - The number of threads used by the algorithm
 
 To update the values, use the following configuration:
 ```js
 Accounts.config({
     argon2Enabled: true,
     argon2Type: "argon2id",
-    argon2TimeCost: 4,
-    argon2MemoryCost: 65536,
-    argon2Parallelism: 4,
+    argon2TimeCost: 2,
+    argon2MemoryCost: 19456,
+    argon2Parallelism: 1,
 });
 ```
 
 Other Argon2 parameters, such as `hashLength`, are kept to default values:
 - `hashLength`: 32 bytes - The length of the hash output in bytes
+
+The default values are the minimum [OWASP recommendations for Argon2 parameters](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#introduction). When updating these values, consider the trade-offs between security and performance on the target infrastructure.
 
 For more information about Argon2's parameters, refer to the [argon2 options documentation](https://github.com/ranisalt/node-argon2/wiki/Options).
 

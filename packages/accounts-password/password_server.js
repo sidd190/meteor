@@ -34,9 +34,9 @@ const ARGON2_TYPES = {
 };
 
 Accounts._argon2Type = () => ARGON2_TYPES[Accounts._options.argon2Type] || argon2.argon2id;
-Accounts._argon2TimeCost = () => Accounts._options.argon2TimeCost || 3;
-Accounts._argon2MemoryCost = () => Accounts._options.argon2MemoryCost || 65536;
-Accounts._argon2Parallelism = () => Accounts._options.argon2Parallelism || 4;
+Accounts._argon2TimeCost = () => Accounts._options.argon2TimeCost || 2;
+Accounts._argon2MemoryCost = () => Accounts._options.argon2MemoryCost || 19456;
+Accounts._argon2Parallelism = () => Accounts._options.argon2Parallelism || 1;
 
 /**
  * Extracts the string to be encrypted using bcrypt or Argon2 from the given `password`.
