@@ -339,6 +339,10 @@ export default defineConfig({
             link: "/packages/markdown",
           },
           {
+            text: "modern-browsers",
+            link: "/packages/modern-browsers",
+          },
+          {
             text: "modules",
             link: "/packages/modules",
           },
