@@ -1767,6 +1767,7 @@ main.registerCommand({
   maxArgs: 1,
   options: {
     db: { type: Boolean },
+    'skip-cache': { type: Boolean },
   },
   requiresApp: true,
   catalogRefresh: new catalog.Refresh.Never()
@@ -1793,7 +1794,7 @@ main.registerCommand({
                  "MONGO_URL will NOT be reset.");
   }
 
-  const resetMeteorNmCachePromise = files.rm_recursive_async(
+  const resetMeteorNmCachePromise = options['skip-cache'] ? Promise.resolve() : files.rm_recursive_async(
     files.pathJoin(options.appDir, "node_modules", ".cache", "meteor")
   );
 
