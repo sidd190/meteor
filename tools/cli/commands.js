@@ -3390,7 +3390,7 @@ async function doBenchmarkCommand(options) {
     !!options['only-size'] && 'METEOR_BUNDLE_SIZE_ONLY=true',
     !!options['size'] && 'METEOR_BUNDLE_SIZE=true'
   ].filter(Boolean);
-  const meteorOptions = args.filter(arg => ['--only-size', '--size'].includes(arg));
+  const meteorOptions = args.filter(arg => !['--only-size', '--size'].includes(arg));
 
   const profilingCommand = [
     `${meteorSizeEnvs.join(' ')} ${profilingPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${meteorOptions.join(' ')}`.trim(),
