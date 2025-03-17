@@ -1172,6 +1172,8 @@ Use METEOR_CLIENT_ENTRYPOINT=<path-to-file> to set a custom client entrypoint, a
 METEOR_SERVER_ENTRYPOINT=<path-to-file> to set a custom server entrypoint. By default,
 it uses the server and client entrypoints specified in your package.json.
 
+Use METEOR_LOG_DIR=<path-to-directory> to set a custom log directory.
+
 Options:
 The options for this command are the same as those for the meteor run command.
 You can pass typical runtime options (such as --settings, --exclude-archs, etc.)
