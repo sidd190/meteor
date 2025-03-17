@@ -3349,7 +3349,7 @@ const setupBenchmarkSuite = async (profilingPath) => {
   process.env.GIT_TERMINAL_PROMPT = 0;
 
   const repoUrl = "https://github.com/meteor/performance";
-  const branch = "monitor-bundler";
+  const branch = "profile-cmd-feedback";
   const gitCommand = [
     `mkdir -p ${profilingPath}`,
     `git clone --no-checkout --depth 1 --filter=tree:0 --sparse --progress --branch ${branch} --single-branch ${repoUrl} ${profilingPath}`,
@@ -3386,8 +3386,13 @@ async function doBenchmarkCommand(options) {
   const profilingPath = `${projectContext.projectDir}/node_modules/.cache/meteor/performance`;
   await setupBenchmarkSuite(profilingPath);
 
+  const meteorSizeEnvs = [
+    !!options['only-size'] && 'METEOR_BUNDLE_SIZE_ONLY=true',
+    !!options['size'] && 'METEOR_BUNDLE_SIZE=true'
+  ].filter(Boolean);
+
   const profilingCommand = [
-    `${profilingPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${args.join(' ')}`,
+    `${meteorSizeEnvs.join(' ')} ${profilingPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${args.join(' ')}`.trim(),
   ].join(" && ");
   const [, errBenchmark] = await bashLive`${profilingCommand}`;
   if (errBenchmark) {
@@ -3399,6 +3404,10 @@ main.registerCommand(
 {
   name: 'profile',
   maxArgs: Infinity,
-  options: runCommandOptions.options,
+  options: {
+    ...runCommandOptions.options || {},
+  'size': { type: Boolean },
+  'only-size': { type: Boolean },
+  },
   catalogRefresh: new catalog.Refresh.Never(),
 }, doBenchmarkCommand);
