@@ -1172,7 +1172,7 @@ Use METEOR_LOG_DIR=<path-to-directory> to set a custom log directory.
 
 Options:
   --size         monitor both bundle runtime and size
-  --only-size    monitor only the bundle size
+  --size-only    monitor only the bundle size
 
 The rest of options for this command are the same as those for the meteor run command.
 You can pass typical runtime options (such as --settings, --exclude-archs, etc.)

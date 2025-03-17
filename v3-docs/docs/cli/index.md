@@ -1017,7 +1017,7 @@ The options for this command are the same as those for the `meteor run` command.
 You can pass typical runtime options (such as --settings, --exclude-archs, etc.)
 to customize the profiling process.
 
-You can use `--size` to monitor both the bundle runtime and `--only-size` to monitor
+You can use `--size` to monitor both the bundle runtime and `--size-only` to monitor
 only the bundle size, allowing you to assess the impact of changes on the overall build
 size.
 

@@ -3388,10 +3388,10 @@ async function doBenchmarkCommand(options) {
   await setupBenchmarkSuite(profilingPath);
 
   const meteorSizeEnvs = [
-    !!options['only-size'] && 'METEOR_BUNDLE_SIZE_ONLY=true',
+    !!options['size-only'] && 'METEOR_BUNDLE_SIZE_ONLY=true',
     !!options['size'] && 'METEOR_BUNDLE_SIZE=true'
   ].filter(Boolean);
-  const meteorOptions = args.filter(arg => !['--only-size', '--size'].includes(arg));
+  const meteorOptions = args.filter(arg => !['--size-only', '--size'].includes(arg));
 
   const profilingCommand = [
     `${meteorSizeEnvs.join(' ')} ${profilingPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${meteorOptions.join(' ')}`.trim(),
@@ -3409,7 +3409,7 @@ main.registerCommand(
   options: {
     ...runCommandOptions.options || {},
   'size': { type: Boolean },
-  'only-size': { type: Boolean },
+  'size-only': { type: Boolean },
   },
   catalogRefresh: new catalog.Refresh.Never(),
 }, doBenchmarkCommand);
