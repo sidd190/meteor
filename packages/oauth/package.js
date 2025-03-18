@@ -1,6 +1,6 @@
 Package.describe({
   summary: "Common code for OAuth-based services",
-  version: '3.0.2-beta320.2',
+  version: '3.0.2',
 });
 
 Package.onUse(api => {
