@@ -153,8 +153,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
           // Determine if SWC should be used based on package and file criteria.
           const shouldUseSwc =
-            ['minimongo', 'random'].includes(packageName) ||
-            (!packagesSkipSwc.includes(packageName) &&
+            !packagesSkipSwc.includes(packageName) &&
               !fileSkipSwc.includes(inputFilePath));
 
           if (shouldUseSwc) {
