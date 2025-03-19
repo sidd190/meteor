@@ -154,7 +154,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
           // Determine if SWC should be used based on package and file criteria.
           const shouldUseSwc =
             !packagesSkipSwc.includes(packageName) &&
-              !fileSkipSwc.includes(inputFilePath));
+              !fileSkipSwc.includes(inputFilePath);
 
           if (shouldUseSwc) {
             const isTypescriptSyntax =
