@@ -4,6 +4,7 @@ import { Tracker } from 'meteor/tracker';
 import { EJSON } from 'meteor/ejson';
 import { Random } from 'meteor/random';
 import { MongoID } from 'meteor/mongo-id';
+import { ClientStream } from "meteor/socket-stream-client";
 import { DDP } from './namespace.js';
 import { MethodInvoker } from './method_invoker';
 import {
@@ -74,8 +75,6 @@ export class Connection {
     if (typeof url === 'object') {
       self._stream = url;
     } else {
-      import { ClientStream } from "meteor/socket-stream-client";
-
       self._stream = new ClientStream(url, {
         retry: options.retry,
         ConnectionError: DDP.ConnectionError,

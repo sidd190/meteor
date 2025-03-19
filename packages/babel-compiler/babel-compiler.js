@@ -1,5 +1,6 @@
 var semver = Npm.require("semver");
 var JSON5 = Npm.require("json5");
+var SWC = Npm.require("@swc/core");
 
 /**
  * A compiler that can be instantiated with features and used inside
@@ -145,7 +146,52 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
     try {
       var result = profile('Babel.compile', function () {
-        return Babel.compile(source, babelOptions, cacheOptions);
+        let compilation;
+        try {
+          const packagesSkipSwc = [];
+          const fileSkipSwc = ['webapp_server.js']; // top level await
+
+          // Determine if SWC should be used based on package and file criteria.
+          const shouldUseSwc =
+            ['minimongo', 'random'].includes(packageName) ||
+            (!packagesSkipSwc.includes(packageName) &&
+              !fileSkipSwc.includes(inputFilePath));
+
+          if (shouldUseSwc) {
+            const isTypescriptSyntax =
+              inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
+            const hasTSXSupport = inputFilePath.endsWith('.tsx');
+            const hasJSXSupport = inputFilePath.endsWith('.jsx');
+
+            const transformed = SWC.transformSync(source, {
+              jsc: {
+                target: 'es2015',
+                parser: {
+                  syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
+                  jsx: hasJSXSupport,
+                  tsx: hasTSXSupport,
+                },
+              },
+              module: { type: 'commonjs' },
+              minify: false,
+              sourceMaps: true,
+            });
+
+            compilation = {
+              code: transformed.code,
+              map: JSON.parse(transformed.map),
+              hash: toBeAdded.hash,
+              sourceType: 'module',
+            };
+          } else {
+            compilation = Babel.compile(source, babelOptions, cacheOptions);
+          }
+        } catch (e) {
+          // If SWC fails, fall back to Babel
+          compilation = Babel.compile(source, babelOptions, cacheOptions);
+        }
+
+        return compilation;
       });
     } catch (e) {
       if (e.loc) {
