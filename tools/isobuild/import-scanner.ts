@@ -988,8 +988,8 @@ export default class ImportScanner {
     );
 
     // there should always be file.hash, but better safe than sorry
-    if (file.hash) {
-      IMPORT_SCANNER_CACHE.set(file.hash, result);
+    if (fileHash) {
+      IMPORT_SCANNER_CACHE.set(fileHash, result);
     }
 
     return result;
