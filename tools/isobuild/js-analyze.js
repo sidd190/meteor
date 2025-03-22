@@ -20,6 +20,14 @@ var AST_CACHE = new LRUCache({
   }
 });
 
+function countLines(str) {
+  let count = 0;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === '\n') count++;
+  }
+  return count;
+}
+
 // Like babel.parse, but annotates any thrown error with $ParseError = true.
 function tryToParse(source, hash) {
   if (hash && AST_CACHE.has(hash)) {
@@ -39,7 +47,7 @@ function tryToParse(source, hash) {
           allowHashBang: true,
           checkPrivateFields: false,
         });
-        Object.assign(ast, { lines: (source?.split('\n')?.length || 0) - 1 });
+        Object.assign(ast, { lines: countLines(source) });
       } catch (error) {
         ast = parse(source, {
           strictMode: false,
