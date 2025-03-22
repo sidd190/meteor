@@ -16,7 +16,7 @@ function isRegExp(value) {
 var AST_CACHE = new LRUCache({
   max: Math.pow(2, 12),
   length(ast) {
-    return ast.end;
+    return ast.loc.end.line;
   }
 });
 
@@ -37,7 +37,8 @@ function tryToParse(source, hash) {
           allowImportExportEverywhere: true,
           allowReturnOutsideFunction: true,
           allowHashBang: true,
-          checkPrivateFields: false
+          checkPrivateFields: false,
+          locations: true,
         });
       } catch (error) {
         ast = parse(source, {
