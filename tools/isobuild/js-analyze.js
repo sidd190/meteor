@@ -32,7 +32,7 @@ function tryToParse(source, hash) {
       try {
         ast = acorn.parse(source, {
           ecmaVersion: 'latest',
-          sourceType: 'module',
+          sourceType: 'script',
           allowAwaitOutsideFunction: true,
           allowImportExportEverywhere: true,
           allowReturnOutsideFunction: true,
