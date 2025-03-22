@@ -16,7 +16,7 @@ function isRegExp(value) {
 var AST_CACHE = new LRUCache({
   max: Math.pow(2, 12),
   length(ast) {
-    return ast.loc.end.line;
+    return ast?.loc?.end?.line || ast?.lines || ast.end;
   }
 });
 
@@ -32,14 +32,14 @@ function tryToParse(source, hash) {
       try {
         ast = acorn.parse(source, {
           ecmaVersion: 'latest',
-          sourceType: 'script',
+          sourceType: 'module',
           allowAwaitOutsideFunction: true,
           allowImportExportEverywhere: true,
           allowReturnOutsideFunction: true,
           allowHashBang: true,
           checkPrivateFields: false,
-          locations: true,
         });
+        Object.assign(ast, { lines: (source?.split('\n')?.length || 0) - 1 });
       } catch (error) {
         ast = parse(source, {
           strictMode: false,
