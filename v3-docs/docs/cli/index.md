@@ -157,6 +157,66 @@ meteor run --debug-port 5858
 meteor test-packages --debug-port 5858
 ```
 
+## meteor profile {#meteorprofile}
+
+Run a performance profile for your Meteor application to analyze build and bundling performance.
+
+```bash
+meteor profile [<meteor-run-options>...]
+```
+
+::: info Availability
+This command is available from Meteor 3.2 and newer.
+:::
+
+### Usage
+
+This command monitors the bundler process and tracks key performance metrics to help analyze build and bundling performance.
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--size` | Monitor both bundle runtime and size |
+| `--size-only` | Monitor only the bundle size |
+
+::: info
+All other options from `meteor run` are also supported (e.g., `--settings`, `--exclude-archs`).
+:::
+
+### Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `METEOR_IDLE_TIMEOUT=<seconds>` | Set a timeout for profiling | 90 seconds |
+| `METEOR_CLIENT_ENTRYPOINT=<path>` | Set a custom client entrypoint | From package.json |
+| `METEOR_SERVER_ENTRYPOINT=<path>` | Set a custom server entrypoint | From package.json |
+| `METEOR_LOG_DIR=<path>` | Set a custom log directory | Default log directory |
+
+::: tip
+The default timeout (90s) is usually enough for each build step to complete. If you encounter errors due to early exits, increase the `METEOR_IDLE_TIMEOUT` value.
+:::
+
+### Example Usage
+
+```bash
+# Basic profile
+meteor profile
+
+# Monitor bundle size only
+meteor profile --size-only
+
+# Profile with custom settings and timeout
+METEOR_IDLE_TIMEOUT=120 meteor profile --settings settings.json
+
+# Profile with custom entrypoints
+METEOR_CLIENT_ENTRYPOINT=client/main.js METEOR_SERVER_ENTRYPOINT=server/main.js meteor profile
+```
+
+::: details Customizing the Profiling Process
+You can pass any option that works with `meteor run` to customize the profiling process. This allows you to profile your application under specific conditions that match your deployment environment.
+:::
+
 ## meteor create  _app-name_ {meteorcreate}
 
 The command `meteor create app-name` is the default command for creating a new Meteor project. It creates a subdirectory
