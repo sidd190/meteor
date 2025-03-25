@@ -25,6 +25,9 @@ export default defineConfig({
   sitemap: {
     hostname: "https://v3-docs.meteor.com",
   },
+  ignoreDeadLinks: [
+    /^http:\/\/localhost/
+  ],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config
     nav: [
