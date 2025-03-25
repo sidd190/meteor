@@ -257,9 +257,9 @@ Without any flags, `meteor create` generates a React project.
 
 | Option | Description |
 |--------|-------------|
-| `--bare` | Create an empty app (Blaze + MongoDB) |
 | `--minimal` | Create with minimal Meteor packages |
-| `--full` | Create a fully scaffolded app with imports-based structure |
+| `--bare` | Create an empty app (Blaze + MongoDB) |
+| `--full` | Create a fully scaffolded app with imports-based structure (Blaze + MongoDB) |
 | `--package` | Create a new package instead of an application |
 
 ::: warning Prototype Mode
