@@ -226,7 +226,28 @@ meteor create [options] app-name
 ```
 
 ::: tip Default Behavior
-Without any flags, `meteor create` generates a React project.
+Without any flags, `meteor create app-name` generates a React project.
+:::
+
+::: tip Interactive Wizard
+If you run `meteor create` without arguments, Meteor will launch an interactive wizard that guides you through selecting your project name and application type:
+
+```bash
+  ~ What is the name/path of your app?
+  ~ Which skeleton do you want to use?
+  Blaze     # To create an app using Blaze
+  Full      # To create a more complete scaffolded app
+  Minimal   # To create an app with as few Meteor packages as possible
+  React     # To create a basic React-based app
+  Typescript # To create an app using TypeScript and React
+  Vue       # To create a basic Vue3-based app
+  Svelte    # To create a basic Svelte app
+  Tailwind # To create an app using React and Tailwind 
+  Chakra-ui # To create an app Chakra UI and React 
+  Solid # To create a basic Solid app 
+  Apollo # To create a basic Apollo + React app 
+  Bare # To create an empty app
+```
 :::
 
 ### Basic Options
@@ -241,14 +262,14 @@ Without any flags, `meteor create` generates a React project.
 
 ### Application Types
 
-| Option | Description | Tutorial |
+| Option | Description | Tutorial / Example |
 |--------|-------------|----------|
-| `--react` | Create a React app (default) | [v3 React Tutorial](https://docs.meteor.com/tutorials/react/), [v2 React Tutorial](https://react-tutorial.meteor.com/) |
-| `--vue` | Vue 3 + Tailwind CSS + Vite | [v3 Vue Tutorial](https://docs.meteor.com/tutorials/vue/meteorjs3-vue3-vue-meteor-tracker.html), [v2 Vue Tutorial](https://vue3-tutorial.meteor.com/) |
-| `--svelte` | Svelte | [v2 Svelte Tutorial](https://svelte-tutorial.meteor.com/) |
-| `--blaze` | Basic Blaze app | [v2 Blaze Tutorial](https://blaze-tutorial.meteor.com/) |
-| `--solid` | Solid + Vite | [v2 Meteor Solid App](https://github.com/fredmaiaarantes/meteor-solid-app/releases/tag/milestone-2.0) |
-| `--apollo` | React + Apollo (GraphQL) | [v2 GraphQL Tutorial](https://react-tutorial.meteor.com/simple-todos-graphql/) |
+| `--react` | Create a React app (default) | [Meteor 3 with React](https://docs.meteor.com/tutorials/react/), [Meteor 2 with React](https://react-tutorial.meteor.com/) |
+| `--vue` | Vue 3 + Tailwind CSS + Vite | [Meteor 3 with Vue](https://docs.meteor.com/tutorials/vue/meteorjs3-vue3-vue-meteor-tracker.html), [Meteor 2 with Vue](https://vue3-tutorial.meteor.com/) |
+| `--svelte` | Svelte | [Meteor 2 with Svelte](https://svelte-tutorial.meteor.com/) |
+| `--blaze` | Basic Blaze app | [Meteor 2 with Blaze](https://blaze-tutorial.meteor.com/) |
+| `--solid` | Solid + Vite | [Meteor 2 with Solid Example](https://github.com/fredmaiaarantes/meteor-solid-app/releases/tag/milestone-2.0) |
+| `--apollo` | React + Apollo (GraphQL) | [Meteor 2 with GraphQL](https://react-tutorial.meteor.com/simple-todos-graphql/) |
 | `--typescript` | React + TypeScript | [TypeScript Guide](https://guide.meteor.com/build-tool.html#typescript) |
 | `--tailwind` | React + Tailwind CSS | - |
 | `--chakra-ui` | React + Chakra UI | [Simple Tasks Example](https://github.com/fredmaiaarantes/simpletasks) |
@@ -329,10 +350,6 @@ The `--prototype` option adds packages that make development faster but shouldn'
 
 ::: tip File Structure
 To learn more about the recommended file structure for Meteor apps, check the [Meteor Guide](https://guide.meteor.com/structure.html#javascript-structure).
-:::
-
-::: tip Combining Options
-Most options can be combined. For example, you can create a TypeScript-based Vue app with the prototype packages using `meteor create --vue --typescript --prototype app-name`.
 :::
 
 ##  meteor generate  {meteorgenerate}
