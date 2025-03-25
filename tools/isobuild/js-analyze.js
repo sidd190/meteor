@@ -16,19 +16,11 @@ function isRegExp(value) {
 var AST_CACHE = new LRUCache({
   max: Math.pow(2, 12),
   length(ast) {
-    return ast?.loc?.end?.line || ast?.lines || ast.end;
+    // Estimate cached lines based on average length per character
+    const avgCharsPerLine = 40;
+    return Math.ceil(ast.end / avgCharsPerLine);
   }
 });
-
-function countLines(str) {
-  let lastIndex = str.indexOf('\n');
-  let count = 0;
-  while (lastIndex > -1) {
-    count += 1;
-    lastIndex = str.indexOf('\n', lastIndex + 1);
-  }
-  return count;
-}
 
 // Like babel.parse, but annotates any thrown error with $ParseError = true.
 function tryToParse(source, hash) {
@@ -49,7 +41,6 @@ function tryToParse(source, hash) {
           allowHashBang: true,
           checkPrivateFields: false,
         });
-        Object.assign(ast, { lines: countLines(source) });
       } catch (error) {
         ast = parse(source, {
           strictMode: false,
