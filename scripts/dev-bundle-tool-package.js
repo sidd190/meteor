@@ -69,7 +69,7 @@ var packageJson = {
     "ws": "7.4.5",
     "open":"8.4.2",
     "@swc/core": "1.11.11",
-    "swc-to-babel": "4.0.0",
+    "acorn": "8.14.1",
   }
 };
 
