@@ -21,9 +21,11 @@ var AST_CACHE = new LRUCache({
 });
 
 function countLines(str) {
+  let lastIndex = str.indexOf('\n');
   let count = 0;
-  for (let i = 0; i < str.length; i++) {
-    if (str[i] === '\n') count++;
+  while (lastIndex > -1) {
+    count += 1;
+    lastIndex = str.indexOf('\n', lastIndex + 1);
   }
   return count;
 }
