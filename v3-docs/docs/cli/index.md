@@ -1162,27 +1162,3 @@ interface and allow you to interactively run JavaScript and see the results.
 
 Executing `meteor node -e "console.log(process.versions)"` would
 run `console.log(process.versions)` in the version of `node` bundled with Meteor.
-
-## meteor profile {meteorprofile}
-
-The `meteor profile` command runs a performance profile for the Meteor application,
-monitoring the bundler process and tracking key performance metrics to help analyze
-the build and bundling performance.
-
-The options for this command are the same as those for the `meteor run` command.
-You can pass typical runtime options (such as --settings, --exclude-archs, etc.)
-to customize the profiling process.
-
-You can use `--size` to monitor both the bundle runtime and `--size-only` to monitor
-only the bundle size, allowing you to assess the impact of changes on the overall build
-size.
-
-Use `METEOR_IDLE_TIMEOUT=<seconds>` to set a timeout for profiling. The default time (90s)
-is usually enough for each build step to complete. If you encounter errors due to
-early exits, adjust the environment variable accordingly.
-
-Use `METEOR_CLIENT_ENTRYPOINT=<path-to-file>` to set a custom client entrypoint, and
-`METEOR_SERVER_ENTRYPOINT=<path-to-file>` to set a custom server entrypoint. By default,
-it uses the server and client entrypoints specified in your package.json.
-
-Use `METEOR_LOG_DIR=<path-to-directory>` to set a custom log directory.
