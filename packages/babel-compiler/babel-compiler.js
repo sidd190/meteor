@@ -55,7 +55,7 @@ BCp.processFilesForTarget = function (inputFiles) {
 BCp.processOneFileForTarget = function (inputFile, source) {
   var self = this; // capture context
   this._babelrcCache = this._babelrcCache || Object.create(null);
-  this._transformCache = this._transformCache || Object.create(null);
+  this._swcCache = this._swcCache || Object.create(null);
 
   if (typeof source !== "string") {
     // Other compiler plugins can call processOneFileForTarget with a
@@ -151,35 +151,38 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const shouldUseSwc = !packagesSkipSwc.includes(packageName) &&
           !fileSkipSwc.includes(inputFilePath);
 
-        // Create a cache key based on the source hash and the compiler used.
-        const cacheKey = `${toBeAdded.hash}-${shouldUseSwc ? 'swc' : 'babel'}`;
-
         // Check RAM cache
-        let compilation = self._transformCache[cacheKey];
-        // Check file system cache if enabled
-        if (!compilation && self.cacheDirectory) {
-          const cacheFilePath = path.join(self.cacheDirectory, 'compilation-cache', cacheKey + '.json');
-          if (fs.existsSync(cacheFilePath)) {
-            try {
-              compilation = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
-              self._transformCache[cacheKey] = compilation;
-            } catch (e) {
-              // If reading/parsing the cache fails, ignore and continue.
-            }
-          }
-        }
-        // Return cached result if found.
-        if (compilation) {
-          return compilation;
-        }
-
-        // Perform compilation
+        let compilation;
         try {
           if (shouldUseSwc) {
+            // Create a cache key based on the source hash and the compiler used.
+            const cacheKey = toBeAdded.hash;
+            const cacheContext = 'swc-cache';
+
+            // Check RAM cache
+            compilation = self._swcCache[cacheKey];
+            // Check file system cache if enabled
+            if (!compilation && self.cacheDirectory) {
+              const cacheFilePath = path.join(self.cacheDirectory, cacheContext, cacheKey + '.json');
+              if (fs.existsSync(cacheFilePath)) {
+                try {
+                  compilation = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
+                  self._swcCache[cacheKey] = compilation;
+                } catch (e) {
+                  // If reading/parsing the cache fails, ignore and continue.
+                }
+              }
+            }
+            // Return cached result if found.
+            if (compilation) {
+              return compilation;
+            }
+
             const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
             const hasTSXSupport = inputFilePath.endsWith('.tsx');
             const hasJSXSupport = inputFilePath.endsWith('.jsx');
 
+            // Perform compilation
             const transformed = SWC.transformSync(source, {
               jsc: {
                 target: 'es2015',
@@ -200,24 +203,24 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               hash: toBeAdded.hash,
               sourceType: 'module',
             };
+
+            // Save result in cache
+            self._swcCache[cacheKey] = compilation;
+            if (self.cacheDirectory) {
+              const cacheFilePath = path.join(self.cacheDirectory, cacheContext, cacheKey + '.json');
+              try {
+                fs.mkdirSync(path.dirname(cacheFilePath), { recursive: true });
+                fs.writeFileSync(cacheFilePath, JSON.stringify(compilation), 'utf8');
+              } catch (e) {
+                // If file caching fails, ignore the error.
+              }
+            }
           } else {
             compilation = Babel.compile(source, babelOptions, cacheOptions);
           }
         } catch (e) {
           // If SWC fails, fall back to Babel
           compilation = Babel.compile(source, babelOptions, cacheOptions);
-        }
-
-        // Save result in caches
-        self._transformCache[cacheKey] = compilation;
-        if (self.cacheDirectory) {
-          const cacheFilePath = path.join(self.cacheDirectory, 'compilation-cache', cacheKey + '.json');
-          try {
-            fs.mkdirSync(path.dirname(cacheFilePath), { recursive: true });
-            fs.writeFileSync(cacheFilePath, JSON.stringify(compilation), 'utf8');
-          } catch (e) {
-            // If file caching fails, ignore the error.
-          }
         }
         return compilation;
       });
