@@ -209,8 +209,12 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             if (self.cacheDirectory) {
               const cacheFilePath = path.join(self.cacheDirectory, cacheContext, cacheKey + '.json');
               try {
-                fs.mkdirSync(path.dirname(cacheFilePath), { recursive: true });
-                fs.writeFileSync(cacheFilePath, JSON.stringify(compilation), 'utf8');
+                const writeFileCache = async () => {
+                  await fs.promises.mkdir(path.dirname(cacheFilePath), { recursive: true });
+                  await fs.promises.writeFile(cacheFilePath, JSON.stringify(compilation), 'utf8');
+                };
+                // Asynchronously write the cache without blocking
+                writeFileCache();
               } catch (e) {
                 // If file caching fails, ignore the error.
               }
