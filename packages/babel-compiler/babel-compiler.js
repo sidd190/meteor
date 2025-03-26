@@ -157,7 +157,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
           if (shouldUseSwc) {
             // Create a cache key based on the source hash and the compiler used.
             const cacheKey = toBeAdded.hash;
-            const cacheContext = 'swc-cache';
+            const cacheContext = '.swc-cache';
 
             // Check RAM cache
             compilation = self._swcCache[cacheKey];
