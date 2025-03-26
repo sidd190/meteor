@@ -164,7 +164,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
             const transformed = SWC.transformSync(source, {
               jsc: {
-                target: 'es2015',
+                target: 'es2022',
                 parser: {
                   syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
                   jsx: hasJSXSupport,
