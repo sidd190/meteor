@@ -1,6 +1,8 @@
 var semver = Npm.require("semver");
 var JSON5 = Npm.require("json5");
 var SWC = Npm.require("@swc/core");
+const reifyCompile = Npm.require("@meteorjs/reify/lib/compiler").compile;
+const reifyAcornTopLevelParse = Npm.require("@meteorjs/reify/lib/parsers/top-level").parse;
 
 /**
  * A compiler that can be instantiated with features and used inside
@@ -149,7 +151,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         let compilation;
         try {
           const packagesSkipSwc = [];
-          const fileSkipSwc = ['webapp_server.js']; // top level await
+          const fileSkipSwc = []; // top level await
 
           // Determine if SWC should be used based on package and file criteria.
           const shouldUseSwc =
@@ -171,13 +173,25 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                   tsx: hasTSXSupport,
                 },
               },
-              module: { type: 'commonjs' },
+              module: { type: 'es6' },
               minify: false,
               sourceMaps: true,
             });
 
+            let content = transformed.code;
+            // Perserve Meteor's specifics: reify modules, nested imports and top-level await support.
+            const result = reifyCompile(content, {
+              parse: reifyAcornTopLevelParse,
+              generateLetDeclarations: false,
+              ast: false,
+            });
+            if (!result.identical) {
+              identical = false;
+              content = result.code;
+            }
+
             compilation = {
-              code: transformed.code,
+              code: content,
               map: JSON.parse(transformed.map),
               hash: toBeAdded.hash,
               sourceType: 'module',
