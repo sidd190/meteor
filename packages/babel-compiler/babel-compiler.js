@@ -3,6 +3,8 @@ var JSON5 = Npm.require("json5");
 var SWC = Npm.require("@swc/core");
 const reifyCompile = Npm.require("@meteorjs/reify/lib/compiler").compile;
 const reifyAcornTopLevelParse = Npm.require("@meteorjs/reify/lib/parsers/top-level").parse;
+var fs = Npm.require('fs');
+var path = Npm.require('path');
 
 /**
  * A compiler that can be instantiated with features and used inside
@@ -53,7 +55,9 @@ BCp.processFilesForTarget = function (inputFiles) {
 // Returns an object suitable for passing to inputFile.addJavaScript, or
 // null to indicate there was an error, and nothing should be added.
 BCp.processOneFileForTarget = function (inputFile, source) {
+  var self = this; // capture context
   this._babelrcCache = this._babelrcCache || Object.create(null);
+  this._swcCache = this._swcCache || Object.create(null);
 
   if (typeof source !== "string") {
     // Other compiler plugins can call processOneFileForTarget with a
@@ -124,23 +128,18 @@ BCp.processOneFileForTarget = function (inputFile, source) {
       },
     };
 
-    this.inferTypeScriptConfig(
-      features, inputFile, cacheOptions.cacheDeps);
+    this.inferTypeScriptConfig(features, inputFile, cacheOptions.cacheDeps);
 
     var babelOptions = Babel.getDefaultOptions(features);
     babelOptions.caller = { name: "meteor", arch };
 
-    this.inferExtraBabelOptions(
-      inputFile,
-      babelOptions,
-      cacheOptions.cacheDeps
-    );
+    this.inferExtraBabelOptions(inputFile, babelOptions, cacheOptions.cacheDeps);
 
     babelOptions.sourceMaps = true;
     babelOptions.filename =
       babelOptions.sourceFileName = packageName
-      ? "packages/" + packageName + "/" + inputFilePath
-      : inputFilePath;
+        ? "packages/" + packageName + "/" + inputFilePath
+        : inputFilePath;
 
     if (this.modifyBabelConfig) {
       this.modifyBabelConfig(babelOptions, inputFile);
@@ -148,22 +147,44 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
     try {
       var result = profile('Babel.compile', function () {
+        // Determine if SWC should be used based on package and file criteria.
+        const packagesSkipSwc = [];
+        const fileSkipSwc = []; // top level await
+        const shouldUseSwc = !packagesSkipSwc.includes(packageName) &&
+          !fileSkipSwc.includes(inputFilePath);
+
+        // Check RAM cache
         let compilation;
         try {
-          const packagesSkipSwc = [];
-          const fileSkipSwc = []; // top level await
-
-          // Determine if SWC should be used based on package and file criteria.
-          const shouldUseSwc =
-            !packagesSkipSwc.includes(packageName) &&
-              !fileSkipSwc.includes(inputFilePath);
-
           if (shouldUseSwc) {
-            const isTypescriptSyntax =
-              inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
+            // Create a cache key based on the source hash and the compiler used.
+            const cacheKey = toBeAdded.hash;
+            const cacheContext = '.swc-cache';
+
+            // Check RAM cache
+            compilation = self._swcCache[cacheKey];
+            // Check file system cache if enabled
+            if (!compilation && self.cacheDirectory) {
+              const cacheFilePath = path.join(self.cacheDirectory, cacheContext, cacheKey + '.json');
+              if (fs.existsSync(cacheFilePath)) {
+                try {
+                  compilation = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
+                  self._swcCache[cacheKey] = compilation;
+                } catch (e) {
+                  // If reading/parsing the cache fails, ignore and continue.
+                }
+              }
+            }
+            // Return cached result if found.
+            if (compilation) {
+              return compilation;
+            }
+
+            const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
             const hasTSXSupport = inputFilePath.endsWith('.tsx');
             const hasJSXSupport = inputFilePath.endsWith('.jsx');
 
+            // Perform compilation
             const transformed = SWC.transformSync(source, {
               jsc: {
                 target: 'es2015',
@@ -196,6 +217,22 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               hash: toBeAdded.hash,
               sourceType: 'module',
             };
+
+            // Save result in cache
+            self._swcCache[cacheKey] = compilation;
+            if (self.cacheDirectory) {
+              const cacheFilePath = path.join(self.cacheDirectory, cacheContext, cacheKey + '.json');
+              try {
+                const writeFileCache = async () => {
+                  await fs.promises.mkdir(path.dirname(cacheFilePath), { recursive: true });
+                  await fs.promises.writeFile(cacheFilePath, JSON.stringify(compilation), 'utf8');
+                };
+                // Asynchronously write the cache without blocking
+                writeFileCache();
+              } catch (e) {
+                // If file caching fails, ignore the error.
+              }
+            }
           } else {
             compilation = Babel.compile(source, babelOptions, cacheOptions);
           }
@@ -203,7 +240,6 @@ BCp.processOneFileForTarget = function (inputFile, source) {
           // If SWC fails, fall back to Babel
           compilation = Babel.compile(source, babelOptions, cacheOptions);
         }
-
         return compilation;
       });
     } catch (e) {
