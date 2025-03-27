@@ -9,7 +9,6 @@ import {
   isInfOrNaN,
   handleError,
 } from './utils';
-import canonicalStringify from './stringify';
 
 /**
  * @namespace
@@ -396,6 +395,7 @@ EJSON.stringify = handleError((item, options) => {
   let serialized;
   const json = EJSON.toJSONValue(item);
   if (options && (options.canonical || options.indent)) {
+    import canonicalStringify from './stringify';
     serialized = canonicalStringify(json, options);
   } else {
     serialized = JSON.stringify(json);
