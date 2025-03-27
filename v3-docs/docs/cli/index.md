@@ -217,210 +217,140 @@ METEOR_CLIENT_ENTRYPOINT=client/main.js METEOR_SERVER_ENTRYPOINT=server/main.js 
 You can pass any option that works with `meteor run` to customize the profiling process. This allows you to profile your application under specific conditions that match your deployment environment.
 :::
 
-## meteor create  _app-name_ {meteorcreate}
+## meteor create _app-name_ {#meteorcreate}
 
-The command `meteor create app-name` is the default command for creating a new Meteor project. It creates a subdirectory
-named `app-name` and copies a template app into it. You can pass an absolute or relative path. If you pass a relative
-path, it will be resolved relative to the current working directory. By default, it generates a React project.
+Create a new Meteor project in a directory called `app-name`.
 
-See the flags below to learn how you can generate different types of apps.
+```bash
+meteor create [options] app-name
+```
 
+::: tip Default Behavior
+Without any flags, `meteor create app-name` generates a React project.
+:::
 
-## --apollo {apollo}
+::: tip Interactive Wizard
+If you run `meteor create` without arguments, Meteor will launch an interactive wizard that guides you through selecting your project name and application type:
 
-The command `meteor create --apollo app-name` creates a Meteor app with [React](https://react.dev/),
-[Apollo](https://www.apollographql.com/) (GraphQL), and [MongoDB](https://www.mongodb.com/). To create a complete app,
-including testing and deployment, follow the [React tutorial](https://react-tutorial.meteor.com/). To learn how to use
-Apollo, refer to the [GraphQL section](https://react-tutorial.meteor.com/simple-todos-graphql/).
+```bash
+  ~ What is the name/path of your app?
+  ~ Which skeleton do you want to use?
+  Blaze     # To create an app using Blaze
+  Full      # To create a more complete scaffolded app
+  Minimal   # To create an app with as few Meteor packages as possible
+  React     # To create a basic React-based app
+  Typescript # To create an app using TypeScript and React
+  Vue       # To create a basic Vue3-based app
+  Svelte    # To create a basic Svelte app
+  Tailwind # To create an app using React and Tailwind 
+  Chakra-ui # To create an app Chakra UI and React 
+  Solid # To create a basic Solid app 
+  Apollo # To create a basic Apollo + React app 
+  Bare # To create an empty app
+```
+:::
 
-Npm packages included: `@apollo/client`, `@apollo/server`, `@babel/runtime`, `body-parser`, `express`,
-`graphql` `meteor-node-stubs`, `react`, `react-dom`.
+### Basic Options
 
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
+| Option | Description |
+|--------|-------------|
+| `--from <url>` | Clone a Meteor project from a URL |
+| `--example <name>` | Use a specific example template |
+| `--list` | Show list of available examples |
+| `--release <version>` | Specify Meteor version (e.g., `--release 2.8`) |
+| `--prototype` | Include `autopublish` and `insecure` packages for rapid prototyping (not for production) |
+
+### Application Types
+
+| Option | Description | Tutorial / Example |
+|--------|-------------|----------|
+| `--react` | Create a React app (default) | [Meteor 3 with React](https://docs.meteor.com/tutorials/react/), [Meteor 2 with React](https://react-tutorial.meteor.com/) |
+| `--vue` | Vue 3 + Tailwind CSS + Vite | [Meteor 3 with Vue](https://docs.meteor.com/tutorials/vue/meteorjs3-vue3-vue-meteor-tracker.html), [Meteor 2 with Vue](https://vue3-tutorial.meteor.com/) |
+| `--svelte` | Svelte | [Meteor 2 with Svelte](https://svelte-tutorial.meteor.com/) |
+| `--blaze` | Basic Blaze app | [Meteor 2 with Blaze](https://blaze-tutorial.meteor.com/) |
+| `--solid` | Solid + Vite | [Meteor 2 with Solid Example](https://github.com/fredmaiaarantes/meteor-solid-app/releases/tag/milestone-2.0) |
+| `--apollo` | React + Apollo (GraphQL) | [Meteor 2 with GraphQL](https://react-tutorial.meteor.com/simple-todos-graphql/) |
+| `--typescript` | React + TypeScript | [TypeScript Guide](https://guide.meteor.com/build-tool.html#typescript) |
+| `--tailwind` | React + Tailwind CSS | - |
+| `--chakra-ui` | React + Chakra UI | [Simple Tasks Example](https://github.com/fredmaiaarantes/simpletasks) |
+
+### Project Structure Options
+
+| Option | Description |
+|--------|-------------|
+| `--minimal` | Create with minimal Meteor packages |
+| `--bare` | Create an empty app (Blaze + MongoDB) |
+| `--full` | Create a fully scaffolded app with imports-based structure (Blaze + MongoDB) |
+| `--package` | Create a new package instead of an application |
+
+::: warning Prototype Mode
+The `--prototype` option adds packages that make development faster but shouldn't be used in production. See the [security checklist](https://guide.meteor.com/security.html#checklist).
+:::
+
+### Included Packages
+
+<details>
+<summary><strong>React App</strong> (--react or default)</summary>
+
+**NPM packages:**
+- `@babel/runtime`, `meteor-node-stubs`, `react`, `react-dom`
+
+**Meteor packages:**
+- `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
 `standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `hot-module-replacement`, `static-html`,
-`react-meteor-data`, `apollo`, `swydo:graphql`.
+`react-meteor-data`
+</details>
 
-## --bare {bare}
+<details>
+<summary><strong>Apollo (GraphQL) App</strong> (--apollo)</summary>
 
-The command `meteor create --bare app-name` creates an empty Meteor app with [Blaze](https://blazejs.org) and
-[MongoDB](https://www.mongodb.com/). To create a complete app, including testing and deployment, follow the
-[Blaze tutorial](https://blaze-tutorial.meteor.com/).
+**NPM packages:**
+- `@apollo/client`, `@apollo/server`, `@babel/runtime`, `graphql` `meteor-node-stubs`, `react`, `react-dom`
 
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `jquery`.
+**Meteor packages:**
+- `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
+`standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `hot-module-replacement`, `static-html`,
+`apollo`, `compat:graphql`
+</details>
 
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `tracker`, `standard-minifier-css`,
-`standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`.
+<details>
+<summary><strong>Blaze App</strong> (--blaze)</summary>
 
+**NPM packages:**
+- `@babel/runtime`, `meteor-node-stubs`, `jquery`
 
-## --blaze {blaze-app}
-
-The command `meteor create --blaze app-name` creates a Meteor app with [Blaze](https://blazejs.org) and
-[MongoDB](https://www.mongodb.com/). To create a complete app, including testing and deployment, follow the
-[Blaze tutorial](https://blaze-tutorial.meteor.com/).
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `jquery`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `blaze-html-templates`, `jquery`, `reactive-var`,
+**Meteor packages:**
+- `meteor-base`, `mobile-experience`, `mongo`, `blaze-html-templates`, `jquery`, `reactive-var`,
 `tracker`, `standard-minifier-css`, `standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`,
-`hot-module-replacement`, `blaze-hot`.
+`hot-module-replacement`, `blaze-hot`
+</details>
 
+<details>
+<summary><strong>Vue App</strong> (--vue)</summary>
 
-## --chakra-ui {chakra-ui}
+**NPM packages:**
+- `@babel/runtime`, `meteor-node-stubs`, `vue`, `vue-meteor-tracker`, `vue-router`, `@types/meteor`, `@vitejs/plugin-vue`, `autoprefixer`, `meteor-vite`, `postcss`, `tailwindcss`, `vite`
 
-The command `meteor create --chakra-ui app-name` creates a Meteor app with [React](https://react.dev/),
-[Chakra-UI](https://chakra-ui.com/), and [MongoDB](https://www.mongodb.com/). To create a complete app, including
-testing and deployment, follow the [React tutorial](https://react-tutorial.meteor.com/). To learn how to use Chakra-UI,
-refer to the [Simple Tasks](https://github.com/fredmaiaarantes/simpletasks) example.
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `react`, `react-dom`, `@chakra-ui/icons`, `@chakra-ui/react`, `@emotion/react`
-`@emotion/styled`, `@react-icons/all-files`, `framer-motion`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
+**Meteor packages:**
+- `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
 `standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `hot-module-replacement`, `static-html`,
-`react-meteor-data`.
+`jorgenvatle:vite`
+</details>
 
+<details>
+<summary><strong>Minimal App</strong> (--minimal)</summary>
 
-## --full {full}
+**NPM packages:**
+- `@babel/runtime`, `meteor-node-stubs`
 
-The command `meteor create --full app-name` creates a Meteor app with [Blaze](https://blazejs.org) and
-[MongoDB](https://www.mongodb.com/). It creates a more complete, imports-based project that closely matches the
-[file structure](https://guide.meteor.com/structure.html#javascript-structure) recommended by the
-[Meteor Guide](https://guide.meteor.com/). To create a complete app, including testing and deployment, follow the
-[Blaze tutorial](https://blaze-tutorial.meteor.com/).
+**Meteor packages:**
+- `meteor`, `standard-minifier-css`, `standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`,
+`static-html`, `webapp`, `ddp`, `server-render`, `hot-module-replacement`
+</details>
 
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `jquery`, `chai`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `blaze-html-templates`, `jquery`, `reactive-var`,
-`tracker`, `standard-minifier-css`, `standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`,
-`ostrio:flow-router-extra`, `less`, `meteortesting:mocha`, `johanbrook:publication-collector`.
-
-
-## --minimal {minimal}
-
-The command `meteor create --minimal app-name` creates a project with as few Meteor packages as possible.
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`.
-
-Meteor packages included: `meteor`, `standard-minifier-css`, `standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`,
-`static-html`, `webapp`, `server-render`, `hot-module-replacement`.
-
-
-## --package {package}
-
-The command `meteor create --package package-name` creates a new package. If used in an existing app, it will create a
-package in the `packages` directory. Check the [Meteor Guide](https://guide.meteor.com/writing-atmosphere-packages.html)
-for more information on how to get started writing packages.
-
-
-## --prototype {prototype}
-
-The command `meteor create --prototype app-name` creates a project with the prototype purpose packages (`autopublish`
-and `insecure`). If you use them, you can change your collections quickly and create prototype apps very quickly.
-However, these packages are not supposed to be used in production.
-
-For more information about security, you can read our [security checklist](https://guide.meteor.com/security.html#checklist).
-It can be used with other flags that create apps, such as `--react`, `blaze`, or `--typescript`.
-
-
-## --react {react}
-
-The command `meteor create --react app-name` creates a Meteor app with [React](https://react.dev/) and
-[MongoDB](https://www.mongodb.com/). It functions in the same way as if you don't use any flags. To create a complete
-app, including testing and deployment, follow the [React tutorial](https://react-tutorial.meteor.com/).
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `react`, `react-dom`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
-`standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `hot-module-replacement`, `static-html`,
-`react-meteor-data`.
-
-
-
-## --release {release}
-
-The command `meteor create app-name --release {meteor-version}` creates a Meteor app with the release specified in the
-command. For instance, you can create a Meteor app with the `2.8` release using `meteor create app-name --release 2.8`.
-By default, it generates a React app, but you can use it with other flags that create apps such as `--blaze`,
-`--svelte`, `--vue`, or `--typescript`.
-
-
-## --solid {solid}
-
-The command `meteor create --solid app-name` creates a Meteor app with [Solid](https://www.solidjs.com/),
-[Vite](https://vitejs.dev/), and [MongoDB](https://www.mongodb.com/). You can see an example on the
-[meteor-solid-app](https://github.com/fredmaiaarantes/meteor-solid-app/releases/tag/milestone-2.0) repository.
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `solid-js`, `babel-preset-solid`, `vite`, `vite-plugin-solid`, `vite-plugin-solid-svg`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
-`standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `hot-module-replacement`, `static-html`,
-`vite:bundler`.
-
-
-## --svelte {svelte}
-
-The command `meteor create --svelte app-name` creates a Meteor app with [Svelte](https://svelte.dev/) and
-[MongoDB](https://www.mongodb.com/). To create a complete app, including testing and deployment, follow the
-[Svelte tutorial](https://svelte-tutorial.meteor.com/).
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `svelte`, `svelte-preprocess`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `standard-minifier-css`,
-`standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `hot-module-replacement`, `static-html`,
-`zodern:melte`, `zodern:types`.
-
-You can also use [Svelte](https://svelte.dev/) with [Vite](https://vitejs.dev/) by using the [jorgenvatle:meteor-vite](https://github.com/JorgenVatle/meteor-vite) package.
-You can see an example on the [meteor-vite](https://github.com/JorgenVatle/meteor-vite/tree/release/examples/svelte) repository.
-
-
-## --tailwind {tailwind}
-
-The command `meteor create --tailwind app-name` creates a Meteor app with [React](https://react.dev/),
-[Tailwind CSS](https://tailwindcss.com), and [MongoDB](https://www.mongodb.com/).
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `react`, `react-dom`, `autoprefixer`, `postcss`, `postcss-load-config`, `tailwindcss`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
-`standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `hot-module-replacement`, `static-html`,
-`react-meteor-data`.
-
-
-## --typescript {typescript}
-
-The command `meteor create --typescript app-name` creates a Meteor app with [React](https://react.dev/),
-[TypeScript](https://www.typescriptlang.org/), and [MongoDB](https://www.mongodb.com/). Check the
-[Meteor Guide](https://guide.meteor.com/build-tool.html#typescript) for more information about TypeScript and how to
-use it with other UI frameworks.
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `react`, `react-dom`, `@types/mocha`, `@types/node`, `@types/react`, `@types/react-dom`, `typescript`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
-`standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `hot-module-replacement`, `static-html`,
-`react-meteor-data`, `zodern:types`.
-
-
-## --vue {vue}
-
-The command `meteor create --vue app-name` creates a Meteor app with [Vue 3](https://vuejs.org/),
-[Tailwind CSS](https://tailwindcss.com), [Vite](https://vitejs.dev/), and [MongoDB](https://www.mongodb.com/). To
-create a complete app, including testing and deployment, follow the [Vue 3 tutorial](https://vue3-tutorial.meteor.com/).
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `vue`, `vue-meteor-tracker`, `vue-router`, `@types/meteor`, `@vitejs/plugin-vue`, `autoprefixer`, `postcss`, `tailwindcss`, `vite`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
-`standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `hot-module-replacement`, `static-html`,
-`vite:bundler`.
-
-You can also use Vue 3 with Vite by using the [jorgenvatle:meteor-vite](https://github.com/JorgenVatle/meteor-vite)
-package. You can see an example on the [meteor-vite](https://github.com/JorgenVatle/meteor-vite/tree/release/examples/vue)
-repository.
-
-Npm packages included: `@babel/runtime`, `meteor-node-stubs`, `vue`, `vue-meteor-tracker`.
-
-Meteor packages included: `meteor-base`, `mobile-experience`, `mongo`, `reactive-var`, `standard-minifier-css`,
-`standard-minifier-js`, `es5-shim`, `ecmascript`, `typescript`, `shell-server`, `tracker`, `static-html`, `akryum:vue-component`,
-`meteortesting:mocha`, `johanbrook:publication-collector`.
-
+::: tip File Structure
+To learn more about the recommended file structure for Meteor apps, check the [Meteor Guide](https://guide.meteor.com/structure.html#javascript-structure).
+:::
 
 ##  meteor generate  {meteorgenerate}
 
@@ -708,17 +638,37 @@ export function transformContents(scaffoldName, contents, fileName) {
   return transformName(scaffoldName, contents);
 }
 ```
+## meteor login
 
-## meteor login / logout {meteorloginlogout}
+Logs you in to your Meteor developer account.
 
-Log in and out of your account using Meteor's authentication system.
+**Usage:**
+```bash
+meteor login [--email]
+```
 
-You can pass `METEOR_SESSION_FILE=token.json` before `meteor login` to generate
-a login session token so you don't have to share your login credentials with
-third-party service providers.
+**Details:**
+- Prompts for your username and password
+- Pass `--email` to log in by email address rather than by username
+- You can set `METEOR_SESSION_FILE=token.json` before `meteor login` to generate a login session token, avoiding the need to share credentials with third-party service providers
 
-Once you have your account you can log in and log out from the command line, and
-check your username with `meteor whoami`.
+## meteor logout
+
+Logs you out of your Meteor developer account.
+
+**Usage:**
+```bash
+meteor logout
+```
+
+## meteor whoami
+
+Displays your currently logged-in username.
+
+**Usage:**
+```bash
+meteor whoami
+```
 
 ## meteor deploy _site_ {#meteordeploy}
 
@@ -815,149 +765,170 @@ This is necessary because the database provider doesn't have certificates instal
 - `--cache-build` option is available since Meteor 1.11
 :::
 
-## meteor update {meteorupdate}
+## meteor update
 
-Attempts to bring you to the latest version of Meteor, and then to upgrade your
-packages to their latest versions. By default, update will not break
-compatibility.
+Updates your Meteor application while maintaining compatibility.
 
-For example, let's say packages A and B both depend on version 1.1.0 of package
-X. If a new version of A depends on X@2.0.0, but there is no new version of
-package B, running `meteor update` will not update A, because doing so will
-break package B.
+**Usage:**
+```bash
+meteor update
+meteor update --patch
+meteor update --release <release>
+meteor update --packages-only
+meteor update [packageName packageName2 ...]
+meteor update --all-packages
+```
 
-You can pass in the flag `--packages-only` to update only the packages, and not
-the release itself. Similarly, you can pass in names of packages
-(`meteor update foo:kittens baz:cats`) to only update specific packages.
+**Update Types:**
 
-Every project is pinned to a specific release of Meteor. You can temporarily try
-using your package with another release by passing the `--release` option to any
-command; `meteor update` changes the pinned release.
+| Command | Description |
+|---------|-------------|
+| `meteor update` | Updates the Meteor release and compatible package versions |
+| `meteor update --patch` | Updates to the latest patch release (recommended for bug fixes) |
+| `meteor update --release <release>` | Updates to a specific Meteor release |
+| `meteor update --packages-only` | Updates only packages, not the Meteor release |
+| `meteor update [packageName ...]` | Updates specific named packages |
+| `meteor update --all-packages` | Updates all packages including indirect dependencies |
 
-Sometimes, Meteor will ask you to run `meteor update --patch`. Patch releases
-are special releases that contain only very minor changes (usually crucial bug
-fixes) from previous releases. We highly recommend that you always run `update
---patch` when prompted.
-
-You may also pass the `--release` flag to act as an override to update to a
-specific release. This is an override: if it cannot find compatible versions of
-packages, it will log a warning, but perform the update anyway. This will only
-change your package versions if necessary.
-
-
-## meteor add  _package_ {meteoradd}
-
-Add packages to your Meteor project. By convention, names of community packages
-include the name of the maintainer. For example: `meteor add iron:router`. You
-can add multiple packages with one command.
-
-Optionally, adds version constraints. Running `meteor add package@1.1.0` will
-add the package at version `1.1.0` or higher (but not `2.0.0` or higher). If you
-want to use version `1.1.0` exactly, use `meteor add package@=1.1.0`. You can also
-'or' constraints together: for example, `meteor add 'package@=1.0.0 || =2.0.1'`
-means either 1.0.0 (exactly) or 2.0.1 (exactly).
-
-To remove a version constraint for a specific package, run `meteor add` again
-without specifying a version. For example above, to stop using version `1.1.0`
-exactly, run `meteor add package`.
+**Important Notes:**
+- Every project is pinned to a specific Meteor release
+- By default, updates will not break compatibility between packages
+- Patch releases contain minor, critical bug fixes and are highly recommended
+- The `--release` flag can override compatibility checks (may cause warnings)
+- The `--all-packages` option will update all packages to their latest compatible versions, respecting dependency constraints
 
 
-## meteor remove  _package_ {meteorremove}
+## meteor add *package* {#meteor-add}
 
-Removes a package previously added to your Meteor project. For a
-list of the packages that your application is currently using, run
-`meteor list`.
+Adds packages to your Meteor project.
 
-This removes the package entirely. To continue using the package,
-but remove its version constraint, use [`meteor add`](#meteor-add-package).
+**Usage:**
+```bash
+meteor add [package1] [package2] ...
+meteor add package@version
+```
 
-Meteor does not downgrade transitive dependencies unless it's necessary. This
-means that if running `meteor add A` upgrades A's parent package X to a new
-version, your project will continue to use X at the new version even after you
-run `meteor remove A`.
+**Version Constraints:**
+- `package@1.1.0` - Version 1.1.0 or higher (but not 2.0.0+)
+- `package@=1.1.0` - Exactly version 1.1.0
+- `package@=1.0.0 || =2.0.1` - Either version 1.0.0 or 2.0.1 exactly
 
+**Notes:**
+- By convention, community packages include the maintainer's name (e.g., `iron:router`)
+- To remove a version constraint, run `meteor add package` without specifying a version
 
-## meteor list {meteorlist}
+## meteor remove *package* {#meteor-remove}
 
-Lists all the packages that you have added to your project. For each package,
-lists the version that you are using. Lets you know if a newer version of that
-package is available.
+Removes a package previously added to your Meteor project.
 
-**Flags**
+**Usage:**
+```bash
+meteor remove [package1] [package2] ...
+```
 
-Flags are optional and can be used to format the output. The default output
-requires no flags whatsoever. The following flags are supported:
+**Notes:**
+- For a list of currently used packages, run `meteor list`
+- This removes the package entirely (to only remove version constraints, use [`meteor add`](#meteor-add))
+- Transitive dependencies aren't automatically downgraded unless necessary
 
-`--tree`
+## meteor list {#meteor-list}
 
-Outputs a tree showing how packages are referenced.
+Lists all packages added to your project, including versions and available updates.
 
-`--json`
+**Usage:**
+```bash
+meteor list [flags]
+```
 
-Outputs an unformatted JSON String, showing how packages are referenced.
+**Flags:**
 
-`--weak`
-
-Show weakly referenced dependencies in the tree.
-Only functional in combination with `--tree` or `--json`.
-
-`--details`
-
-Adds more package details to the JSON output.
-Only functional in combination with `--json`.
-
-
-## meteor add-platform  _platform_ {meteoraddplatform}
-
-Adds platforms to your Meteor project. You can add multiple
-platforms with one command. Once a platform has been added, you
-can use 'meteor run <i>platform</i>' to run on the platform, and `meteor build`
-to build the Meteor project for every added platform.
-
-
-## meteor remove-platform  _platform_ {meteorremoveplatform}
-
-Removes a platform previously added to your Meteor project. For a
-list of the platforms that your application is currently using, see
-`meteor list-platforms`.
+| Flag | Description |
+|------|-------------|
+| `--tree` | Outputs a tree showing package reference hierarchy |
+| `--json` | Outputs an unformatted JSON string of package references |
+| `--weak` | Shows weakly referenced dependencies (only with `--tree` or `--json`) |
+| `--details` | Adds more package details (only with `--json`) |
 
 
-## meteor list-platforms {meteorlistplatforms}
+## meteor add-platform *platform* {#meteor-add-platform}
 
-Lists all of the platforms that have been explicitly added to your project.
+Adds platforms to your Meteor project.
+
+**Usage:**
+```bash
+meteor add-platform [platform1] [platform2] ...
+```
+
+**Notes:**
+- Multiple platforms can be added with one command
+- After adding, use `meteor run <platform>` to run on that platform
+- Use `meteor build` to build for all added platforms
 
 
-## meteor ensure-cordova-dependencies {meteorensurecordovadependencies}
+## meteor remove-platform *platform* {#meteor-remove-platform}
 
-Check if the dependencies are installed, otherwise install them.
+Removes a previously added platform.
 
-## meteor mongo {meteormongo}
+**Usage:**
+```bash
+meteor remove-platform [platform]
+```
 
-Open a MongoDB shell on your local development database, so that you
-can view or manipulate it directly.
+**Notes:**
+- For a list of currently added platforms, use `meteor list-platforms`
+
+
+## meteor list-platforms {#meteor-list-platforms}
+
+Lists all platforms explicitly added to your project.
+
+**Usage:**
+```bash
+meteor list-platforms
+```
+
+
+## meteor ensure-cordova-dependencies {#meteor-ensure-cordova-dependencies}
+
+Checks if dependencies are installed, and installs them if necessary.
+
+**Usage:**
+```bash
+meteor ensure-cordova-dependencies
+```
+
+
+## meteor mongo {#meteor-mongo}
+
+Opens a MongoDB shell on your local development database.
+
+**Usage:**
+```bash
+meteor mongo
+```
 
 ::: warning
-For now, you must already have your application running locally
-with `meteor run`. This will be easier in the future.
+For now, you must already have your application running locally with `meteor run`. This will be easier in the future.
 :::
 
+## meteor reset {#meteor-reset}
 
-## meteor reset {meteorreset}
+Resets the current project to a fresh state and clears the local cache.
 
-Reset the current project to a fresh state and clear the local cache.
+**Usage:**
+```bash
+meteor reset [--db]
+```
 
-To remove also the local mongo database use `--db` flag.
+**Flags:**
+- `--db` - Also removes the local MongoDB database
 
 ::: warning
-Reset with `--db` flag deletes your data! Make sure you do not have any information you
-care about in your local mongo database by running `meteor mongo`.
-From the mongo shell, use `show collections`
-and <code>db.<i>collection</i>.find()</code> to inspect your data.
+Reset with `--db` flag deletes your data! Make sure you do not have any information you care about in your local mongo database by running `meteor mongo`. From the mongo shell, use `show collections` and `db.<collection>.find()` to inspect your data.
 :::
 
 ::: warning
-For now, you can not run this while a development server is
-running. Quit all running meteor applications before running this.
+For now, you cannot run this while a development server is running. Quit all running meteor applications before running this.
 :::
 
 
