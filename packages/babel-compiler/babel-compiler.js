@@ -58,6 +58,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
   var self = this; // capture context
   this._babelrcCache = this._babelrcCache || Object.create(null);
   this._swcCache = this._swcCache || Object.create(null);
+  this._swcIncompatible = this._swcIncompatible || Object.create(null);
 
   if (typeof source !== "string") {
     // Other compiler plugins can call processOneFileForTarget with a
@@ -150,8 +151,10 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         // Determine if SWC should be used based on package and file criteria.
         const packagesSkipSwc = [];
         const fileSkipSwc = []; // top level await
-        const shouldUseSwc = !packagesSkipSwc.includes(packageName) &&
-          !fileSkipSwc.includes(inputFilePath);
+        const shouldUseSwc =
+          !packagesSkipSwc.includes(packageName) &&
+          !fileSkipSwc.includes(inputFilePath) &&
+          !self._swcIncompatible[toBeAdded.hash];
 
         // Check RAM cache
         let compilation;
@@ -237,6 +240,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             compilation = Babel.compile(source, babelOptions, cacheOptions);
           }
         } catch (e) {
+          self._swcIncompatible[toBeAdded.hash] = true;
           // If SWC fails, fall back to Babel
           compilation = Babel.compile(source, babelOptions, cacheOptions);
         }
