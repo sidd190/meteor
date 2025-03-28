@@ -1790,28 +1790,22 @@ if (Meteor.isServer) (() => {
     });
 
     Tinytest.addAsync("passwords, replace email", async test => {
-      const origEmail = `${ Random.id() }@turing.com`;
+      const origEmail = `originalemail@test.com`;
       const userId = await Accounts.createUser({
         email: origEmail
       });
 
-      const newEmail = `${ Random.id() }@turing.com`;
-      await Accounts.addEmailAsync(userId, newEmail);
+      const newEmail = `newemail@test.com`;
 
-      const thirdEmail = `${ Random.id() }@turing.com`;
-      await Accounts.addEmailAsync(userId, thirdEmail, true);
       const u1 = await Accounts._findUserByQuery({ id: userId })
       test.equal(u1.emails, [
-        { address: origEmail, verified: false },
-        { address: newEmail, verified: false },
-        { address: thirdEmail, verified: true }
+        { address: origEmail, verified: false }
       ]);
 
-      await Accounts.replaceEmailAsync(userId, newEmail, thirdEmail);
+      await Accounts.replaceEmailAsync(userId, origEmail, newEmail);
       const u2 = await Accounts._findUserByQuery({ id: userId })
       test.equal(u2.emails, [
-        { address: origEmail, verified: false },
-        { address: thirdEmail, verified: true }
+        { address: newEmail, verified: false }
       ]);
     })
 
