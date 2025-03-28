@@ -2,7 +2,7 @@ var semver = Npm.require("semver");
 var JSON5 = Npm.require("json5");
 var SWC = Npm.require("@swc/core");
 const reifyCompile = Npm.require("@meteorjs/reify/lib/compiler").compile;
-const reifyAcornTopLevelParse = Npm.require("@meteorjs/reify/lib/parsers/top-level").parse;
+const reifyAcornParse = Npm.require("@meteorjs/reify/lib/parsers/acorn").parse;
 var fs = Npm.require('fs');
 var path = Npm.require('path');
 
@@ -205,9 +205,21 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             let content = transformed.code;
             // Perserve Meteor's specifics: reify modules, nested imports and top-level await support.
             const result = reifyCompile(content, {
-              parse: reifyAcornTopLevelParse,
+              parse: reifyAcornParse,
               generateLetDeclarations: false,
               ast: false,
+              // Enforce reify options for proper compatibility (TODO export getReifyOptions)
+              // https://github.com/meteor/meteor/blob/devel/npm-packages/meteor-babel/options.js#L19
+              avoidModernSyntax: true,
+              enforceStrictMode: false,
+              dynamicImport: true,
+              ...features.topLevelAwait && { topLevelAwait: true },
+              ...features.compileForShell && { moduleAlias: 'module' },
+              ...(features.modernBrowsers ||
+                features.nodeMajorVersion >= 8) && {
+                avoidModernSyntax: false,
+                generateLetDeclarations: true,
+              },
             });
             if (!result.identical) {
               identical = false;
