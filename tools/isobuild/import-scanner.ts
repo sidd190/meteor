@@ -45,7 +45,7 @@ import {
 
 import { wrap } from "optimism";
 const { compile: reifyCompile } = require("@meteorjs/reify/lib/compiler");
-const { parse: reifyBabelParse } = require("@meteorjs/reify/lib/parsers/babel");
+const { parse: reifyAcornParse } = require("@meteorjs/reify/lib/parsers/acorn");
 
 import Resolver, { Resolution } from "./resolver";
 import LRUCache from 'lru-cache';
@@ -88,7 +88,7 @@ const reifyCompileWithCache = Profile("reifyCompileWithCache", wrap(function (
 
   const isLegacy = isLegacyArch(bundleArch);
   let result = reifyCompile(stripHashBang(source), {
-    parse: reifyBabelParse,
+    parse: reifyAcornParse,
     generateLetDeclarations: !isLegacy,
     avoidModernSyntax: isLegacy,
     enforceStrictMode: false,
