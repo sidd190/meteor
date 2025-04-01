@@ -208,7 +208,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
     }
 
     try {
-      var result = (function getTranspilerCompilation() {
+      var result = (() => {
         const packagesSkipSwc = [];
         const fileSkipSwc = []; // top level await
 
@@ -271,7 +271,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         }
 
         return compilation;
-      }).call(this);
+      })();
     } catch (e) {
       if (e.loc) {
         // Error is from @babel/parser.
