@@ -10,7 +10,398 @@ This is a complete history of changes for Meteor releases.
 
 [//]: # (go to meteor/docs/generators/changelog/docs)
 
+## v3.2.0, 2025-03-18
 
+### Highlights
+
+- Upgrade to Node 22.14.0 & Mongo 7.0.16.
+- Implement `meteor profile` command to show performance metrics of Meteor apps.
+- Fix Meteor profiler to handle promises and display metrics correctly.
+- Support for argon2 to improve password security over bcrypt. [PR #13554](https://github.com/meteor/meteor/pull/13554)
+- Improve and fix package resolution logic. [PR #13604](https://github.com/meteor/meteor/pull/13604)
+- Fix rare oplog issue that could cause data loss for clients. [PR #13603](https://github.com/meteor/meteor/pull/13603)
+
+All detailed PRs can be found here: https://github.com/meteor/meteor/pulls?q=is%3Apr+is%3Amerged+base%3Arelease-3.2
+
+#### Breaking Changes
+
+N/A
+
+####  Internal API changes
+
+N/A
+
+#### Migration Steps
+
+Please run the following command to update your project:
+
+```bash
+
+meteor update --release 3.2
+
+```
+
+#### Bumped Meteor Packages
+
+- accounts-base@3.1.0
+- accounts-password@3.1.0
+- ecmascript-runtime-client@0.12.3
+- facebook-oauth@1.11.6
+- fetch@0.1.6
+- logging@1.3.6
+- logic-solver@3.1.0
+- minifier-css@2.0.1
+- meteor-tool@3.2.0
+- modern-browsers@0.2.1
+- mongo@2.1.1
+- oauth@3.0.2
+- test-helpers@2.0.3
+
+#### Bumped NPM Packages
+
+- meteor-node-stubs@1.2.13
+
+#### Special thanks to
+
+✨✨✨
+
+- [@nachocodoner](https://github.com/nachocodoner)
+- [@Grubba27](https://github.com/Grubba27)
+- [@vparpoil](https://github.com/vparpoil)
+- [@cunneen](https://github.com/cunneen)
+- [@gbuerk](https://github.com/gbuerk)
+- [@julio-rocketchat](https://github.com/julio-rocketchat)
+- [@StorytellerCZ](https://github.com/StorytellerCZ)
+- [@dr-dimitru](https://github.com/dr-dimitru)
+- [@Seb-Dion](https://github.com/Seb-Dion)
+
+✨✨✨
+
+
+## v3.1.2, 2025-02-06
+
+### Highlights
+
+- Node upgrade: v22.13.1
+- Updated Meteor skeletons for Vue and Solid
+- Improved browser detection and related documentation
+- Security updates: nodemailer-openpgp and others in Meteor packages
+
+#### Breaking Changes
+
+N/A
+
+####  Internal API changes
+
+N/A
+
+#### Migration Steps
+
+Please run the following command to update your project:
+
+```bash
+
+meteor update --release 3.1.2
+
+```
+
+#### Bumped Meteor Packages
+
+- email@3.1.2
+- meteor-tool@3.1.2
+- modern-browsers@0.2.0
+- webapp@2.0.5
+
+#### Bumped NPM Packages
+
+N/A
+
+#### Special thanks to
+
+✨✨✨
+
+- [@nachocodoner](https://github.com/nachocodoner)
+- [@Grubba27](https://github.com/Grubba27)
+- [@perbergland](https://github.com/perbergland)
+- [@StorytellerCZ](https://github.com/StorytellerCZ)
+- [@julio-rocketchat](https://github.com/julio-rocketchat)
+
+✨✨✨
+## v3.1.1, 2025-01-15
+
+### Highlights
+
+- Node upgrade: v22.13.0
+- Real-time Performance Boost: Refactored AsynchronousQueue for parallel processing and optimized MongoDB observers for faster initial document handling.
+- Allow/Deny Rules Update: Deprecated async rules and updated documentation and types.
+- Mongo Driver Downgrade: Reverted to a stable version to prevent issues in Meteor.
+- Support for Meteor.deprecate: Added deprecation warnings with stack trace for outdated code usage.
+- OAuth Fixes: Resolved issues with cancel popup event and callback.
+- Windows Fixes: Fixed issues with running from folders with spaces and post-npm install build errors on Windows.
+- Security Updates: Upgraded json5 and semver from babel compiler.
+
+#### Breaking Changes
+
+N/A
+
+####  Internal API changes
+
+N/A
+
+#### Migration Steps
+
+Please run the following command to update your project:
+
+```bash
+
+meteor update --release 3.1.1
+
+```
+
+#### Bumped Meteor Packages
+
+- accounts-base@3.0.4
+- accounts-oauth@1.4.6
+- accounts-passwordless@3.0.1
+- allow-deny@2.1.0
+- babel-compiler@7.11.3
+- ddp-client@3.1.0
+- ddp-server@3.1.0
+- meteor-tool@3.1.1
+- facebook-oauth@1.11.5
+- meteor@2.1.0
+- meteor-tool@3.1.1
+- mongo@2.1.0
+- npm-mongo@6.10.2
+- oauth@3.0.1
+- roles@@1.0.1
+- socket-stream-client@0.6.0
+
+#### Bumped NPM Packages
+
+N/A
+
+#### Special thanks to
+
+✨✨✨
+
+- [@leonardoventurini](https://github.com/leonardoventurini)
+- [@nachocodoner](https://github.com/nachocodoner)
+- [@Grubba27](https://github.com/Grubba27)
+- [@9Morello](https://github.com/9Morello)
+- [@perbergland](https://github.com/perbergland)
+- [@StorytellerCZ](https://github.com/StorytellerCZ)
+- [@MrSpark2591](https://github.com/MrSpark2591)
+- [@jstarpl](https://github.com/jstarpl)
+- [@minhna](https://github.com/minhna)
+- [@svolkomorov](https://github.com/svolkomorov)
+- [@quyetdgroup](https://github.com/quyetdgroup)
+
+✨✨✨
+## v3.1.0, 2024-11-20
+
+### Highlights
+
+- Upgrade to Node v22
+- Upgrade Mongo Driver to v6
+- Upgrade Express to v5
+- HMR performance improvements
+- Bring the `roles` package into the core
+- Solve remaining issues with Top Level Await and Reify
+- Refactor part of the real-time code in the `mongo` package into TypeScript
+- Deprecate `underscore` and eliminate it from packages
+- Fix Cordova dependency issues
+- Simplify Meteor.EnvironmentVariable and make sure it works in all cases
+- Stop using Rosetta for development MongoDB on Apple Silicon
+- Test improvements
+- Bump `http` package to 3.0.0
+
+#### Breaking Changes
+
+- Express is now at v5 and some it's APIs have changed.
+
+####  Internal API changes
+
+N/A
+
+#### Migration Steps
+
+Please run the following command to update your project:
+
+```bash
+
+meteor update --release 3.1
+
+```
+
+Make sure to migrate userland code to use the new Express APIs:
+
+https://expressjs.com/en/guide/migrating-5.html
+
+The MongoDB Node.js driver implemented a significant breaking change regarding operation handling. Applications leveraging `rawCollection()` or `rawDatabase()` methods must now utilize Promise-based syntax exclusively, as the callback-pattern API has been deprecated and removed. This modification affects all direct MongoDB operations previously using callback functions.
+
+
+#### Bumped Meteor Packages
+
+- accounts-password@3.0.3
+- babel-compiler@7.11.2
+- boilerplate-generator-tests@1.5.3
+- ddp-client@3.0.3
+- ddp-server@3.0.3
+- http@3.0.0
+- ecmascript@0.16.10
+- email@3.1.1
+- meteor-tool@3.1.0
+- meteor@2.0.2
+- minifier-js@3.0.1
+- minimongo@2.0.2
+- modules@0.20.3
+- mongo@2.0.3
+- coffeescript-compiler@2.4.2
+- coffeescript@2.7.2
+- mongo-decimal@0.2.0
+- npm-mongo@6.10.0
+- shell-server@0.6.1
+- test-helpers@2.0.2
+- test-in-console@2.0.1
+- tinytest@1.3.1
+- typescript@5.6.3
+- url@1.3.5
+- webapp@2.0.4
+
+
+#### Bumped NPM Packages
+
+- meteor-babel@7.20.1
+- meteor-installer@3.1.0
+- meteor-node-stubs@1.2.12
+
+
+#### Special thanks to
+
+✨✨✨
+
+- [@denihs](https://github.com/denihs)
+- [@nachocodoner](https://github.com/nachocodoner)
+- [@leonardoventurini](https://github.com/leonardoventurini)
+- [@StorytellerCZ](https://github.com/StorytellerCZ)
+- [@zodern](https://github.com/zodern)
+- [@harry97](https://github.com/harry97)
+- [@permb](https://github.com/permb)
+- [@9Morello](https://github.com/9Morello)
+- [@wreiske](https://github.com/wreiske)
+- [@MarcoTribuz](https://github.com/MarcoTribuz)
+- [@MeteorCoder](https://forums.meteor.com/u/meteorcoder/summary)
+
+✨✨✨
+## v3.0.4, 2024-10-15
+
+### Highlights
+
+- Node 20.18.0 & Typescript 5.6.2
+- Updated webapp dependencies.
+- DDP-server and DDP-client removed underscore
+- Remove dependencies on Blaze packages when using static-html
+- Fix Cordova on Windows
+- Fix Cordova build on using plugins describing dependencies
+- Various Windows specific fixes
+
+#### Breaking Changes
+
+N/A
+
+####  Internal API changes
+
+N/A
+
+#### Migration Steps
+
+Please run the following command to update your project:
+
+```bash
+
+meteor update --release 3.0.4
+
+```
+
+#### Meteor Version Release
+
+* `Bumped packages`:
+  - accounts-base@3.0.3                
+  - babel-compiler@7.11.1              
+  - caching-compiler@2.0.1             
+  - check@1.4.4                        
+  - ddp-client@3.0.2                   
+  - ddp-server@3.0.2                   
+  - ecmascript-runtime@0.8.3           
+  - modules@0.20.2                     
+  - static-html-tools@1.0.0            
+  - static-html@1.4.0                  
+  - url@1.3.4                          
+  - webapp@2.0.3                       
+  - meteor-tool@3.0.4
+
+#### Special thanks to
+N/A
+## v3.0.3, 2024-09-11
+
+### Highlights
+
+- Fixed `Meteor.userId` only being invoked with `bindEnvironment`.
+- Updated to Node `20.17.x`.
+- Fixed an issue where `meteor --open` opens the browser before the app is started.
+- Investigated and addressed the error when installing the `jam:method` package.
+- Improved the message for new available versions when running an app.
+- Updated the documentation link inside `install.sh`.
+- Resolved the issue where subscriptions stopped after a parameter change.
+- Added MongoDB connection telemetry.
+- Bumped the `email` package to prevent update errors.
+- Cordova package updates
+
+#### Breaking Changes
+
+N/A
+
+####  Internal API changes
+
+- Some internal changes to how async contexts are handled, ensuring better performance and garbage collection.
+
+#### Migration Steps
+
+Please run the following command to update your project:
+
+```bash
+
+meteor update --release 3.0.3
+
+```
+
+If you've had your Meteor installation for over a year, we suggest reinstalling it to avoid any package installation issues. You can do this by running a few quick commands:
+
+```bash
+npx meteor uninstall // or rm -rf ~/.meteor
+npx meteor
+```
+
+
+
+#### Meteor Version Release
+
+* `Bumped packages`:
+  - accounts-base@3.0.2
+  - accounts-password@3.0.2
+  - email@3.1.0
+  - mongo@2.0.2
+
+
+#### Special thanks to
+
+- [@ayewo](https://github.com/ayewo).
+- [@denihs](https://github.com/denihs).
+- [@harryadel](https://github.com/harryadel).
+- [@kbarr1212](https://github.com/kbarr1212).
+- [@leonardoventurini](https://github.com/leonardoventurini).
+- [@nachocodoner](https://github.com/nachocodoner).
 
 ## v3.0.2, 2024-08-14
 
