@@ -1,6 +1,8 @@
 var semver = Npm.require("semver");
 var JSON5 = Npm.require("json5");
 var SWC = Npm.require("@swc/core");
+const reifyCompile = Npm.require("@meteorjs/reify/lib/compiler").compile;
+const reifyAcornParse = Npm.require("@meteorjs/reify/lib/parsers/acorn").parse;
 var fs = Npm.require('fs');
 var path = Npm.require('path');
 
@@ -56,6 +58,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
   var self = this; // capture context
   this._babelrcCache = this._babelrcCache || Object.create(null);
   this._swcCache = this._swcCache || Object.create(null);
+  this._swcIncompatible = this._swcIncompatible || Object.create(null);
 
   if (typeof source !== "string") {
     // Other compiler plugins can call processOneFileForTarget with a
@@ -147,9 +150,11 @@ BCp.processOneFileForTarget = function (inputFile, source) {
       var result = profile('Babel.compile', function () {
         // Determine if SWC should be used based on package and file criteria.
         const packagesSkipSwc = [];
-        const fileSkipSwc = ['webapp_server.js']; // top level await
-        const shouldUseSwc = !packagesSkipSwc.includes(packageName) &&
-          !fileSkipSwc.includes(inputFilePath);
+        const fileSkipSwc = []; // top level await
+        const shouldUseSwc =
+          !packagesSkipSwc.includes(packageName) &&
+          !fileSkipSwc.includes(inputFilePath) &&
+          !self._swcIncompatible[toBeAdded.hash];
 
         // Check RAM cache
         let compilation;
@@ -192,13 +197,37 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                   tsx: hasTSXSupport,
                 },
               },
-              module: { type: 'commonjs' },
+              module: { type: 'es6' },
               minify: false,
               sourceMaps: true,
             });
 
+            let content = transformed.code;
+            // Perserve Meteor's specifics: reify modules, nested imports and top-level await support.
+            const result = reifyCompile(content, {
+              parse: reifyAcornParse,
+              generateLetDeclarations: false,
+              ast: false,
+              // Enforce reify options for proper compatibility (TODO export getReifyOptions)
+              // https://github.com/meteor/meteor/blob/devel/npm-packages/meteor-babel/options.js#L19
+              avoidModernSyntax: true,
+              enforceStrictMode: false,
+              dynamicImport: true,
+              ...features.topLevelAwait && { topLevelAwait: true },
+              ...features.compileForShell && { moduleAlias: 'module' },
+              ...(features.modernBrowsers ||
+                features.nodeMajorVersion >= 8) && {
+                avoidModernSyntax: false,
+                generateLetDeclarations: true,
+              },
+            });
+            if (!result.identical) {
+              identical = false;
+              content = result.code;
+            }
+
             compilation = {
-              code: transformed.code,
+              code: content,
               map: JSON.parse(transformed.map),
               hash: toBeAdded.hash,
               sourceType: 'module',
@@ -223,6 +252,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             compilation = Babel.compile(source, babelOptions, cacheOptions);
           }
         } catch (e) {
+          self._swcIncompatible[toBeAdded.hash] = true;
           // If SWC fails, fall back to Babel
           compilation = Babel.compile(source, babelOptions, cacheOptions);
         }
