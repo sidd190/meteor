@@ -35,7 +35,7 @@ function compileWithBabel(source, babelOptions, cacheOptions) {
   });
 }
 
-function compileWithSWC(source, { inputFilePath, hash, features, ...swcOptions }) {
+function compileWithSwc(source, swcOptions, { inputFilePath, features }) {
   return profile('SWC.compile', function () {
     // Determine file extension based syntax.
     const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
@@ -83,7 +83,6 @@ function compileWithSWC(source, { inputFilePath, hash, features, ...swcOptions }
     return {
       code: content,
       map: JSON.parse(transformed.map),
-      hash,
       sourceType: 'module',
     };
   });
@@ -221,46 +220,17 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         let compilation;
         try {
           if (shouldUseSwc) {
-            // Create a cache key based on the source hash and the compiler used.
+            // Create a cache key based on the source hash and the compiler used
             const cacheKey = toBeAdded.hash;
-            const cacheContext = '.swc-cache';
-
-            // Check RAM cache
-            compilation = this._swcCache[cacheKey];
-            // Check file system cache if enabled
-            if (!compilation && this.cacheDirectory) {
-              const cacheFilePath = path.join(this.cacheDirectory, cacheContext, cacheKey + '.json');
-              if (fs.existsSync(cacheFilePath)) {
-                try {
-                  compilation = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
-                  this._swcCache[cacheKey] = compilation;
-                } catch (e) {
-                  // If reading/parsing the cache fails, ignore and continue.
-                }
-              }
-            }
+            // Check cache
+            compilation = this.readFromSwcCache({ cacheKey });
             // Return cached result if found.
             if (compilation) {
               return compilation;
             }
-
-            compilation = compileWithSWC(source, { inputFilePath, hash: toBeAdded.hash, features });
-
+            compilation = compileWithSwc(source, {}, { inputFilePath, features });
             // Save result in cache
-            this._swcCache[cacheKey] = compilation;
-            if (this.cacheDirectory) {
-              const cacheFilePath = path.join(this.cacheDirectory, cacheContext, cacheKey + '.json');
-              try {
-                const writeFileCache = async () => {
-                  await fs.promises.mkdir(path.dirname(cacheFilePath), { recursive: true });
-                  await fs.promises.writeFile(cacheFilePath, JSON.stringify(compilation), 'utf8');
-                };
-                // Asynchronously write the cache without blocking
-                writeFileCache();
-              } catch (e) {
-                // If file caching fails, ignore the error.
-              }
-            }
+            this.writeToSwcCache({ cacheKey, compilation });
           } else {
             compilation = compileWithBabel(source, babelOptions, cacheOptions);
           }
@@ -689,3 +659,43 @@ function packageNameFromTopLevelModuleId(id) {
   }
   return parts[0];
 }
+
+const SwcCacheContext = '.swc-cache';
+
+BCp.readFromSwcCache = function({ cacheKey }) {
+  // Check in-memory cache.
+  let compilation = this._swcCache[cacheKey];
+  // If not found, try file system cache if enabled.
+  if (!compilation && this.cacheDirectory) {
+    const cacheFilePath = path.join(this.cacheDirectory, SwcCacheContext, `${cacheKey}.json`);
+    if (fs.existsSync(cacheFilePath)) {
+      try {
+        compilation = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
+        // Save back to in-memory cache.
+        this._swcCache[cacheKey] = compilation;
+      } catch (err) {
+        // Ignore any errors reading/parsing the cache.
+      }
+    }
+  }
+  return compilation;
+};
+
+BCp.writeToSwcCache = function({ cacheKey, compilation }) {
+  // Save to in-memory cache.
+  this._swcCache[cacheKey] = compilation;
+  // If file system caching is enabled, write asynchronously.
+  if (this.cacheDirectory) {
+    const cacheFilePath = path.join(this.cacheDirectory, SwcCacheContext, `${cacheKey}.json`);
+    try {
+      const writeFileCache = async () => {
+        await fs.promises.mkdir(path.dirname(cacheFilePath), { recursive: true });
+        await fs.promises.writeFile(cacheFilePath, JSON.stringify(compilation), 'utf8');
+      };
+      // Invoke without blocking the main flow.
+      writeFileCache();
+    } catch (err) {
+      // If writing fails, ignore the error.
+    }
+  }
+};
