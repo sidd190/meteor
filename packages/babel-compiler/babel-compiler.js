@@ -29,6 +29,67 @@ var isMeteorPre144 = semver.lt(process.version, "4.8.1");
 
 var enableClientTLA = process.env.METEOR_ENABLE_CLIENT_TOP_LEVEL_AWAIT === 'true';
 
+function compileWithBabel(source, babelOptions, cacheOptions) {
+  return profile('Babel.compile', function () {
+    return Babel.compile(source, babelOptions, cacheOptions);
+  });
+}
+
+function compileWithSWC(source, { inputFilePath, hash, features, ...swcOptions }) {
+  return profile('SWC.compile', function () {
+    // Determine file extension based syntax.
+    const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
+    const hasTSXSupport = inputFilePath.endsWith('.tsx');
+    const hasJSXSupport = inputFilePath.endsWith('.jsx');
+
+    // Perform SWC transformation.
+    const transformed = SWC.transformSync(source, {
+      ...swcOptions,
+      jsc: {
+        target: 'es2015',
+        parser: {
+          syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
+          jsx: hasJSXSupport,
+          tsx: hasTSXSupport,
+        },
+      },
+      module: { type: 'es6' },
+      minify: false,
+      sourceMaps: true,
+    });
+
+    let content = transformed.code;
+
+    // Preserve Meteor-specific features: reify modules, nested imports, and top-level await support.
+    const result = reifyCompile(content, {
+      parse: reifyAcornParse,
+      generateLetDeclarations: false,
+      ast: false,
+      // Enforce reify options for proper compatibility.
+      avoidModernSyntax: true,
+      enforceStrictMode: false,
+      dynamicImport: true,
+      ...features.topLevelAwait && { topLevelAwait: true },
+      ...features.compileForShell && { moduleAlias: 'module' },
+      ...(features.modernBrowsers || features.nodeMajorVersion >= 8) && {
+        avoidModernSyntax: false,
+        generateLetDeclarations: true,
+      },
+    });
+    if (!result.identical) {
+      content = result.code;
+    }
+
+    return {
+      code: content,
+      map: JSON.parse(transformed.map),
+      hash,
+      sourceType: 'module',
+    };
+  });
+}
+
+
 BCp.processFilesForTarget = function (inputFiles) {
   var compiler = this;
 
@@ -147,16 +208,16 @@ BCp.processOneFileForTarget = function (inputFile, source) {
     }
 
     try {
-      var result = profile('Babel.compile', function () {
-        // Determine if SWC should be used based on package and file criteria.
+      var result = (function getTranspilerCompilation() {
         const packagesSkipSwc = [];
         const fileSkipSwc = []; // top level await
+
+        // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc =
           !packagesSkipSwc.includes(packageName) &&
           !fileSkipSwc.includes(inputFilePath) &&
-          !self._swcIncompatible[toBeAdded.hash];
+          !this._swcIncompatible[toBeAdded.hash];
 
-        // Check RAM cache
         let compilation;
         try {
           if (shouldUseSwc) {
@@ -165,14 +226,14 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             const cacheContext = '.swc-cache';
 
             // Check RAM cache
-            compilation = self._swcCache[cacheKey];
+            compilation = this._swcCache[cacheKey];
             // Check file system cache if enabled
-            if (!compilation && self.cacheDirectory) {
-              const cacheFilePath = path.join(self.cacheDirectory, cacheContext, cacheKey + '.json');
+            if (!compilation && this.cacheDirectory) {
+              const cacheFilePath = path.join(this.cacheDirectory, cacheContext, cacheKey + '.json');
               if (fs.existsSync(cacheFilePath)) {
                 try {
                   compilation = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
-                  self._swcCache[cacheKey] = compilation;
+                  this._swcCache[cacheKey] = compilation;
                 } catch (e) {
                   // If reading/parsing the cache fails, ignore and continue.
                 }
@@ -183,60 +244,12 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               return compilation;
             }
 
-            const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
-            const hasTSXSupport = inputFilePath.endsWith('.tsx');
-            const hasJSXSupport = inputFilePath.endsWith('.jsx');
-
-            // Perform compilation
-            const transformed = SWC.transformSync(source, {
-              jsc: {
-                target: 'es2015',
-                parser: {
-                  syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
-                  jsx: hasJSXSupport,
-                  tsx: hasTSXSupport,
-                },
-              },
-              module: { type: 'es6' },
-              minify: false,
-              sourceMaps: true,
-            });
-
-            let content = transformed.code;
-            // Perserve Meteor's specifics: reify modules, nested imports and top-level await support.
-            const result = reifyCompile(content, {
-              parse: reifyAcornParse,
-              generateLetDeclarations: false,
-              ast: false,
-              // Enforce reify options for proper compatibility (TODO export getReifyOptions)
-              // https://github.com/meteor/meteor/blob/devel/npm-packages/meteor-babel/options.js#L19
-              avoidModernSyntax: true,
-              enforceStrictMode: false,
-              dynamicImport: true,
-              ...features.topLevelAwait && { topLevelAwait: true },
-              ...features.compileForShell && { moduleAlias: 'module' },
-              ...(features.modernBrowsers ||
-                features.nodeMajorVersion >= 8) && {
-                avoidModernSyntax: false,
-                generateLetDeclarations: true,
-              },
-            });
-            if (!result.identical) {
-              identical = false;
-              content = result.code;
-            }
-
-            compilation = {
-              code: content,
-              map: JSON.parse(transformed.map),
-              hash: toBeAdded.hash,
-              sourceType: 'module',
-            };
+            compilation = compileWithSWC(source, { inputFilePath, hash: toBeAdded.hash, features });
 
             // Save result in cache
-            self._swcCache[cacheKey] = compilation;
-            if (self.cacheDirectory) {
-              const cacheFilePath = path.join(self.cacheDirectory, cacheContext, cacheKey + '.json');
+            this._swcCache[cacheKey] = compilation;
+            if (this.cacheDirectory) {
+              const cacheFilePath = path.join(this.cacheDirectory, cacheContext, cacheKey + '.json');
               try {
                 const writeFileCache = async () => {
                   await fs.promises.mkdir(path.dirname(cacheFilePath), { recursive: true });
@@ -249,15 +262,16 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               }
             }
           } else {
-            compilation = Babel.compile(source, babelOptions, cacheOptions);
+            compilation = compileWithBabel(source, babelOptions, cacheOptions);
           }
         } catch (e) {
-          self._swcIncompatible[toBeAdded.hash] = true;
+          this._swcIncompatible[toBeAdded.hash] = true;
           // If SWC fails, fall back to Babel
-          compilation = Babel.compile(source, babelOptions, cacheOptions);
+          compilation = compileWithBabel(source, babelOptions, cacheOptions);
         }
+
         return compilation;
-      });
+      }).call(this);
     } catch (e) {
       if (e.loc) {
         // Error is from @babel/parser.
