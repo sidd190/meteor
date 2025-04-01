@@ -1,6 +1,10 @@
 var semver = Npm.require("semver");
 var JSON5 = Npm.require("json5");
 var SWC = Npm.require("@swc/core");
+const reifyCompile = Npm.require("@meteorjs/reify/lib/compiler").compile;
+const reifyAcornParse = Npm.require("@meteorjs/reify/lib/parsers/acorn").parse;
+var fs = Npm.require('fs');
+var path = Npm.require('path');
 
 /**
  * A compiler that can be instantiated with features and used inside
@@ -24,6 +28,66 @@ var hasOwn = Object.prototype.hasOwnProperty;
 var isMeteorPre144 = semver.lt(process.version, "4.8.1");
 
 var enableClientTLA = process.env.METEOR_ENABLE_CLIENT_TOP_LEVEL_AWAIT === 'true';
+
+function compileWithBabel(source, babelOptions, cacheOptions) {
+  return profile('Babel.compile', function () {
+    return Babel.compile(source, babelOptions, cacheOptions);
+  });
+}
+
+function compileWithSwc(source, swcOptions, { inputFilePath, features }) {
+  return profile('SWC.compile', function () {
+    // Determine file extension based syntax.
+    const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
+    const hasTSXSupport = inputFilePath.endsWith('.tsx');
+    const hasJSXSupport = inputFilePath.endsWith('.jsx');
+
+    // Perform SWC transformation.
+    const transformed = SWC.transformSync(source, {
+      ...swcOptions,
+      jsc: {
+        target: 'es2015',
+        parser: {
+          syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
+          jsx: hasJSXSupport,
+          tsx: hasTSXSupport,
+        },
+      },
+      module: { type: 'es6' },
+      minify: false,
+      sourceMaps: true,
+    });
+
+    let content = transformed.code;
+
+    // Preserve Meteor-specific features: reify modules, nested imports, and top-level await support.
+    const result = reifyCompile(content, {
+      parse: reifyAcornParse,
+      generateLetDeclarations: false,
+      ast: false,
+      // Enforce reify options for proper compatibility.
+      avoidModernSyntax: true,
+      enforceStrictMode: false,
+      dynamicImport: true,
+      ...features.topLevelAwait && { topLevelAwait: true },
+      ...features.compileForShell && { moduleAlias: 'module' },
+      ...(features.modernBrowsers || features.nodeMajorVersion >= 8) && {
+        avoidModernSyntax: false,
+        generateLetDeclarations: true,
+      },
+    });
+    if (!result.identical) {
+      content = result.code;
+    }
+
+    return {
+      code: content,
+      map: JSON.parse(transformed.map),
+      sourceType: 'module',
+    };
+  });
+}
+
 
 BCp.processFilesForTarget = function (inputFiles) {
   var compiler = this;
@@ -52,6 +116,8 @@ BCp.processFilesForTarget = function (inputFiles) {
 // null to indicate there was an error, and nothing should be added.
 BCp.processOneFileForTarget = function (inputFile, source) {
   this._babelrcCache = this._babelrcCache || Object.create(null);
+  this._swcCache = this._swcCache || Object.create(null);
+  this._swcIncompatible = this._swcIncompatible || Object.create(null);
 
   if (typeof source !== "string") {
     // Other compiler plugins can call processOneFileForTarget with a
@@ -122,76 +188,59 @@ BCp.processOneFileForTarget = function (inputFile, source) {
       },
     };
 
-    this.inferTypeScriptConfig(
-      features, inputFile, cacheOptions.cacheDeps);
+    this.inferTypeScriptConfig(features, inputFile, cacheOptions.cacheDeps);
 
     var babelOptions = Babel.getDefaultOptions(features);
     babelOptions.caller = { name: "meteor", arch };
 
-    this.inferExtraBabelOptions(
-      inputFile,
-      babelOptions,
-      cacheOptions.cacheDeps
-    );
+    this.inferExtraBabelOptions(inputFile, babelOptions, cacheOptions.cacheDeps);
 
     babelOptions.sourceMaps = true;
     babelOptions.filename =
       babelOptions.sourceFileName = packageName
-      ? "packages/" + packageName + "/" + inputFilePath
-      : inputFilePath;
+        ? "packages/" + packageName + "/" + inputFilePath
+        : inputFilePath;
 
     if (this.modifyBabelConfig) {
       this.modifyBabelConfig(babelOptions, inputFile);
     }
 
     try {
-      var result = profile('Babel.compile', function () {
+      var result = (() => {
+        const packagesSkipSwc = [];
+        const fileSkipSwc = []; // top level await
+
+        // Determine if SWC should be used based on package and file criteria.
+        const shouldUseSwc =
+          !packagesSkipSwc.includes(packageName) &&
+          !fileSkipSwc.includes(inputFilePath) &&
+          !this._swcIncompatible[toBeAdded.hash];
+
         let compilation;
         try {
-          const packagesSkipSwc = [];
-          const fileSkipSwc = ['webapp_server.js']; // top level await
-
-          // Determine if SWC should be used based on package and file criteria.
-          const shouldUseSwc =
-            !packagesSkipSwc.includes(packageName) &&
-              !fileSkipSwc.includes(inputFilePath);
-
           if (shouldUseSwc) {
-            const isTypescriptSyntax =
-              inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
-            const hasTSXSupport = inputFilePath.endsWith('.tsx');
-            const hasJSXSupport = inputFilePath.endsWith('.jsx');
-
-            const transformed = SWC.transformSync(source, {
-              jsc: {
-                target: 'es2015',
-                parser: {
-                  syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
-                  jsx: hasJSXSupport,
-                  tsx: hasTSXSupport,
-                },
-              },
-              module: { type: 'commonjs' },
-              minify: false,
-              sourceMaps: true,
-            });
-
-            compilation = {
-              code: transformed.code,
-              map: JSON.parse(transformed.map),
-              hash: toBeAdded.hash,
-              sourceType: 'module',
-            };
+            // Create a cache key based on the source hash and the compiler used
+            const cacheKey = toBeAdded.hash;
+            // Check cache
+            compilation = this.readFromSwcCache({ cacheKey });
+            // Return cached result if found.
+            if (compilation) {
+              return compilation;
+            }
+            compilation = compileWithSwc(source, {}, { inputFilePath, features });
+            // Save result in cache
+            this.writeToSwcCache({ cacheKey, compilation });
           } else {
-            compilation = Babel.compile(source, babelOptions, cacheOptions);
+            compilation = compileWithBabel(source, babelOptions, cacheOptions);
           }
         } catch (e) {
+          this._swcIncompatible[toBeAdded.hash] = true;
           // If SWC fails, fall back to Babel
-          compilation = Babel.compile(source, babelOptions, cacheOptions);
+          compilation = compileWithBabel(source, babelOptions, cacheOptions);
         }
 
         return compilation;
-      });
+      })();
     } catch (e) {
       if (e.loc) {
         // Error is from @babel/parser.
@@ -609,3 +658,43 @@ function packageNameFromTopLevelModuleId(id) {
   }
   return parts[0];
 }
+
+const SwcCacheContext = '.swc-cache';
+
+BCp.readFromSwcCache = function({ cacheKey }) {
+  // Check in-memory cache.
+  let compilation = this._swcCache[cacheKey];
+  // If not found, try file system cache if enabled.
+  if (!compilation && this.cacheDirectory) {
+    const cacheFilePath = path.join(this.cacheDirectory, SwcCacheContext, `${cacheKey}.json`);
+    if (fs.existsSync(cacheFilePath)) {
+      try {
+        compilation = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
+        // Save back to in-memory cache.
+        this._swcCache[cacheKey] = compilation;
+      } catch (err) {
+        // Ignore any errors reading/parsing the cache.
+      }
+    }
+  }
+  return compilation;
+};
+
+BCp.writeToSwcCache = function({ cacheKey, compilation }) {
+  // Save to in-memory cache.
+  this._swcCache[cacheKey] = compilation;
+  // If file system caching is enabled, write asynchronously.
+  if (this.cacheDirectory) {
+    const cacheFilePath = path.join(this.cacheDirectory, SwcCacheContext, `${cacheKey}.json`);
+    try {
+      const writeFileCache = async () => {
+        await fs.promises.mkdir(path.dirname(cacheFilePath), { recursive: true });
+        await fs.promises.writeFile(cacheFilePath, JSON.stringify(compilation), 'utf8');
+      };
+      // Invoke without blocking the main flow.
+      writeFileCache();
+    } catch (err) {
+      // If writing fails, ignore the error.
+    }
+  }
+};
