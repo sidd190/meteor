@@ -34,14 +34,14 @@ Contributors are encouraged to focus their efforts on work that aligns with the 
 **Goal:** Add a command([meteor profile](/cli/#meteorprofile)) to measure if our changes are actually making our builds faster and smaller.
 
 
-#### Phase 2: External Bundler Integration
+#### Phase 2: External Transpiler Integration & Bundler Improvements
 
 **Target Release:** 3.3 ⏳
 
 **Goal:** For this phase we want:
  - Improve our current bundler performance, via optimizations so that any meteor user can get benefits from it; And an external bundler could get
    the same benefits.
- - To have an external bundler working with Meteor and producing a bundle that is smaller or faster than the current Meteor bundle.
+ - To have an external transpiler working with Meteor and producing a bundle that is smaller or faster than the current Meteor bundle.
 
 #### Phase 3: HMR Improvements
 
