@@ -115,7 +115,6 @@ BCp.processFilesForTarget = function (inputFiles) {
 // Returns an object suitable for passing to inputFile.addJavaScript, or
 // null to indicate there was an error, and nothing should be added.
 BCp.processOneFileForTarget = function (inputFile, source) {
-  var self = this; // capture context
   this._babelrcCache = this._babelrcCache || Object.create(null);
   this._swcCache = this._swcCache || Object.create(null);
   this._swcIncompatible = this._swcIncompatible || Object.create(null);
