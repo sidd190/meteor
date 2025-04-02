@@ -120,7 +120,7 @@ To be able to use the `meteor` command from fish it's needed to include `/home/<
 
 ## Using AI with Meteor docs {#ai-docs}
 
-Meteor docs ships with [llms.txt](https://llmstxt.org/) file, which allows you to use AI tools like ChatGPT to answer questions about Meteor.
+Meteor docs ships with [llms.txt](https://llmstxt.org/) file, which helps language models use your website
 
 If you have [LM Studio installed](https://lmstudio.ai/docs/app) or any other LLM tool, you can use the llms.txt file to ask questions about Meteor.
 
