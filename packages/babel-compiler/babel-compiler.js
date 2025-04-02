@@ -262,8 +262,8 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const shouldSkipSwc =
           !hasModernTranspiler ||
           (config.excludeApp === true && isAppCode) ||
-          isExcludedConfig(packageName, config.excludePackages || []) ||
-          (isAppCode && isExcludedConfig(inputFilePath, config.excludeFiles || []));
+          (isAppCode && isExcludedConfig(inputFilePath, config.excludeAppFiles || [])) ||
+          isExcludedConfig(packageName, config.excludePackages || []);
         // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc =
           !shouldSkipSwc && !this._swcIncompatible[toBeAdded.hash];
