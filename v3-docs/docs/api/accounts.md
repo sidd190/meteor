@@ -888,7 +888,7 @@ email with a link the user can use to verify their email address.
 
 <ApiBox name="Accounts.removeEmail" />
 
-<ApiBox name="Accounts.replaceEmail" />
+<ApiBox name="Accounts.replaceEmailAsync" />
 
 <ApiBox name="Accounts.verifyEmail" />
 
