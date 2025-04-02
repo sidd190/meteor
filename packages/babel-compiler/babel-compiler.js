@@ -88,12 +88,61 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features }) {
   });
 }
 
+function getMeteorAppDir() {
+  return process.cwd();
+}
+
+function getMeteorAppPackageJson() {
+  return JSON.parse(
+    fs.readFileSync(`${getMeteorAppDir()}/package.json`, 'utf-8'),
+  );
+}
+
+const _regexCache = new Map();
+
+function isRegexLike(str) {
+  return /[.*+?^${}()|[\]\\]/.test(str);
+}
+
+function isExcludedConfig(name, excludeList = []) {
+  return excludeList.some(rule => {
+    if (name === rule) return true;
+    if (isRegexLike(rule)) {
+      let regex = _regexCache.get(rule);
+      if (!regex) {
+        try {
+          regex = new RegExp(rule);
+          _regexCache.set(rule, regex);
+        } catch (err) {
+          console.warn(`Invalid regex in exclude list: "${rule}"`);
+          return false;
+        }
+      }
+      return regex.test(name);
+    }
+
+    return false;
+  });
+}
+
+BCp.initializeMeteorAppConfig = function () {
+  const currentLastModifiedConfigTime = fs
+    .statSync(`${getMeteorAppDir()}/package.json`)
+    ?.mtime?.getTime();
+  if (currentLastModifiedConfigTime !== this.lastModifiedConfigTime) {
+    this.lastModifiedConfigTime = currentLastModifiedConfigTime;
+    this.lastModifiedConfig = getMeteorAppPackageJson()?.meteor;
+  }
+  return this.lastModifiedConfig;
+};
 
 BCp.processFilesForTarget = function (inputFiles) {
   var compiler = this;
 
   // Reset this cache for each batch processed.
   this._babelrcCache = null;
+
+  this.initializeMeteorAppConfig();
 
   inputFiles.forEach(function (inputFile) {
     if (inputFile.supportsLazyCompilation) {
@@ -207,14 +256,17 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
     try {
       var result = (() => {
-        const packagesSkipSwc = [];
-        const fileSkipSwc = []; // top level await
-
+        const isAppCode = packageName == null;
+        const config = this.lastModifiedConfig?.modernTranspiler;
+        const hasModernTranspiler = config != null;
+        const shouldSkipSwc =
+          !hasModernTranspiler ||
+          (config.excludeApp === true && isAppCode) ||
+          isExcludedConfig(packageName, config.excludePackages || []) ||
+          (isAppCode && isExcludedConfig(inputFilePath, config.excludeFiles || []));
         // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc =
-          !packagesSkipSwc.includes(packageName) &&
-          !fileSkipSwc.includes(inputFilePath) &&
-          !this._swcIncompatible[toBeAdded.hash];
+          !shouldSkipSwc && !this._swcIncompatible[toBeAdded.hash];
 
         let compilation;
         try {
