@@ -105,7 +105,7 @@ function isRegexLike(str) {
 }
 
 function isExcludedConfig(name, excludeList = [], startsWith) {
-  if (!name) return false;
+  if (!name || !excludeList?.length) return false;
   return excludeList.some(rule => {
     if (name === rule) return true;
     if (startsWith && name.startsWith(rule)) return true;
@@ -260,12 +260,14 @@ BCp.processOneFileForTarget = function (inputFile, source) {
       var result = (() => {
         const isNodeModulesCode = packageName == null && inputFilePath.includes("node_modules/");
         const isAppCode = packageName == null && !isNodeModulesCode;
+        const isPackageCode = packageName != null;
         const config = this.lastModifiedConfig?.modernTranspiler;
         const hasModernTranspiler = config != null;
         const shouldSkipSwc =
           !hasModernTranspiler ||
-          (config.excludeApp === true && isAppCode) ||
-          (config.excludeNodeModules === true && isNodeModulesCode) ||
+          (isAppCode && config.excludeApp === true) ||
+          (isNodeModulesCode && config.excludeNodeModules === true) ||
+          (isPackageCode && config.excludePackages === true) ||
           (isAppCode &&
             Array.isArray(config.excludeApp) &&
             isExcludedConfig(inputFilePath, config.excludeApp || [])) ||
@@ -276,9 +278,14 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                 inputFilePath.replace('node_modules/', ''),
                 config.excludeNodeModules || [],
                 true,
-              ))
-          ) ||
-          isExcludedConfig(packageName, config.excludePackages || []);
+              ))) ||
+          (isPackageCode &&
+            Array.isArray(config.excludePackages) &&
+            (isExcludedConfig(packageName, config.excludePackages || []) ||
+              isExcludedConfig(
+                `${packageName}/${inputFilePath}`,
+                config.excludePackages || [],
+              )));
         // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc =
           !shouldSkipSwc && !this._swcIncompatible[toBeAdded.hash];
