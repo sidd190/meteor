@@ -104,9 +104,11 @@ function isRegexLike(str) {
   return /[.*+?^${}()|[\]\\]/.test(str);
 }
 
-function isExcludedConfig(name, excludeList = []) {
+function isExcludedConfig(name, excludeList = [], startsWith) {
+  if (!name) return false;
   return excludeList.some(rule => {
     if (name === rule) return true;
+    if (startsWith && name.startsWith(rule)) return true;
     if (isRegexLike(rule)) {
       let regex = _regexCache.get(rule);
       if (!regex) {
@@ -256,13 +258,26 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
     try {
       var result = (() => {
-        const isAppCode = packageName == null;
+        const isNodeModulesCode = packageName == null && inputFilePath.includes("node_modules/");
+        const isAppCode = packageName == null && !isNodeModulesCode;
         const config = this.lastModifiedConfig?.modernTranspiler;
         const hasModernTranspiler = config != null;
         const shouldSkipSwc =
           !hasModernTranspiler ||
           (config.excludeApp === true && isAppCode) ||
-          (isAppCode && isExcludedConfig(inputFilePath, config.excludeAppFiles || [])) ||
+          (config.excludeNodeModules === true && isNodeModulesCode) ||
+          (isAppCode &&
+            Array.isArray(config.excludeApp) &&
+            isExcludedConfig(inputFilePath, config.excludeApp || [])) ||
+          (isNodeModulesCode &&
+            Array.isArray(config.excludeNodeModules) &&
+            (isExcludedConfig(inputFilePath, config.excludeNodeModules || []) ||
+              isExcludedConfig(
+                inputFilePath.replace('node_modules/', ''),
+                config.excludeNodeModules || [],
+                true,
+              ))
+          ) ||
           isExcludedConfig(packageName, config.excludePackages || []);
         // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc =
