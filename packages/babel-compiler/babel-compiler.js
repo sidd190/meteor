@@ -404,7 +404,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               ...(e?.message?.includes(
                 'cannot be used outside of module code',
               ) && {
-                tip: 'Remove nested import to support SWC transpilation and improve speed',
+                tip: 'Remove nested imports or replace them with require to support SWC and improve speed.',
               }),
             });
           }
