@@ -98,31 +98,42 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features }) {
   });
 }
 
+let lastModifiedMeteorConfig;
+let lastModifiedMeteorConfigTime;
 BCp.initializeMeteorAppConfig = function () {
   const currentLastModifiedConfigTime = fs
     .statSync(`${getMeteorAppDir()}/package.json`)
     ?.mtime?.getTime();
-  if (currentLastModifiedConfigTime !== this.lastModifiedMeteorConfigTime) {
-    this.lastModifiedMeteorConfigTime = currentLastModifiedConfigTime;
-    this.lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
+  if (currentLastModifiedConfigTime !== lastModifiedMeteorConfigTime) {
+    lastModifiedMeteorConfigTime = currentLastModifiedConfigTime;
+    lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
+
+    if (lastModifiedMeteorConfig?.modernTranspiler?.verbose) {
+      logConfigBlock('Meteor Config', lastModifiedMeteorConfig);
+    }
   }
-  return this.lastModifiedMeteorConfig;
+  return lastModifiedMeteorConfig;
 };
 
+let lastModifiedSwcConfig;
+let lastModifiedSwcConfigTime;
 BCp.initializeMeteorAppSwcrc = function () {
   if (!fs.existsSync(`${getMeteorAppDir()}/.swcrc`)) {
-    this.lastModifiedSwcConfig = {};
+    lastModifiedSwcConfig = {};
     return;
   }
-
   const currentLastModifiedConfigTime = fs
     .statSync(`${getMeteorAppDir()}/.swcrc`)
     ?.mtime?.getTime();
-  if (currentLastModifiedConfigTime !== this.lastModifiedSwcConfigTime) {
-    this.lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
-    this.lastModifiedSwcConfig = getMeteorAppSwcrc();
+  if (currentLastModifiedConfigTime !== lastModifiedSwcConfigTime) {
+    lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
+    lastModifiedSwcConfig = getMeteorAppSwcrc();
+
+    if (lastModifiedMeteorConfig?.modernTranspiler?.verbose) {
+      logConfigBlock('SWC Config', lastModifiedSwcConfig);
+    }
   }
-  return this.lastModifiedSwcConfig;
+  return lastModifiedSwcConfig;
 };
 
 BCp.processFilesForTarget = function (inputFiles) {
@@ -249,7 +260,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const isNodeModulesCode = packageName == null && inputFilePath.includes("node_modules/");
         const isAppCode = packageName == null && !isNodeModulesCode;
         const isPackageCode = packageName != null;
-        const config = this.lastModifiedMeteorConfig?.modernTranspiler;
+        const config = lastModifiedMeteorConfig?.modernTranspiler;
         const hasModernTranspiler = config != null;
         const shouldSkipSwc =
           !hasModernTranspiler ||
@@ -275,7 +286,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                 config.excludePackages || [],
               )));
 
-        const cacheKey = `${toBeAdded.hash}${this.lastModifiedSwcConfigTime ||''}`;
+        const cacheKey = `${toBeAdded.hash}${lastModifiedSwcConfigTime ||''}`;
         // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc = !shouldSkipSwc && !this._swcIncompatible[cacheKey];
 
@@ -301,7 +312,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             }
             compilation = compileWithSwc(
               source,
-              this.lastModifiedSwcConfig,
+              lastModifiedSwcConfig,
               { inputFilePath, features },
             );
             // Save result in cache
@@ -903,6 +914,21 @@ function logTranspilation({
     }
     console.log();
   }
+}
+
+function logConfigBlock(description, configObject) {
+  const label = color('[Config]', 36);
+  const descriptionColor = color(description, 90);
+
+  console.log(`${label} ${descriptionColor}`);
+
+  const configLines = JSON.stringify(configObject, null, 2)
+    .replace(/"([^"]+)":/g, '$1:')
+    .split('\n')
+    .map(line => '  ' + line);
+
+  configLines.forEach(line => console.log(line));
+  console.log();
 }
 
 function deepMerge(target, source, preservePaths, inPath = '') {
