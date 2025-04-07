@@ -42,9 +42,7 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features }) {
     const hasTSXSupport = inputFilePath.endsWith('.tsx');
     const hasJSXSupport = inputFilePath.endsWith('.jsx');
 
-    // Perform SWC transformation.
-    const transformed = SWC.transformSync(source, {
-      ...swcOptions,
+    const baseSwcConfig = {
       jsc: {
         target: 'es2015',
         parser: {
@@ -56,7 +54,19 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features }) {
       module: { type: 'es6' },
       minify: false,
       sourceMaps: true,
-    });
+    };
+    const nextSwcConfig =
+      Object.keys(swcOptions)?.length > 0
+        ? deepMerge(baseSwcConfig, swcOptions, [
+            'module.type',
+            'jsc.parser.syntax',
+            'jsc.parser.jsx',
+            'jsc.parser.tsx',
+          ])
+        : baseSwcConfig;
+
+    // Perform SWC transformation.
+    const transformed = SWC.transformSync(source, nextSwcConfig);
 
     let content = transformed.code;
 
@@ -88,110 +98,31 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features }) {
   });
 }
 
-function getMeteorAppDir() {
-  return process.cwd();
-}
-
-function getMeteorAppPackageJson() {
-  return JSON.parse(
-    fs.readFileSync(`${getMeteorAppDir()}/package.json`, 'utf-8'),
-  );
-}
-
-const _regexCache = new Map();
-
-function isRegexLike(str) {
-  return /[.*+?^${}()|[\]\\]/.test(str);
-}
-
-function color(text, code) {
-  return `\x1b[${code}m${text}\x1b[0m`;
-}
-
-function logTranspilation({
-  packageName,
-  inputFilePath,
-  usedSwc,
-  cacheHit,
-  isNodeModulesCode,
-  errorMessage = '',
-  tip = '',
-}) {
-  const transpiler = usedSwc ? 'SWC' : 'Babel';
-  const transpilerColor = usedSwc ? 32 : 33;
-  const label = color('[Transpiler]', 36);
-  const transpilerPart = `${label} Used ${color(
-    transpiler,
-    transpilerColor,
-  )} for`;
-  const filePathPadded = `${
-    packageName ? `${packageName}/` : ''
-  }${inputFilePath}`.padEnd(50);
-  let rawOrigin = '';
-  if (packageName) {
-    rawOrigin = `(package)`;
-  } else {
-    rawOrigin = isNodeModulesCode ? '(node_modules)' : '(app)';
-  }
-  const originPaddedRaw = rawOrigin.padEnd(35);
-  const originPaddedColored = packageName
-    ? originPaddedRaw
-    : isNodeModulesCode
-    ? color(originPaddedRaw, 90)
-    : color(originPaddedRaw, 35);
-  const cacheStatus = errorMessage
-    ? color('⚠️  Fallback', 33)
-    : usedSwc
-    ? cacheHit
-      ? color('🟢 Cache hit', 32)
-      : color('🔴 Cache miss', 31)
-    : '';
-  console.log(
-    `${transpilerPart} ${filePathPadded}${originPaddedColored}${cacheStatus}`,
-  );
-  if (errorMessage) {
-    console.log();
-    console.log(`  ↳ ${color('Error:', 31)} ${errorMessage}`);
-    if (tip) {
-      console.log();
-      console.log(`  ${color('💡 Tip:', 33)} ${tip}`);
-    }
-    console.log();
-  }
-}
-
-function isExcludedConfig(name, excludeList = [], startsWith) {
-  if (!name || !excludeList?.length) return false;
-  return excludeList.some(rule => {
-    if (name === rule) return true;
-    if (startsWith && name.startsWith(rule)) return true;
-    if (isRegexLike(rule)) {
-      let regex = _regexCache.get(rule);
-      if (!regex) {
-        try {
-          regex = new RegExp(rule);
-          _regexCache.set(rule, regex);
-        } catch (err) {
-          console.warn(`Invalid regex in exclude list: "${rule}"`);
-          return false;
-        }
-      }
-      return regex.test(name);
-    }
-
-    return false;
-  });
-}
-
 BCp.initializeMeteorAppConfig = function () {
   const currentLastModifiedConfigTime = fs
     .statSync(`${getMeteorAppDir()}/package.json`)
     ?.mtime?.getTime();
-  if (currentLastModifiedConfigTime !== this.lastModifiedConfigTime) {
-    this.lastModifiedConfigTime = currentLastModifiedConfigTime;
-    this.lastModifiedConfig = getMeteorAppPackageJson()?.meteor;
+  if (currentLastModifiedConfigTime !== this.lastModifiedMeteorConfigTime) {
+    this.lastModifiedMeteorConfigTime = currentLastModifiedConfigTime;
+    this.lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
   }
-  return this.lastModifiedConfig;
+  return this.lastModifiedMeteorConfig;
+};
+
+BCp.initializeMeteorAppSwcrc = function () {
+  if (!fs.existsSync(`${getMeteorAppDir()}/.swcrc`)) {
+    this.lastModifiedSwcConfig = {};
+    return;
+  }
+
+  const currentLastModifiedConfigTime = fs
+    .statSync(`${getMeteorAppDir()}/.swcrc`)
+    ?.mtime?.getTime();
+  if (currentLastModifiedConfigTime !== this.lastModifiedSwcConfigTime) {
+    this.lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
+    this.lastModifiedSwcConfig = getMeteorAppSwcrc();
+  }
+  return this.lastModifiedSwcConfig;
 };
 
 BCp.processFilesForTarget = function (inputFiles) {
@@ -201,6 +132,7 @@ BCp.processFilesForTarget = function (inputFiles) {
   this._babelrcCache = null;
 
   this.initializeMeteorAppConfig();
+  this.initializeMeteorAppSwcrc();
 
   inputFiles.forEach(function (inputFile) {
     if (inputFile.supportsLazyCompilation) {
@@ -317,7 +249,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const isNodeModulesCode = packageName == null && inputFilePath.includes("node_modules/");
         const isAppCode = packageName == null && !isNodeModulesCode;
         const isPackageCode = packageName != null;
-        const config = this.lastModifiedConfig?.modernTranspiler;
+        const config = this.lastModifiedMeteorConfig?.modernTranspiler;
         const hasModernTranspiler = config != null;
         const shouldSkipSwc =
           !hasModernTranspiler ||
@@ -342,16 +274,16 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                 `${packageName}/${inputFilePath}`,
                 config.excludePackages || [],
               )));
+
+        const cacheKey = `${toBeAdded.hash}${this.lastModifiedSwcConfigTime ||''}`;
         // Determine if SWC should be used based on package and file criteria.
-        const shouldUseSwc =
-          !shouldSkipSwc && !this._swcIncompatible[toBeAdded.hash];
+        const shouldUseSwc = !shouldSkipSwc && !this._swcIncompatible[cacheKey];
 
         let compilation;
         try {
           let usedSwc = false;
           if (shouldUseSwc) {
             // Create a cache key based on the source hash and the compiler used
-            const cacheKey = toBeAdded.hash;
             // Check cache
             compilation = this.readFromSwcCache({ cacheKey });
             // Return cached result if found.
@@ -369,7 +301,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             }
             compilation = compileWithSwc(
               source,
-              {},
+              this.lastModifiedSwcConfig,
               { inputFilePath, features },
             );
             // Save result in cache
@@ -390,7 +322,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             });
           }
         } catch (e) {
-          this._swcIncompatible[toBeAdded.hash] = true;
+          this._swcIncompatible[cacheKey] = true;
           // If SWC fails, fall back to Babel
           compilation = compileWithBabel(source, babelOptions, cacheOptions);
           if (config?.verbose) {
@@ -869,3 +801,131 @@ BCp.writeToSwcCache = function({ cacheKey, compilation }) {
     }
   }
 };
+
+function getMeteorAppDir() {
+  return process.cwd();
+}
+
+function getMeteorAppPackageJson() {
+  return JSON.parse(
+    fs.readFileSync(`${getMeteorAppDir()}/package.json`, 'utf-8'),
+  );
+}
+
+function getMeteorAppSwcrc() {
+  try {
+    return JSON.parse(fs.readFileSync(`${getMeteorAppDir()}/.swcrc`, 'utf-8'));
+  } catch (e) {
+    console.error('Error parsing .swcrc file', e);
+  }
+}
+
+const _regexCache = new Map();
+
+function isRegexLike(str) {
+  return /[.*+?^${}()|[\]\\]/.test(str);
+}
+
+function isExcludedConfig(name, excludeList = [], startsWith) {
+  if (!name || !excludeList?.length) return false;
+  return excludeList.some(rule => {
+    if (name === rule) return true;
+    if (startsWith && name.startsWith(rule)) return true;
+    if (isRegexLike(rule)) {
+      let regex = _regexCache.get(rule);
+      if (!regex) {
+        try {
+          regex = new RegExp(rule);
+          _regexCache.set(rule, regex);
+        } catch (err) {
+          console.warn(`Invalid regex in exclude list: "${rule}"`);
+          return false;
+        }
+      }
+      return regex.test(name);
+    }
+
+    return false;
+  });
+}
+
+function color(text, code) {
+  return `\x1b[${code}m${text}\x1b[0m`;
+}
+
+function logTranspilation({
+  packageName,
+  inputFilePath,
+  usedSwc,
+  cacheHit,
+  isNodeModulesCode,
+  errorMessage = '',
+  tip = '',
+}) {
+  const transpiler = usedSwc ? 'SWC' : 'Babel';
+  const transpilerColor = usedSwc ? 32 : 33;
+  const label = color('[Transpiler]', 36);
+  const transpilerPart = `${label} Used ${color(
+    transpiler,
+    transpilerColor,
+  )} for`;
+  const filePathPadded = `${
+    packageName ? `${packageName}/` : ''
+  }${inputFilePath}`.padEnd(50);
+  let rawOrigin = '';
+  if (packageName) {
+    rawOrigin = `(package)`;
+  } else {
+    rawOrigin = isNodeModulesCode ? '(node_modules)' : '(app)';
+  }
+  const originPaddedRaw = rawOrigin.padEnd(35);
+  const originPaddedColored = packageName
+    ? originPaddedRaw
+    : isNodeModulesCode
+    ? color(originPaddedRaw, 90)
+    : color(originPaddedRaw, 35);
+  const cacheStatus = errorMessage
+    ? color('⚠️  Fallback', 33)
+    : usedSwc
+    ? cacheHit
+      ? color('🟢 Cache hit', 32)
+      : color('🔴 Cache miss', 31)
+    : '';
+  console.log(
+    `${transpilerPart} ${filePathPadded}${originPaddedColored}${cacheStatus}`,
+  );
+  if (errorMessage) {
+    console.log();
+    console.log(`  ↳ ${color('Error:', 31)} ${errorMessage}`);
+    if (tip) {
+      console.log();
+      console.log(`  ${color('💡 Tip:', 33)} ${tip}`);
+    }
+    console.log();
+  }
+}
+
+function deepMerge(target, source, preservePaths, inPath = '') {
+  for (const key in source) {
+    const fullPath = inPath ? `${inPath}.${key}` : key;
+
+    // Skip preserved paths
+    if (preservePaths.includes(fullPath)) continue;
+
+    if (
+      typeof source[key] === 'object' &&
+      source[key] !== null &&
+      !Array.isArray(source[key])
+    ) {
+      target[key] = deepMerge(
+        target[key] || {},
+        source[key],
+        preservePaths,
+        fullPath,
+      );
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
