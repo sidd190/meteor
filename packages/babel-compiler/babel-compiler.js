@@ -305,9 +305,13 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                 config.excludePackages || [],
               )));
 
-        const cacheKey = `${toBeAdded.hash}${lastModifiedSwcConfigTime || ''}${
-          isLegacyWebArch ? 'legacy' : ''
-        }`;
+        const cacheKey = [
+          toBeAdded.hash,
+          lastModifiedSwcConfigTime,
+          isLegacyWebArch ? 'legacy' : '',
+        ]
+          .filter(Boolean)
+          .join('-');
         // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc = !shouldSkipSwc && !this._swcIncompatible[cacheKey];
 
