@@ -45,7 +45,7 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features, arch }) {
     const isLegacyWebArch = arch.includes('legacy');
     const baseSwcConfig = {
       jsc: {
-        ...!isLegacyWebArch && { target: 'es2015' },
+        ...(!isLegacyWebArch && { target: 'es2015' }),
         parser: {
           syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
           jsx: hasJSXSupport,
@@ -55,9 +55,9 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features, arch }) {
       module: { type: 'es6' },
       minify: false,
       sourceMaps: true,
-      ...isLegacyWebArch && {
+      ...(isLegacyWebArch && {
         env: { targets: lastModifiedSwcLegacyConfig || {} },
-      },
+      }),
     };
     const nextSwcConfig =
       Object.keys(swcOptions)?.length > 0
