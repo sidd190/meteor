@@ -84,12 +84,12 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features, arch }) {
       avoidModernSyntax: true,
       enforceStrictMode: false,
       dynamicImport: true,
-      ...features.topLevelAwait && { topLevelAwait: true },
-      ...features.compileForShell && { moduleAlias: 'module' },
-      ...(features.modernBrowsers || features.nodeMajorVersion >= 8) && {
+      ...(features.topLevelAwait && { topLevelAwait: true }),
+      ...(features.compileForShell && { moduleAlias: 'module' }),
+      ...((features.modernBrowsers || features.nodeMajorVersion >= 8) && {
         avoidModernSyntax: false,
         generateLetDeclarations: true,
-      },
+      }),
     });
     if (!result.identical) {
       content = result.code;
