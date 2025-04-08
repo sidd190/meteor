@@ -68,7 +68,6 @@ var packageJson = {
     'xmlbuilder2': '1.8.1',
     "ws": "7.4.5",
     "open":"8.4.2",
-    "@swc/core": "1.11.11",
     "acorn": "8.14.1",
   }
 };
