@@ -35,16 +35,17 @@ function compileWithBabel(source, babelOptions, cacheOptions) {
   });
 }
 
-function compileWithSwc(source, swcOptions, { inputFilePath, features }) {
+function compileWithSwc(source, swcOptions, { inputFilePath, features, arch }) {
   return profile('SWC.compile', function () {
     // Determine file extension based syntax.
     const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
     const hasTSXSupport = inputFilePath.endsWith('.tsx');
     const hasJSXSupport = inputFilePath.endsWith('.jsx');
 
+    const isLegacyWebArch = arch.includes('legacy');
     const baseSwcConfig = {
       jsc: {
-        target: 'es2015',
+        ...!isLegacyWebArch && { target: 'es2015' },
         parser: {
           syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
           jsx: hasJSXSupport,
@@ -54,10 +55,14 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features }) {
       module: { type: 'es6' },
       minify: false,
       sourceMaps: true,
+      ...isLegacyWebArch && {
+        env: { targets: lastModifiedSwcLegacyConfig || {} },
+      },
     };
     const nextSwcConfig =
       Object.keys(swcOptions)?.length > 0
         ? deepMerge(baseSwcConfig, swcOptions, [
+            'env.targets',
             'module.type',
             'jsc.parser.syntax',
             'jsc.parser.jsx',
@@ -136,6 +141,16 @@ BCp.initializeMeteorAppSwcrc = function () {
   return lastModifiedSwcConfig;
 };
 
+let lastModifiedSwcLegacyConfig;
+BCp.initializeMeteorAppLegacyConfig = function () {
+  const swcLegacyConfig = convertBabelTargetsForSwc(Babel.getMinimumModernBrowserVersions());
+  if (lastModifiedMeteorConfig?.modernTranspiler?.verbose && !lastModifiedSwcLegacyConfig) {
+    logConfigBlock('SWC Legacy Config', swcLegacyConfig);
+  }
+  lastModifiedSwcLegacyConfig = swcLegacyConfig;
+  return lastModifiedSwcConfig;
+};
+
 BCp.processFilesForTarget = function (inputFiles) {
   var compiler = this;
 
@@ -144,6 +159,7 @@ BCp.processFilesForTarget = function (inputFiles) {
 
   this.initializeMeteorAppConfig();
   this.initializeMeteorAppSwcrc();
+  this.initializeMeteorAppLegacyConfig();
 
   inputFiles.forEach(function (inputFile) {
     if (inputFile.supportsLazyCompilation) {
@@ -260,6 +276,8 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const isNodeModulesCode = packageName == null && inputFilePath.includes("node_modules/");
         const isAppCode = packageName == null && !isNodeModulesCode;
         const isPackageCode = packageName != null;
+        const isLegacyWebArch = arch.includes('legacy');
+
         const config = lastModifiedMeteorConfig?.modernTranspiler;
         const hasModernTranspiler = config != null;
         const shouldSkipSwc =
@@ -267,6 +285,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
           (isAppCode && config.excludeApp === true) ||
           (isNodeModulesCode && config.excludeNodeModules === true) ||
           (isPackageCode && config.excludePackages === true) ||
+          (isLegacyWebArch && config.excludeLegacy === true) ||
           (isAppCode &&
             Array.isArray(config.excludeApp) &&
             isExcludedConfig(inputFilePath, config.excludeApp || [])) ||
@@ -286,7 +305,9 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                 config.excludePackages || [],
               )));
 
-        const cacheKey = `${toBeAdded.hash}${lastModifiedSwcConfigTime ||''}`;
+        const cacheKey = `${toBeAdded.hash}${lastModifiedSwcConfigTime || ''}${
+          isLegacyWebArch ? 'legacy' : ''
+        }`;
         // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc = !shouldSkipSwc && !this._swcIncompatible[cacheKey];
 
@@ -306,6 +327,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                   packageName,
                   isNodeModulesCode,
                   cacheHit: true,
+                  arch,
                 });
               }
               return compilation;
@@ -313,7 +335,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             compilation = compileWithSwc(
               source,
               lastModifiedSwcConfig,
-              { inputFilePath, features },
+              { inputFilePath, features, arch },
             );
             // Save result in cache
             this.writeToSwcCache({ cacheKey, compilation });
@@ -330,6 +352,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               packageName,
               isNodeModulesCode,
               cacheHit: false,
+              arch,
             });
           }
         } catch (e) {
@@ -343,6 +366,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               packageName,
               isNodeModulesCode,
               cacheHit: false,
+              arch,
               errorMessage: e?.message,
               ...(e?.message?.includes(
                 'cannot be used outside of module code',
@@ -870,6 +894,7 @@ function logTranspilation({
   usedSwc,
   cacheHit,
   isNodeModulesCode,
+  arch,
   errorMessage = '',
   tip = '',
 }) {
@@ -902,8 +927,9 @@ function logTranspilation({
       ? color('🟢 Cache hit', 32)
       : color('🔴 Cache miss', 31)
     : '';
+  const archPart = arch ? color(` (${arch})`, 90) : '';
   console.log(
-    `${transpilerPart} ${filePathPadded}${originPaddedColored}${cacheStatus}`,
+    `${transpilerPart} ${filePathPadded}${originPaddedColored}${cacheStatus}${archPart}`,
   );
   if (errorMessage) {
     console.log();
@@ -954,4 +980,21 @@ function deepMerge(target, source, preservePaths, inPath = '') {
     }
   }
   return target;
+}
+
+function convertBabelTargetsForSwc(babelTargets) {
+  const allowedEnvs = new Set([
+    'chrome', 'opera', 'edge', 'firefox', 'safari',
+    'ie', 'ios', 'android', 'node', 'electron'
+  ]);
+
+  const filteredTargets = {};
+  for (const [env, version] of Object.entries(babelTargets)) {
+    if (allowedEnvs.has(env)) {
+      // Convert an array version (e.g., [10, 3]) into "10.3", otherwise convert to string.
+      filteredTargets[env] = Array.isArray(version) ? version.join('.') : version.toString();
+    }
+  }
+
+  return filteredTargets;
 }
