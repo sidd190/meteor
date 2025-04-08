@@ -1,6 +1,6 @@
 var semver = Npm.require("semver");
 var JSON5 = Npm.require("json5");
-var SWC = Npm.require("@swc/core");
+var SWC = Npm.require("@meteorjs/swc-core");
 const reifyCompile = Npm.require("@meteorjs/reify/lib/compiler").compile;
 const reifyAcornParse = Npm.require("@meteorjs/reify/lib/parsers/acorn").parse;
 var fs = Npm.require('fs');
