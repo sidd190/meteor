@@ -106,6 +106,9 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features, arch }) {
 let lastModifiedMeteorConfig;
 let lastModifiedMeteorConfigTime;
 BCp.initializeMeteorAppConfig = function () {
+  if (!fs.existsSync(`${getMeteorAppDir()}/package.json`)) {
+    return;
+  }
   const currentLastModifiedConfigTime = fs
     .statSync(`${getMeteorAppDir()}/package.json`)
     ?.mtime?.getTime();
