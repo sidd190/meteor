@@ -106,7 +106,7 @@ function compileWithSwc(source, swcOptions, { inputFilePath, features, arch }) {
 let lastModifiedMeteorConfig;
 let lastModifiedMeteorConfigTime;
 BCp.initializeMeteorAppConfig = function () {
-  if (!fs.existsSync(`${getMeteorAppDir()}/package.json`)) {
+  if (!lastModifiedMeteorConfig && !fs.existsSync(`${getMeteorAppDir()}/package.json`)) {
     return;
   }
   const currentLastModifiedConfigTime = fs
@@ -126,7 +126,7 @@ BCp.initializeMeteorAppConfig = function () {
 let lastModifiedSwcConfig;
 let lastModifiedSwcConfigTime;
 BCp.initializeMeteorAppSwcrc = function () {
-  if (!fs.existsSync(`${getMeteorAppDir()}/.swcrc`)) {
+  if (!lastModifiedSwcConfig && !fs.existsSync(`${getMeteorAppDir()}/.swcrc`)) {
     lastModifiedSwcConfig = {};
     return;
   }
