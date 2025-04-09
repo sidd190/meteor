@@ -35,7 +35,7 @@ function compileWithBabel(source, babelOptions, cacheOptions) {
   });
 }
 
-function compileWithSwc(source, swcOptions, { inputFilePath, features, arch }) {
+function compileWithSwc(source, swcOptions = {}, { inputFilePath, features, arch }) {
   return profile('SWC.compile', function () {
     // Determine file extension based syntax.
     const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
@@ -127,7 +127,6 @@ let lastModifiedSwcConfig;
 let lastModifiedSwcConfigTime;
 BCp.initializeMeteorAppSwcrc = function () {
   if (!lastModifiedSwcConfig && !fs.existsSync(`${getMeteorAppDir()}/.swcrc`)) {
-    lastModifiedSwcConfig = {};
     return;
   }
   const currentLastModifiedConfigTime = fs
