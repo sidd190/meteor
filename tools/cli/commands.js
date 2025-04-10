@@ -286,8 +286,8 @@ function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
     }
   } else {
     // Dev & Test Mode
-    const isCordovaEnabled = (options.args || []).some(arg => ['ios', 'ios-device', 'android', 'android-device'].includes(arg));
-    if (!isCordovaEnabled) {
+    const isCordovaDev = (options.args || []).some(arg => ['ios', 'ios-device', 'android', 'android-device'].includes(arg));
+    if (!isCordovaDev) {
       const automaticallyIgnoredLegacyArchs = (appDir && isModernArchsOnlyEnabled(appDir)) ? ['web.browser.legacy', 'web.cordova'] : [];
       if (excludeArchsOption || automaticallyIgnoredLegacyArchs.length) {
         const excludeArchs = [...(excludeArchsOption ? excludeArchsOption.trim().split(/\s*,\s*/) : []), ...automaticallyIgnoredLegacyArchs];
