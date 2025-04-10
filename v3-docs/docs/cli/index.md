@@ -219,7 +219,7 @@ METEOR_CLIENT_ENTRYPOINT=client/main.js METEOR_SERVER_ENTRYPOINT=server/main.js 
 ```
 
 ::: details Customizing the Profiling Process
-You can pass any option that works with `meteor run` to customize the profiling process. This allows you to profile your application under specific conditions that match your deployment environment.
+You can pass any option that works with `meteor run` to customize the profiling process. This allows you to profile your application under specific conditions that match your deployment environment. The same applies to the `--build` option, which matches `meteor build` options.
 :::
 
 ## meteor create _app-name_ {#meteorcreate}
