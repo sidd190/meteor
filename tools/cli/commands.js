@@ -271,11 +271,15 @@ function isModernArchsOnlyEnabled(appDir) {
   return packageJson?.meteor?.modernWebArchsOnly === true;
 }
 
-function filterWebArchs(webArchs, excludeArchsOption, appDir) {
-  const automaticallyIgnoredLegacyArchs = (appDir && isModernArchsOnlyEnabled(appDir)) ? ['web.browser.legacy', 'web.cordova'] : [];
-  if (excludeArchsOption || automaticallyIgnoredLegacyArchs.length) {
-    const excludeArchs = [...(excludeArchsOption ? excludeArchsOption.trim().split(/\s*,\s*/) : []), ...automaticallyIgnoredLegacyArchs];
-    webArchs = webArchs.filter(arch => !excludeArchs.includes(arch));
+function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
+  const isCordovaEnabled = (options.args || []).some(arg => ['ios', 'ios-device', 'android', 'android-device'].includes(arg));
+  if (!isCordovaEnabled) {
+    const automaticallyIgnoredLegacyArchs = (appDir && isModernArchsOnlyEnabled(appDir)) ? ['web.browser.legacy', 'web.cordova'] : [];
+    if (excludeArchsOption || automaticallyIgnoredLegacyArchs.length) {
+      const excludeArchs = [...(excludeArchsOption ? excludeArchsOption.trim().split(/\s*,\s*/) : []), ...automaticallyIgnoredLegacyArchs];
+      webArchs = webArchs.filter(arch => !excludeArchs.includes(arch));
+    }
+    return webArchs;
   }
   return webArchs;
 }
@@ -519,7 +523,7 @@ async function doRunCommand(options) {
     }
   }
 
-  webArchs = filterWebArchs(webArchs, options['exclude-archs'], options.appDir);
+  webArchs = filterWebArchs(webArchs, options['exclude-archs'], options.appDir, options);
   const buildMode = options.production ? 'production' : 'development';
 
   let cordovaRunner;
@@ -1415,7 +1419,7 @@ on an OS X system.");
 
     webArchs = filteredArchs.length ? filteredArchs : undefined;
   } else {
-    webArchs = filterWebArchs(baseWebArchs, options['exclude-archs'], options.appDir);
+    webArchs = filterWebArchs(baseWebArchs, options['exclude-archs'], options.appDir, options);
   }
 
   var buildDir = projectContext.getProjectLocalDirectory('build_tar');
@@ -2477,7 +2481,7 @@ var runTestAppForPackages = async function (projectContext, options) {
   if (options.cordovaRunner) {
     webArchs.push("web.cordova");
   }
-  buildOptions.webArchs = filterWebArchs(webArchs, options['exclude-archs'], projectContext.appDirectory);
+  buildOptions.webArchs = filterWebArchs(webArchs, options['exclude-archs'], projectContext.appDirectory, options);
 
   if (options.deploy) {
     // Run the constraint solver and build local packages.
