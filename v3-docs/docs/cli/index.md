@@ -208,14 +208,14 @@ meteor profile
 # Monitor bundle size only
 meteor profile --size-only
 
+# Monitor build time
+meteor profile --build
+
 # Profile with custom settings and timeout
 METEOR_IDLE_TIMEOUT=120 meteor profile --settings settings.json
 
 # Profile with custom entrypoints
 METEOR_CLIENT_ENTRYPOINT=client/main.js METEOR_SERVER_ENTRYPOINT=server/main.js meteor profile
-
-# Monitor build time
-meteor profile --build
 ```
 
 ::: details Customizing the Profiling Process
