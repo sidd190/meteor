@@ -272,14 +272,29 @@ function isModernArchsOnlyEnabled(appDir) {
 }
 
 function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
-  const isCordovaEnabled = (options.args || []).some(arg => ['ios', 'ios-device', 'android', 'android-device'].includes(arg));
-  if (!isCordovaEnabled) {
-    const automaticallyIgnoredLegacyArchs = (appDir && isModernArchsOnlyEnabled(appDir)) ? ['web.browser.legacy', 'web.cordova'] : [];
-    if (excludeArchsOption || automaticallyIgnoredLegacyArchs.length) {
-      const excludeArchs = [...(excludeArchsOption ? excludeArchsOption.trim().split(/\s*,\s*/) : []), ...automaticallyIgnoredLegacyArchs];
-      webArchs = webArchs.filter(arch => !excludeArchs.includes(arch));
+  const platforms = (options.platforms || []);
+  const isBuildMode = platforms?.length > 0;
+  if (isBuildMode) {
+    // Build Mode
+    const isModernOnlyPlatform = platforms.includes('modern') && !platforms.includes('legacy');
+    if (isModernOnlyPlatform) {
+      webArchs = webArchs.filter(arch => arch !== 'web.browser.legacy');
     }
-    return webArchs;
+    const hasCordovaPlatforms = platforms.includes('android') || platforms.includes('ios');
+    if (!hasCordovaPlatforms) {
+      webArchs = webArchs.filter(arch => arch !== 'web.cordova');
+    }
+  } else {
+    // Dev & Test Mode
+    const isCordovaEnabled = (options.args || []).some(arg => ['ios', 'ios-device', 'android', 'android-device'].includes(arg));
+    if (!isCordovaEnabled) {
+      const automaticallyIgnoredLegacyArchs = (appDir && isModernArchsOnlyEnabled(appDir)) ? ['web.browser.legacy', 'web.cordova'] : [];
+      if (excludeArchsOption || automaticallyIgnoredLegacyArchs.length) {
+        const excludeArchs = [...(excludeArchsOption ? excludeArchsOption.trim().split(/\s*,\s*/) : []), ...automaticallyIgnoredLegacyArchs];
+        webArchs = webArchs.filter(arch => !excludeArchs.includes(arch));
+      }
+      return webArchs;
+    }
   }
   return webArchs;
 }
@@ -1419,7 +1434,10 @@ on an OS X system.");
 
     webArchs = filteredArchs.length ? filteredArchs : undefined;
   } else {
-    webArchs = filterWebArchs(baseWebArchs, options['exclude-archs'], options.appDir, options);
+    webArchs = filterWebArchs(baseWebArchs, options['exclude-archs'], options.appDir, {
+      ...options,
+      platforms: projectContext.platformList.getPlatforms(),
+    });
   }
 
   var buildDir = projectContext.getProjectLocalDirectory('build_tar');
