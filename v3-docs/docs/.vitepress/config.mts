@@ -168,6 +168,20 @@ export default defineConfig({
             text: "Cordova",
             link: "/about/cordova",
           },
+          {
+            text: "Modern Build Stack",
+            link: "/about/modern-build-stack.md",
+            items: [
+              {
+                text: "Modern Transpiler: SWC",
+                link: "/about/modern-build-stack/modern-transpiler-swc.md",
+              },
+              {
+                text: "Modern Bundler",
+                link: "/about/modern-build-stack/modern-bundler.md",
+              },
+            ]
+          },
         ],
         collapsed: true,
       },
