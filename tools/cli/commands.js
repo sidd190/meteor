@@ -290,7 +290,11 @@ function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
     if (!isCordovaDev) {
       const excludeArchsOptions = excludeArchsOption ? excludeArchsOption.trim().split(/\s*,\s*/) : [];
       const hasExcludeArchsOptions = (excludeArchsOptions?.length || 0) > 0;
-      const automaticallyIgnoredLegacyArchs = (appDir && !hasExcludeArchsOptions && isModernArchsOnlyEnabled(appDir)) ? ['web.browser.legacy', 'web.cordova'] : [];
+      const hasModernArchsOnlyEnabled = appDir && isModernArchsOnlyEnabled(appDir);
+      if (hasExcludeArchsOptions && hasModernArchsOnlyEnabled) {
+        console.warn('modernWebArchsOnly and --exclude-archs are both active. If both are set, --exclude-archs takes priority.');
+      }
+      const automaticallyIgnoredLegacyArchs = (!hasExcludeArchsOptions && hasModernArchsOnlyEnabled) ? ['web.browser.legacy', 'web.cordova'] : [];
       if (hasExcludeArchsOptions || automaticallyIgnoredLegacyArchs.length) {
         const excludeArchs = [...excludeArchsOptions, ...automaticallyIgnoredLegacyArchs];
         webArchs = webArchs.filter(arch => !excludeArchs.includes(arch));
