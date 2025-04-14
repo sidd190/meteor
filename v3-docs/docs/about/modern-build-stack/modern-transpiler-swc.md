@@ -104,7 +104,7 @@ You can use .swcrc config in the root of your project to describe specific [SWC 
 
 ## Troubleshotting
 
-If you run into issues, try `meteor reset` or delete the `.meteor` folder.
+If you run into issues, try `meteor reset` or delete the `.meteor/local` folder in the project root.
 
 For help or to report issues, post on [GitHub](https://github.com/meteor/meteor/issues) or the [Meteor forums](https://forums.meteor.com). We’re focused on making Meteor faster and your feedback helps.
 
