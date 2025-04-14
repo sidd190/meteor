@@ -599,7 +599,7 @@ async function doRunCommand(options) {
           open(`http://localhost:${options.port}`)
         }
       }
-    }, 
+    },
     open: options.open,
   });
 }
@@ -2147,7 +2147,10 @@ testCommandOptions = {
 
     'extra-packages': { type: String },
 
-    'exclude-archs': { type: String }
+    'exclude-archs': { type: String },
+    
+    // Same as TINYTEST_FILTER
+    filter: { type: String, short: 'f' },
   }
 };
 
@@ -2168,6 +2171,9 @@ main.registerCommand(Object.assign(
 });
 
 async function doTestCommand(options) {
+  if (options.filter) {
+    process.env.TINYTEST_FILTER = options.filter;
+  }
   // This "metadata" is accessed in a few places. Using a global
   // variable here was more expedient than navigating the many layers
   // of abstraction across the build process.

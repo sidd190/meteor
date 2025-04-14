@@ -1061,6 +1061,21 @@ argument will run tests for all local packages. The results are displayed in an
 app that runs at `localhost:3000` by default. If you need to, you can pass the
 `--settings` and `--port` arguments.
 
+If you want to filter the tests by name, you can use `--filter` or `-f`
+followed by the name of the test you want to run, it supports regex's.
+
+```sh
+meteor test-packages --filter myTestName
+```
+
+this command will run only the tests that have `myTestName` in their name.
+
+Alternatively, you can use the `TINYTEST_FILTER` environment variable to filter:
+
+```sh
+TINYTEST_FILTER=myTestName meteor test-packages
+```
+Has the same effect as the previous command.
 
 ## meteor admin {meteoradmin}
 
