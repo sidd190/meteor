@@ -11,3 +11,16 @@ To improve the development and deployment experience for all Meteor projects, we
 - **Modern Transpiler**: Meteor is adopting **SWC** as a faster alternative to Babel.
 - **Modern Bundler**: A new bundler will handle only your app’s code, supporting tree-shaking, popular plugins, and better features for both development and production. Meanwhile, Meteor’s core bundler will continue handling Meteor-specific tasks, such as compiling Atmosphere packages, with optimized workflows.
 - **Dev Server Enhancements**: The dev server remains a core part of Meteor, now with ongoing improvements in performance and developer features.
+
+## Quick start
+
+To start using the new build stack, add the following to your `package.json`:
+
+```json
+"meteor": {
+  "modernWebArchsOnly": true,
+  "modernTranspiler": true
+}
+```
+
+Learn more about these settings in the [Modern Transpiler](modern-build-stack/modern-transpiler.md) and [Modern Bundler](modern-build-stack/modern-bundler.md) guides.

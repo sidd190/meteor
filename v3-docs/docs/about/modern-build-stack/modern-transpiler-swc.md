@@ -1,4 +1,4 @@
-# Modern transpiler: SWC
+# Modern Transpiler: SWC
 
 Meteor has long used Babel, a mature and still widely adopted transpiler. However, it lags behind newer tools like SWC in terms of speed. SWC and others are not only faster but are growing in use and features, reaching parity with Babel.
 
@@ -47,7 +47,7 @@ Other reasons might involve features tied to Babel plugins. If so, you’ll need
 
 Second, you might choose to ignore the fallback if those files are fine with Babel. Even with SWC enabled, Meteor will continue using Babel for those files on future rebuilds.
 
-Third, you can exclude files or contexts from SWC. For example, if you're using `babel-plugin-react-compiler`, you can exclude your app code adding this to `package.json`:
+Third, you can exclude files or contexts from SWC. For example, if you're using `babel-plugin-react-compiler`, which SWC doesn't support yet, you can exclude your app code adding this to `package.json`:
 
 ```json
 "meteor": {
