@@ -67,7 +67,7 @@ Or exclude only specific files like `.jsx`:
 }
 ```
 
-You can also use `excludePackages`, `excludeNodeModules`, and `excludeLegacy` for finer control. See the `modernTranspiler` config docs for more.
+You can also use `excludePackages`, `excludeNodeModules`, and `excludeLegacy` for finer control. See the [`modernTranspiler` config docs](#config-api) for more.
 
 When no alternatives exist, these settings let you still get most of SWC’s speed benefits by limiting fallback use.
 
@@ -75,7 +75,7 @@ We expect most apps will benefit just by enabling `modernTranspiler: true`. Most
 
 > Remember to turn off verbosity when you're done with optimizations.
 
-## User custom .swcrc
+## Custom .swcrc
 
 You can use .swcrc config in the root of your project to describe specific [SWC plugins](https://github.com/swc-project/plugins) there, that will be applied to compile the entire files of your project.
 
