@@ -175,13 +175,15 @@ This command monitors the bundler process and tracks key performance metrics to 
 
 ### Options
 
-| Option | Description |
-|--------|-------------|
-| `--size` | Monitor both bundle runtime and size |
-| `--size-only` | Monitor only the bundle size |
+| Option        | Description                          |
+|---------------|--------------------------------------|
+| `--size`      | Monitor both bundle runtime and size |
+| `--size-only` | Monitor only the bundle size         |
+| `--build`     | Monitor build time                   |
 
 ::: info
 All other options from `meteor run` are also supported (e.g., `--settings`, `--exclude-archs`).
+If you use the --build option, it also accepts meteor build flags (e.g. `--mobile-settings`, `--architecture`).
 :::
 
 ### Environment Variables
@@ -206,6 +208,9 @@ meteor profile
 # Monitor bundle size only
 meteor profile --size-only
 
+# Monitor build time
+meteor profile --build
+
 # Profile with custom settings and timeout
 METEOR_IDLE_TIMEOUT=120 meteor profile --settings settings.json
 
@@ -214,7 +219,7 @@ METEOR_CLIENT_ENTRYPOINT=client/main.js METEOR_SERVER_ENTRYPOINT=server/main.js 
 ```
 
 ::: details Customizing the Profiling Process
-You can pass any option that works with `meteor run` to customize the profiling process. This allows you to profile your application under specific conditions that match your deployment environment.
+You can pass any option that works with `meteor run` to customize the profiling process. This allows you to profile your application under specific conditions that match your deployment environment. The same applies to the `--build` option, which matches `meteor build` options.
 :::
 
 ## meteor create _app-name_ {#meteorcreate}

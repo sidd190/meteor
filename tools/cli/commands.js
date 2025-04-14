@@ -3390,7 +3390,7 @@ const setupBenchmarkSuite = async (profilingPath) => {
   process.env.GIT_TERMINAL_PROMPT = 0;
 
   const repoUrl = "https://github.com/meteor/performance";
-  const branch = "v3.2.0";
+  const branch = "v3.3.0";
   const gitCommand = [
     `mkdir -p ${profilingPath}`,
     `git clone --no-checkout --depth 1 --filter=tree:0 --sparse --progress --branch ${branch} --single-branch ${repoUrl} ${profilingPath}`,
@@ -3429,9 +3429,10 @@ async function doBenchmarkCommand(options) {
 
   const meteorSizeEnvs = [
     !!options['size-only'] && 'METEOR_BUNDLE_SIZE_ONLY=true',
-    !!options['size'] && 'METEOR_BUNDLE_SIZE=true'
+    !!options['size'] && 'METEOR_BUNDLE_SIZE=true',
+    !!options['build'] && 'METEOR_BUNDLE_BUILD=true',
   ].filter(Boolean);
-  const meteorOptions = args.filter(arg => !['--size-only', '--size'].includes(arg));
+  const meteorOptions = args.filter(arg => !['--size-only', '--size', '--build'].includes(arg));
 
   const profilingCommand = [
     `${meteorSizeEnvs.join(' ')} ${profilingPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${meteorOptions.join(' ')}`.trim(),
@@ -3448,8 +3449,9 @@ main.registerCommand(
   maxArgs: Infinity,
   options: {
     ...runCommandOptions.options || {},
-  'size': { type: Boolean },
-  'size-only': { type: Boolean },
+    'size': { type: Boolean },
+    'size-only': { type: Boolean },
+    'build': { type: Boolean },
   },
   catalogRefresh: new catalog.Refresh.Never(),
 }, doBenchmarkCommand);
