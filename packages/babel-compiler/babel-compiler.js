@@ -1,5 +1,10 @@
 var semver = Npm.require("semver");
 var JSON5 = Npm.require("json5");
+var SWC = Npm.require("@meteorjs/swc-core");
+const reifyCompile = Npm.require("@meteorjs/reify/lib/compiler").compile;
+const reifyAcornParse = Npm.require("@meteorjs/reify/lib/parsers/acorn").parse;
+var fs = Npm.require('fs');
+var path = Npm.require('path');
 
 /**
  * A compiler that can be instantiated with features and used inside
@@ -24,11 +29,139 @@ var isMeteorPre144 = semver.lt(process.version, "4.8.1");
 
 var enableClientTLA = process.env.METEOR_ENABLE_CLIENT_TOP_LEVEL_AWAIT === 'true';
 
+function compileWithBabel(source, babelOptions, cacheOptions) {
+  return profile('Babel.compile', function () {
+    return Babel.compile(source, babelOptions, cacheOptions);
+  });
+}
+
+function compileWithSwc(source, swcOptions = {}, { inputFilePath, features, arch }) {
+  return profile('SWC.compile', function () {
+    // Determine file extension based syntax.
+    const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
+    const hasTSXSupport = inputFilePath.endsWith('.tsx');
+    const hasJSXSupport = inputFilePath.endsWith('.jsx');
+
+    const isLegacyWebArch = arch.includes('legacy');
+    const baseSwcConfig = {
+      jsc: {
+        ...(!isLegacyWebArch && { target: 'es2015' }),
+        parser: {
+          syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
+          jsx: hasJSXSupport,
+          tsx: hasTSXSupport,
+        },
+      },
+      module: { type: 'es6' },
+      minify: false,
+      sourceMaps: true,
+      ...(isLegacyWebArch && {
+        env: { targets: lastModifiedSwcLegacyConfig || {} },
+      }),
+    };
+    const nextSwcConfig =
+      Object.keys(swcOptions)?.length > 0
+        ? deepMerge(baseSwcConfig, swcOptions, [
+            'env.targets',
+            'module.type',
+            'jsc.parser.syntax',
+            'jsc.parser.jsx',
+            'jsc.parser.tsx',
+          ])
+        : baseSwcConfig;
+
+    // Perform SWC transformation.
+    const transformed = SWC.transformSync(source, nextSwcConfig);
+
+    let content = transformed.code;
+
+    // Preserve Meteor-specific features: reify modules, nested imports, and top-level await support.
+    const result = reifyCompile(content, {
+      parse: reifyAcornParse,
+      generateLetDeclarations: false,
+      ast: false,
+      // Enforce reify options for proper compatibility.
+      avoidModernSyntax: true,
+      enforceStrictMode: false,
+      dynamicImport: true,
+      ...(features.topLevelAwait && { topLevelAwait: true }),
+      ...(features.compileForShell && { moduleAlias: 'module' }),
+      ...((features.modernBrowsers || features.nodeMajorVersion >= 8) && {
+        avoidModernSyntax: false,
+        generateLetDeclarations: true,
+      }),
+    });
+    if (!result.identical) {
+      content = result.code;
+    }
+
+    return {
+      code: content,
+      map: JSON.parse(transformed.map),
+      sourceType: 'module',
+    };
+  });
+}
+
+let lastModifiedMeteorConfig;
+let lastModifiedMeteorConfigTime;
+BCp.initializeMeteorAppConfig = function () {
+  if (!lastModifiedMeteorConfig && !fs.existsSync(`${getMeteorAppDir()}/package.json`)) {
+    return;
+  }
+  const currentLastModifiedConfigTime = fs
+    .statSync(`${getMeteorAppDir()}/package.json`)
+    ?.mtime?.getTime();
+  if (currentLastModifiedConfigTime !== lastModifiedMeteorConfigTime) {
+    lastModifiedMeteorConfigTime = currentLastModifiedConfigTime;
+    lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
+
+    if (lastModifiedMeteorConfig?.modernTranspiler?.verbose) {
+      logConfigBlock('Meteor Config', lastModifiedMeteorConfig);
+    }
+  }
+  return lastModifiedMeteorConfig;
+};
+
+let lastModifiedSwcConfig;
+let lastModifiedSwcConfigTime;
+BCp.initializeMeteorAppSwcrc = function () {
+  if (!lastModifiedSwcConfig && !fs.existsSync(`${getMeteorAppDir()}/.swcrc`)) {
+    return;
+  }
+  const currentLastModifiedConfigTime = fs
+    .statSync(`${getMeteorAppDir()}/.swcrc`)
+    ?.mtime?.getTime();
+  if (currentLastModifiedConfigTime !== lastModifiedSwcConfigTime) {
+    lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
+    lastModifiedSwcConfig = getMeteorAppSwcrc();
+
+    if (lastModifiedMeteorConfig?.modernTranspiler?.verbose) {
+      logConfigBlock('SWC Config', lastModifiedSwcConfig);
+    }
+  }
+  return lastModifiedSwcConfig;
+};
+
+let lastModifiedSwcLegacyConfig;
+BCp.initializeMeteorAppLegacyConfig = function () {
+  const swcLegacyConfig = convertBabelTargetsForSwc(Babel.getMinimumModernBrowserVersions());
+  if (lastModifiedMeteorConfig?.modernTranspiler?.verbose && !lastModifiedSwcLegacyConfig) {
+    logConfigBlock('SWC Legacy Config', swcLegacyConfig);
+  }
+  lastModifiedSwcLegacyConfig = swcLegacyConfig;
+  return lastModifiedSwcConfig;
+};
+
 BCp.processFilesForTarget = function (inputFiles) {
   var compiler = this;
 
   // Reset this cache for each batch processed.
   this._babelrcCache = null;
+
+  this.initializeMeteorAppConfig();
+  this.initializeMeteorAppSwcrc();
+  this.initializeMeteorAppLegacyConfig();
 
   inputFiles.forEach(function (inputFile) {
     if (inputFile.supportsLazyCompilation) {
@@ -51,6 +184,8 @@ BCp.processFilesForTarget = function (inputFiles) {
 // null to indicate there was an error, and nothing should be added.
 BCp.processOneFileForTarget = function (inputFile, source) {
   this._babelrcCache = this._babelrcCache || Object.create(null);
+  this._swcCache = this._swcCache || Object.create(null);
+  this._swcIncompatible = this._swcIncompatible || Object.create(null);
 
   if (typeof source !== "string") {
     // Other compiler plugins can call processOneFileForTarget with a
@@ -121,32 +256,135 @@ BCp.processOneFileForTarget = function (inputFile, source) {
       },
     };
 
-    this.inferTypeScriptConfig(
-      features, inputFile, cacheOptions.cacheDeps);
+    this.inferTypeScriptConfig(features, inputFile, cacheOptions.cacheDeps);
 
     var babelOptions = Babel.getDefaultOptions(features);
     babelOptions.caller = { name: "meteor", arch };
 
-    this.inferExtraBabelOptions(
-      inputFile,
-      babelOptions,
-      cacheOptions.cacheDeps
-    );
+    this.inferExtraBabelOptions(inputFile, babelOptions, cacheOptions.cacheDeps);
 
     babelOptions.sourceMaps = true;
     babelOptions.filename =
       babelOptions.sourceFileName = packageName
-      ? "packages/" + packageName + "/" + inputFilePath
-      : inputFilePath;
+        ? "packages/" + packageName + "/" + inputFilePath
+        : inputFilePath;
 
     if (this.modifyBabelConfig) {
       this.modifyBabelConfig(babelOptions, inputFile);
     }
 
     try {
-      var result = profile('Babel.compile', function () {
-        return Babel.compile(source, babelOptions, cacheOptions);
-      });
+      var result = (() => {
+        const isNodeModulesCode = packageName == null && inputFilePath.includes("node_modules/");
+        const isAppCode = packageName == null && !isNodeModulesCode;
+        const isPackageCode = packageName != null;
+        const isLegacyWebArch = arch.includes('legacy');
+
+        const config = lastModifiedMeteorConfig?.modernTranspiler;
+        const hasModernTranspiler = config != null;
+        const shouldSkipSwc =
+          !hasModernTranspiler ||
+          (isAppCode && config.excludeApp === true) ||
+          (isNodeModulesCode && config.excludeNodeModules === true) ||
+          (isPackageCode && config.excludePackages === true) ||
+          (isLegacyWebArch && config.excludeLegacy === true) ||
+          (isAppCode &&
+            Array.isArray(config.excludeApp) &&
+            isExcludedConfig(inputFilePath, config.excludeApp || [])) ||
+          (isNodeModulesCode &&
+            Array.isArray(config.excludeNodeModules) &&
+            (isExcludedConfig(inputFilePath, config.excludeNodeModules || []) ||
+              isExcludedConfig(
+                inputFilePath.replace('node_modules/', ''),
+                config.excludeNodeModules || [],
+                true,
+              ))) ||
+          (isPackageCode &&
+            Array.isArray(config.excludePackages) &&
+            (isExcludedConfig(packageName, config.excludePackages || []) ||
+              isExcludedConfig(
+                `${packageName}/${inputFilePath}`,
+                config.excludePackages || [],
+              )));
+
+        const cacheKey = [
+          toBeAdded.hash,
+          lastModifiedSwcConfigTime,
+          isLegacyWebArch ? 'legacy' : '',
+        ]
+          .filter(Boolean)
+          .join('-');
+        // Determine if SWC should be used based on package and file criteria.
+        const shouldUseSwc = !shouldSkipSwc && !this._swcIncompatible[cacheKey];
+
+        let compilation;
+        try {
+          let usedSwc = false;
+          if (shouldUseSwc) {
+            // Create a cache key based on the source hash and the compiler used
+            // Check cache
+            compilation = this.readFromSwcCache({ cacheKey });
+            // Return cached result if found.
+            if (compilation) {
+              if (config?.verbose) {
+                logTranspilation({
+                  usedSwc: true,
+                  inputFilePath,
+                  packageName,
+                  isNodeModulesCode,
+                  cacheHit: true,
+                  arch,
+                });
+              }
+              return compilation;
+            }
+            compilation = compileWithSwc(
+              source,
+              lastModifiedSwcConfig,
+              { inputFilePath, features, arch },
+            );
+            // Save result in cache
+            this.writeToSwcCache({ cacheKey, compilation });
+            usedSwc = true;
+          } else {
+            compilation = compileWithBabel(source, babelOptions, cacheOptions);
+            usedSwc = false;
+          }
+
+          if (config?.verbose) {
+            logTranspilation({
+              usedSwc,
+              inputFilePath,
+              packageName,
+              isNodeModulesCode,
+              cacheHit: false,
+              arch,
+            });
+          }
+        } catch (e) {
+          this._swcIncompatible[cacheKey] = true;
+          // If SWC fails, fall back to Babel
+          compilation = compileWithBabel(source, babelOptions, cacheOptions);
+          if (config?.verbose) {
+            logTranspilation({
+              usedSwc: false,
+              inputFilePath,
+              packageName,
+              isNodeModulesCode,
+              cacheHit: false,
+              arch,
+              errorMessage: e?.message,
+              ...(e?.message?.includes(
+                'cannot be used outside of module code',
+              ) && {
+                tip: 'Remove nested imports or replace them with require to support SWC and improve speed.',
+              }),
+            });
+          }
+        }
+
+        return compilation;
+      })();
     } catch (e) {
       if (e.loc) {
         // Error is from @babel/parser.
@@ -563,4 +801,206 @@ function packageNameFromTopLevelModuleId(id) {
     return parts.join("/");
   }
   return parts[0];
+}
+
+const SwcCacheContext = '.swc-cache';
+
+BCp.readFromSwcCache = function({ cacheKey }) {
+  // Check in-memory cache.
+  let compilation = this._swcCache[cacheKey];
+  // If not found, try file system cache if enabled.
+  if (!compilation && this.cacheDirectory) {
+    const cacheFilePath = path.join(this.cacheDirectory, SwcCacheContext, `${cacheKey}.json`);
+    if (fs.existsSync(cacheFilePath)) {
+      try {
+        compilation = JSON.parse(fs.readFileSync(cacheFilePath, 'utf8'));
+        // Save back to in-memory cache.
+        this._swcCache[cacheKey] = compilation;
+      } catch (err) {
+        // Ignore any errors reading/parsing the cache.
+      }
+    }
+  }
+  return compilation;
+};
+
+BCp.writeToSwcCache = function({ cacheKey, compilation }) {
+  // Save to in-memory cache.
+  this._swcCache[cacheKey] = compilation;
+  // If file system caching is enabled, write asynchronously.
+  if (this.cacheDirectory) {
+    const cacheFilePath = path.join(this.cacheDirectory, SwcCacheContext, `${cacheKey}.json`);
+    try {
+      const writeFileCache = async () => {
+        await fs.promises.mkdir(path.dirname(cacheFilePath), { recursive: true });
+        await fs.promises.writeFile(cacheFilePath, JSON.stringify(compilation), 'utf8');
+      };
+      // Invoke without blocking the main flow.
+      writeFileCache();
+    } catch (err) {
+      // If writing fails, ignore the error.
+    }
+  }
+};
+
+function getMeteorAppDir() {
+  return process.cwd();
+}
+
+function getMeteorAppPackageJson() {
+  return JSON.parse(
+    fs.readFileSync(`${getMeteorAppDir()}/package.json`, 'utf-8'),
+  );
+}
+
+function getMeteorAppSwcrc() {
+  try {
+    return JSON.parse(fs.readFileSync(`${getMeteorAppDir()}/.swcrc`, 'utf-8'));
+  } catch (e) {
+    console.error('Error parsing .swcrc file', e);
+  }
+}
+
+const _regexCache = new Map();
+
+function isRegexLike(str) {
+  return /[.*+?^${}()|[\]\\]/.test(str);
+}
+
+function isExcludedConfig(name, excludeList = [], startsWith) {
+  if (!name || !excludeList?.length) return false;
+  return excludeList.some(rule => {
+    if (name === rule) return true;
+    if (startsWith && name.startsWith(rule)) return true;
+    if (isRegexLike(rule)) {
+      let regex = _regexCache.get(rule);
+      if (!regex) {
+        try {
+          regex = new RegExp(rule);
+          _regexCache.set(rule, regex);
+        } catch (err) {
+          console.warn(`Invalid regex in exclude list: "${rule}"`);
+          return false;
+        }
+      }
+      return regex.test(name);
+    }
+
+    return false;
+  });
+}
+
+function color(text, code) {
+  return `\x1b[${code}m${text}\x1b[0m`;
+}
+
+function logTranspilation({
+  packageName,
+  inputFilePath,
+  usedSwc,
+  cacheHit,
+  isNodeModulesCode,
+  arch,
+  errorMessage = '',
+  tip = '',
+}) {
+  const transpiler = usedSwc ? 'SWC' : 'Babel';
+  const transpilerColor = usedSwc ? 32 : 33;
+  const label = color('[Transpiler]', 36);
+  const transpilerPart = `${label} Used ${color(
+    transpiler,
+    transpilerColor,
+  )} for`;
+  const filePathPadded = `${
+    packageName ? `${packageName}/` : ''
+  }${inputFilePath}`.padEnd(50);
+  let rawOrigin = '';
+  if (packageName) {
+    rawOrigin = `(package)`;
+  } else {
+    rawOrigin = isNodeModulesCode ? '(node_modules)' : '(app)';
+  }
+  const originPaddedRaw = rawOrigin.padEnd(35);
+  const originPaddedColored = packageName
+    ? originPaddedRaw
+    : isNodeModulesCode
+    ? color(originPaddedRaw, 90)
+    : color(originPaddedRaw, 35);
+  const cacheStatus = errorMessage
+    ? color('⚠️  Fallback', 33)
+    : usedSwc
+    ? cacheHit
+      ? color('🟢 Cache hit', 32)
+      : color('🔴 Cache miss', 31)
+    : '';
+  const archPart = arch ? color(` (${arch})`, 90) : '';
+  console.log(
+    `${transpilerPart} ${filePathPadded}${originPaddedColored}${cacheStatus}${archPart}`,
+  );
+  if (errorMessage) {
+    console.log();
+    console.log(`  ↳ ${color('Error:', 31)} ${errorMessage}`);
+    if (tip) {
+      console.log();
+      console.log(`  ${color('💡 Tip:', 33)} ${tip}`);
+    }
+    console.log();
+  }
+}
+
+function logConfigBlock(description, configObject) {
+  const label = color('[Config]', 36);
+  const descriptionColor = color(description, 90);
+
+  console.log(`${label} ${descriptionColor}`);
+
+  const configLines = JSON.stringify(configObject, null, 2)
+    .replace(/"([^"]+)":/g, '$1:')
+    .split('\n')
+    .map(line => '  ' + line);
+
+  configLines.forEach(line => console.log(line));
+  console.log();
+}
+
+function deepMerge(target, source, preservePaths, inPath = '') {
+  for (const key in source) {
+    const fullPath = inPath ? `${inPath}.${key}` : key;
+
+    // Skip preserved paths
+    if (preservePaths.includes(fullPath)) continue;
+
+    if (
+      typeof source[key] === 'object' &&
+      source[key] !== null &&
+      !Array.isArray(source[key])
+    ) {
+      target[key] = deepMerge(
+        target[key] || {},
+        source[key],
+        preservePaths,
+        fullPath,
+      );
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+
+function convertBabelTargetsForSwc(babelTargets) {
+  const allowedEnvs = new Set([
+    'chrome', 'opera', 'edge', 'firefox', 'safari',
+    'ie', 'ios', 'android', 'node', 'electron'
+  ]);
+
+  const filteredTargets = {};
+  for (const [env, version] of Object.entries(babelTargets)) {
+    if (allowedEnvs.has(env)) {
+      // Convert an array version (e.g., [10, 3]) into "10.3", otherwise convert to string.
+      filteredTargets[env] = Array.isArray(version) ? version.join('.') : version.toString();
+    }
+  }
+
+  return filteredTargets;
 }
