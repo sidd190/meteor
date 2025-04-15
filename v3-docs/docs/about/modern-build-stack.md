@@ -23,4 +23,4 @@ To start using the new build stack, add the following to your `package.json`:
 }
 ```
 
-Learn more about these settings in the [Modern Transpiler](modern-build-stack/modern-transpiler.md) and [Modern Bundler](modern-build-stack/modern-bundler.md) guides.
+Learn more about these settings in the [Modern Transpiler](modern-build-stack/modern-transpiler-swc.md) and [Modern Bundler](modern-build-stack/modern-bundler.md) guides.
