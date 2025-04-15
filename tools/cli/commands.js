@@ -545,6 +545,8 @@ async function doRunCommand(options) {
   }
 
   webArchs = filterWebArchs(webArchs, options['exclude-archs'], options.appDir, options);
+  global.webArchs = webArchs;
+
   const buildMode = options.production ? 'production' : 'development';
 
   let cordovaRunner;
@@ -2512,6 +2514,7 @@ var runTestAppForPackages = async function (projectContext, options) {
     webArchs.push("web.cordova");
   }
   buildOptions.webArchs = filterWebArchs(webArchs, options['exclude-archs'], projectContext.appDirectory, options);
+  global.webArchs = buildOptions.webArchs;
 
   if (options.deploy) {
     // Run the constraint solver and build local packages.
