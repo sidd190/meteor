@@ -14,7 +14,7 @@ To improve the development and deployment experience for all Meteor projects, we
 
 ## Quick start
 
-To start using the new build stack, add the following to your `package.json`:
+Start using the new build stack by creating a Meteor app, or add this to your `package.json` in an existing one:
 
 ```json
 "meteor": {

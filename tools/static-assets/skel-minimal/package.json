@@ -17,6 +17,7 @@
       "server": "server/main.js"
     },
     "testModule": "tests/main.js",
-    "modernWebArchsOnly": true
+    "modernWebArchsOnly": true,
+    "modernTranspiler": true
   }
 }
