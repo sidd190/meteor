@@ -271,11 +271,36 @@ function isModernArchsOnlyEnabled(appDir) {
   return packageJson?.meteor?.modernWebArchsOnly === true;
 }
 
-function filterWebArchs(webArchs, excludeArchsOption, appDir) {
-  const automaticallyIgnoredLegacyArchs = (appDir && isModernArchsOnlyEnabled(appDir)) ? ['web.browser.legacy', 'web.cordova'] : [];
-  if (excludeArchsOption || automaticallyIgnoredLegacyArchs.length) {
-    const excludeArchs = [...(excludeArchsOption ? excludeArchsOption.trim().split(/\s*,\s*/) : []), ...automaticallyIgnoredLegacyArchs];
-    webArchs = webArchs.filter(arch => !excludeArchs.includes(arch));
+function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
+  const platforms = (options.platforms || []);
+  const isBuildMode = platforms?.length > 0;
+  if (isBuildMode) {
+    // Build Mode
+    const isModernOnlyPlatform = platforms.includes('modern') && !platforms.includes('legacy');
+    if (isModernOnlyPlatform) {
+      webArchs = webArchs.filter(arch => arch !== 'web.browser.legacy');
+    }
+    const hasCordovaPlatforms = platforms.includes('android') || platforms.includes('ios');
+    if (!hasCordovaPlatforms) {
+      webArchs = webArchs.filter(arch => arch !== 'web.cordova');
+    }
+  } else {
+    // Dev & Test Mode
+    const isCordovaDev = (options.args || []).some(arg => ['ios', 'ios-device', 'android', 'android-device'].includes(arg));
+    if (!isCordovaDev) {
+      const excludeArchsOptions = excludeArchsOption ? excludeArchsOption.trim().split(/\s*,\s*/) : [];
+      const hasExcludeArchsOptions = (excludeArchsOptions?.length || 0) > 0;
+      const hasModernArchsOnlyEnabled = appDir && isModernArchsOnlyEnabled(appDir);
+      if (hasExcludeArchsOptions && hasModernArchsOnlyEnabled) {
+        console.warn('modernWebArchsOnly and --exclude-archs are both active. If both are set, --exclude-archs takes priority.');
+      }
+      const automaticallyIgnoredLegacyArchs = (!hasExcludeArchsOptions && hasModernArchsOnlyEnabled) ? ['web.browser.legacy', 'web.cordova'] : [];
+      if (hasExcludeArchsOptions || automaticallyIgnoredLegacyArchs.length) {
+        const excludeArchs = [...excludeArchsOptions, ...automaticallyIgnoredLegacyArchs];
+        webArchs = webArchs.filter(arch => !excludeArchs.includes(arch));
+      }
+      return webArchs;
+    }
   }
   return webArchs;
 }
@@ -519,7 +544,7 @@ async function doRunCommand(options) {
     }
   }
 
-  webArchs = filterWebArchs(webArchs, options['exclude-archs'], options.appDir);
+  webArchs = filterWebArchs(webArchs, options['exclude-archs'], options.appDir, options);
   const buildMode = options.production ? 'production' : 'development';
 
   let cordovaRunner;
@@ -580,7 +605,7 @@ async function doRunCommand(options) {
           open(`http://localhost:${options.port}`)
         }
       }
-    }, 
+    },
     open: options.open,
   });
 }
@@ -1415,7 +1440,10 @@ on an OS X system.");
 
     webArchs = filteredArchs.length ? filteredArchs : undefined;
   } else {
-    webArchs = filterWebArchs(baseWebArchs, options['exclude-archs'], options.appDir);
+    webArchs = filterWebArchs(baseWebArchs, options['exclude-archs'], options.appDir, {
+      ...options,
+      platforms: projectContext.platformList.getPlatforms(),
+    });
   }
 
   var buildDir = projectContext.getProjectLocalDirectory('build_tar');
@@ -2125,7 +2153,10 @@ testCommandOptions = {
 
     'extra-packages': { type: String },
 
-    'exclude-archs': { type: String }
+    'exclude-archs': { type: String },
+    
+    // Same as TINYTEST_FILTER
+    filter: { type: String, short: 'f' },
   }
 };
 
@@ -2146,6 +2177,9 @@ main.registerCommand(Object.assign(
 });
 
 async function doTestCommand(options) {
+  if (options.filter) {
+    process.env.TINYTEST_FILTER = options.filter;
+  }
   // This "metadata" is accessed in a few places. Using a global
   // variable here was more expedient than navigating the many layers
   // of abstraction across the build process.
@@ -2477,7 +2511,7 @@ var runTestAppForPackages = async function (projectContext, options) {
   if (options.cordovaRunner) {
     webArchs.push("web.cordova");
   }
-  buildOptions.webArchs = filterWebArchs(webArchs, options['exclude-archs'], projectContext.appDirectory);
+  buildOptions.webArchs = filterWebArchs(webArchs, options['exclude-archs'], projectContext.appDirectory, options);
 
   if (options.deploy) {
     // Run the constraint solver and build local packages.
@@ -3362,7 +3396,7 @@ const setupBenchmarkSuite = async (profilingPath) => {
   process.env.GIT_TERMINAL_PROMPT = 0;
 
   const repoUrl = "https://github.com/meteor/performance";
-  const branch = "v3.2.0";
+  const branch = "v3.3.0";
   const gitCommand = [
     `mkdir -p ${profilingPath}`,
     `git clone --no-checkout --depth 1 --filter=tree:0 --sparse --progress --branch ${branch} --single-branch ${repoUrl} ${profilingPath}`,
@@ -3401,9 +3435,10 @@ async function doBenchmarkCommand(options) {
 
   const meteorSizeEnvs = [
     !!options['size-only'] && 'METEOR_BUNDLE_SIZE_ONLY=true',
-    !!options['size'] && 'METEOR_BUNDLE_SIZE=true'
+    !!options['size'] && 'METEOR_BUNDLE_SIZE=true',
+    !!options['build'] && 'METEOR_BUNDLE_BUILD=true',
   ].filter(Boolean);
-  const meteorOptions = args.filter(arg => !['--size-only', '--size'].includes(arg));
+  const meteorOptions = args.filter(arg => !['--size-only', '--size', '--build'].includes(arg));
 
   const profilingCommand = [
     `${meteorSizeEnvs.join(' ')} ${profilingPath}/scripts/monitor-bundler.sh ${projectContext.projectDir} ${new Date().getTime()} ${meteorOptions.join(' ')}`.trim(),
@@ -3420,8 +3455,9 @@ main.registerCommand(
   maxArgs: Infinity,
   options: {
     ...runCommandOptions.options || {},
-  'size': { type: Boolean },
-  'size-only': { type: Boolean },
+    'size': { type: Boolean },
+    'size-only': { type: Boolean },
+    'build': { type: Boolean },
   },
   catalogRefresh: new catalog.Refresh.Never(),
 }, doBenchmarkCommand);
