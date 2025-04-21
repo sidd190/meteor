@@ -473,6 +473,7 @@ main.registerCommand(Object.assign(
 
 async function doRunCommand(options) {
   Console.setVerbose(!!options.verbose);
+
   // Additional args are interpreted as run targets
   const runTargets = parseRunTargets(options.args);
 
