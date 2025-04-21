@@ -812,26 +812,6 @@ Object.assign(RemoteCatalog.prototype, {
   // Given a release track, returns all recommended version *records* for this
   // track, sorted by their orderKey. Returns the empty array if the release
   // track does not exist or does not have any recommended versions.
-  // getSortedRecommendedReleaseRecords: async function (track, laterThanOrderKey) {
-  //   var self = this;
-  //   // XXX releaseVersions content objects are kinda big; if we put
-  //   // 'recommended' and 'orderKey' in their own columns this could be faster
-  //   var result = await self._contentQuery(
-  //     "SELECT content FROM releaseVersions WHERE track=?", track);
-  //
-  //   var recommended = _.filter(result, function (v) {
-  //     if (!v.recommended)
-  //       return false;
-  //     return !laterThanOrderKey || v.orderKey > laterThanOrderKey;
-  //   });
-  //
-  //   var recSort = _.sortBy(recommended, function (rec) {
-  //     return rec.orderKey;
-  //   });
-  //   recSort.reverse();
-  //   return recSort;
-  // },
-
   getSortedRecommendedReleaseRecords: async function (track, laterThanOrderKey) {
     const hasMinKey = laterThanOrderKey != null;
 
@@ -901,9 +881,9 @@ Object.assign(RemoteCatalog.prototype, {
   },
 
   // Executes a query, returning an array of each content column parsed as JSON
-  _contentQuery: async function (query, params, transaction = false) {
+  _contentQuery: async function (query, params) {
     var self = this;
-    var rows = await self._columnsQuery(query, params, transaction);
+    var rows = await self._columnsQuery(query, params);
     return _.map(rows, function(entity) {
       return JSON.parse(entity.content);
     });
