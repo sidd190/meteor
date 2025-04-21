@@ -17,19 +17,22 @@ interface Entry extends SafeWatcher {
 
 // Set METEOR_WATCH_USE_LRU environment variable to a truthy value to
 // enable LRU caching for watcher entries to reduce memory usage.
-const useLRU = Boolean(JSON.parse(process.env.METEOR_WATCH_USE_LRU || "true"));
+const useLRU = Boolean(JSON.parse(process.env.METEOR_WATCH_USE_LRU || "false"));
+
+// enable to tweak maximum entries size (default 500MB).
+const sizeMaxLRU = JSON.parse(process.env.METEOR_WATCH_USE_LRU_SIZE || Math.pow(2, 20) * 500);
 
 // Registry mapping normalized absolute paths to their watcher entry.
 // If LRU caching is enabled, this will be an LRUCache instance.
 // Otherwise, we use a Map object for entries.
 const entries = useLRU
   ? new LRUCache<string, Entry | null>({
-      max: Math.pow(2, 20), // 1MB max size
+      max: sizeMaxLRU, // 1MB max size
       length: (entry, key) => {
         return key.length + (entry ? 100 : 10);
       },
       dispose: (key, entry) => {
-        return entry.close()
+        return entry.close();
       },
     })
   : new Map<string, Entry | null>();
