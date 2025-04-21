@@ -1,6 +1,7 @@
 import { Stats } from 'fs';
 import { dirname } from "path";
 import ParcelWatcher from "@parcel/watcher";
+import LRUCache from 'lru-cache';
 
 import { Profile } from "../tool-env/profile";
 import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile } from "./files";
@@ -14,8 +15,39 @@ interface Entry extends SafeWatcher {
   _fire(event: string): void;
 }
 
+// Set METEOR_WATCH_USE_LRU environment variable to a truthy value to
+// enable LRU caching for watcher entries to reduce memory usage.
+const useLRU = Boolean(JSON.parse(process.env.METEOR_WATCH_USE_LRU || "true"));
+
 // Registry mapping normalized absolute paths to their watcher entry.
-const entries: Record<string, Entry | null> = Object.create(null);
+// If LRU caching is enabled, this will be an LRUCache instance.
+// Otherwise, we use a Map object for entries.
+const entries = useLRU
+  ? new LRUCache<string, Entry | null>({
+      max: Math.pow(2, 20), // 1MB max size
+      length: (entry, key) => {
+        return key.length + (entry ? 100 : 10);
+      },
+      dispose: (key, entry) => {
+        return entry.close()
+      },
+    })
+  : new Map<string, Entry | null>();
+
+function getEntry(path: string): Entry | null | undefined {
+  return entries.get(path);
+}
+
+function setEntry(path: string, entry: Entry | null): void {
+  entries.set(path, entry);
+}
+
+function deleteEntry(path: string): void {
+  if (useLRU) {
+    return entries.del(path);
+  }
+  return entries.delete(path);
+}
 
 // Watch roots are directories for which we have an active ParcelWatcher subscription.
 const watchRoots = new Set<string>();
@@ -150,7 +182,7 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
           // Dispatch each event to any registered entries.
           for (const event of events) {
             const changedPath = toPosixPath(event.path);
-            const entry = entries[changedPath];
+            const entry = getEntry(changedPath);
             if (!entry) continue;
             // In Meteor's safe-watcher API, both create/update trigger "change" events.
             const evtType = event.type === "delete" ? "delete" : "change";
@@ -192,7 +224,7 @@ function startNewEntry(absPath: string): Entry {
     close() {
       if (closed) return;
       closed = true;
-      delete entries[absPath];
+      deleteEntry(absPath);
     },
     _fire(event: string) {
       callbacks.forEach(cb => {
@@ -228,10 +260,10 @@ export const watch = Profile(
         return startPolling(absPath, callback);
       }
       // Try to reuse an existing entry if one was created before.
-      let entry = entries[absPath];
+      let entry = getEntry(absPath);
       if (!entry) {
         entry = startNewEntry(absPath);
-        entries[absPath] = entry;
+        setEntry(absPath, entry);
         // Determine the directory that should be watched.
         let watchTarget: string;
         try {
@@ -247,10 +279,11 @@ export const watch = Profile(
       entry.callbacks.add(callback);
       return {
         close() {
-          if (entries[absPath]) {
-            entries[absPath]!.callbacks.delete(callback);
-            if (entries[absPath]!.callbacks.size === 0) {
-              entries[absPath]!.close();
+          const entry = getEntry(absPath);
+          if (entry) {
+            entry.callbacks.delete(callback);
+            if (entry.callbacks.size === 0) {
+              entry.close();
             }
           }
         }
