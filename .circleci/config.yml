@@ -117,7 +117,7 @@ build_machine_environment:
 
     # Force Meteor to use polling to avoid errors like:
     # "double free or corruption (out) IOT instruction"
-    # Happens on Linux when using the inotify backend.
+    # Happens on Linux when using the fts (brute force) backend.
     # Doesn't affect watching files with @parcel/watch,
     # but causes Meteor commands to exit errored.
     # This impacts CI pipelines.
