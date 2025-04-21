@@ -115,6 +115,16 @@ build_machine_environment:
     NUM_GROUPS: 12
     RUNNING_AVG_LENGTH: 6
 
+    # Force Meteor to use polling to avoid errors like:
+    # "double free or corruption (out) IOT instruction"
+    # Happens on Linux when using the inotify backend.
+    # Doesn't affect watching files with @parcel/watch,
+    # but causes Meteor commands to exit errored.
+    # This impacts CI pipelines.
+    # Using Watchman can fix the issue as well.
+    METEOR_WATCH_FORCE_POLLING: true
+    METEOR_WATCH_POLLING_INTERVAL_MS: 1000
+
 jobs:
   Get Ready:
     <<: *build_machine_environment
