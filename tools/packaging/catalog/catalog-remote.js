@@ -441,9 +441,9 @@ Object.assign(Table.prototype, {
     return "(" + _.times(n, function () { return "?" }).join(",") + ")";
   },
 
-  find: async function (id) {
+  find: async function (db, id) {
     var self = this;
-    var rows = await self.db._query(self._selectQuery, [ id ]);
+    var rows = await db._query(self._selectQuery, [ id ]);
     if (rows.length !== 0) {
       if (rows.length !== 1) {
         throw new Error("Corrupt database (PK violation)");
@@ -944,7 +944,7 @@ Object.assign(RemoteCatalog.prototype, {
 
   getMetadata: async function(key) {
     var self = this;
-    var row = await self.tableMetadata.find(key);
+    var row = await self.tableMetadata.find(self.db, key);
     if (row) {
       return JSON.parse(row['content']);
     }
@@ -966,7 +966,7 @@ Object.assign(RemoteCatalog.prototype, {
 
   shouldShowBanner: async function (releaseName, bannerDate) {
     var self = this;
-    var row = await self.tableBannersShown.find(releaseName);
+    var row = await self.tableBannersShown.find(self.db, releaseName);
     // We've never printed a banner for this release.
     if (! row)
       return true;
