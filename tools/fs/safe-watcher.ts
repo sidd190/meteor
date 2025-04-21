@@ -32,7 +32,7 @@ const entries = useLRU
         return key.length + (entry ? 100 : 10);
       },
       dispose: (key, entry) => {
-        return entry.close();
+        return entry?.close();
       },
     })
   : new Map<string, Entry | null>();
