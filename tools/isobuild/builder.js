@@ -126,9 +126,7 @@ Previous builder: ${previousBuilder.outputPath}, this builder: ${outputPath}`
   async init() {
     // Build the output from scratch
     if (this.resetBuildPath) {
-      console.time("--> (builder.js-Line: 130)\n await files.rm_recursive_deferred: ");
       await files.rm_recursive_deferred(this.buildPath);
-      console.timeEnd("--> (builder.js-Line: 130)\n await files.rm_recursive_deferred: ");
       // Create the new build directory immediately without waiting for deletion
       await files.mkdir_p(this.buildPath, 0o755);
     }
