@@ -1664,7 +1664,7 @@ Object.assign(exports.ReleaseFile.prototype, {
     if (this.isCheckout()) {
       // Only create .meteor/local/dev_bundle if .meteor/release refers to
       // an actual release, and remove it otherwise.
-      await files.rm_recursive(devBundleLink);
+      await files.rm_recursive_deferred(devBundleLink);
       return;
     }
 
