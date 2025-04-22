@@ -6,6 +6,43 @@ import LRUCache from 'lru-cache';
 import { Profile } from "../tool-env/profile";
 import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile } from "./files";
 
+// Register process exit handlers to ensure subscriptions are properly cleaned up
+const registerExitHandlers = () => {
+
+  // For SIGINT and SIGTERM, we need to handle the async cleanup before the process exits
+  const cleanupAndExit = (signal: string) => {
+    // Clear the timeout if cleanup completes successfully
+    closeAllWatchers().then(() => {
+      process.exit(0);
+    }).catch(err => {
+      console.error(`Error closing watchers on ${signal}:`, err);
+      process.exit(1);
+    });
+  };
+
+  // Handle SIGINT (Ctrl+C)
+  process.on('SIGINT', () => cleanupAndExit('SIGINT'));
+
+  // Handle SIGTERM
+  process.on('SIGTERM', () => cleanupAndExit('SIGTERM'));
+
+  // Handle 'exit' event
+  process.on('exit', () => {
+    try {
+      for (const root of Array.from(watchRoots)) {
+        const sub = dirSubscriptions.get(root);
+        if (sub) {
+          sub.unsubscribe();
+          dirSubscriptions.delete(root);
+          watchRoots.delete(root);
+        }
+      }
+    } catch (err) {
+      console.error('Error during synchronous cleanup on exit:', err);
+    }
+  });
+};
+
 export type SafeWatcher = { close: () => void; };
 
 type ChangeCallback = (event: string) => void;
@@ -398,3 +435,6 @@ function fallbackToPolling() {
     closeAllWatchers();
   }
 }
+
+// Register exit handlers to ensure proper cleanup of subscriptions
+registerExitHandlers();
