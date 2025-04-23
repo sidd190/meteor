@@ -207,7 +207,6 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
     const subscription = await ParcelWatcher.subscribe(
         osDirPath,
         (err, events) => {
-          console.log("--> (safe-watcher.ts-Line: 212) events: ", events);
           if (err) {
             console.error(`Parcel watcher error on ${osDirPath}:`, err);
             // Only disable native watching for critical errors (like ENOSPC).
