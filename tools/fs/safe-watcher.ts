@@ -122,6 +122,13 @@ function shouldIgnorePath(absPath: string): boolean {
   const posixPath = toPosixPath(absPath);
   const parts = posixPath.split('/');
 
+  const cwd = toPosixPath(process.cwd());
+  const isWithinCwd = absPath.startsWith(cwd);
+
+  if (isWithinCwd && absPath.includes(`${cwd}/.meteor/local`)) {
+    return true;
+  }
+
   // Check for .meteor: allow the .meteor directory itself,
   // but ignore its "local" subdirectory (or any immediate child folder that indicates cache).
   const meteorIndex = parts.indexOf(".meteor");
@@ -134,8 +141,6 @@ function shouldIgnorePath(absPath: string): boolean {
     // Otherwise, do not automatically ignore .meteor (which includes .meteor/packages, etc).
   }
 
-  const cwd = toPosixPath(process.cwd());
-  const isWithinCwd = absPath.startsWith(cwd);
   if (isWithinCwd) {
     return absPath.includes(`${cwd}/node_modules`);
   }
