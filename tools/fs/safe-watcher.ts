@@ -1,7 +1,6 @@
 import { Stats } from 'fs';
 import { dirname } from "path";
 import ParcelWatcher from "@parcel/watcher";
-import LRUCache from 'lru-cache';
 
 import { Profile } from "../tool-env/profile";
 import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile } from "./files";
@@ -52,27 +51,8 @@ interface Entry extends SafeWatcher {
   _fire(event: string): void;
 }
 
-// Set METEOR_WATCH_USE_LRU environment variable to a truthy value to
-// enable LRU caching for watcher entries to reduce memory usage.
-const useLRU = Boolean(JSON.parse(process.env.METEOR_WATCH_USE_LRU || "false"));
-
-// enable to tweak maximum entries size (default 500MB).
-const sizeMaxLRU = JSON.parse(process.env.METEOR_WATCH_USE_LRU_SIZE || Math.pow(2, 20) * 500);
-
 // Registry mapping normalized absolute paths to their watcher entry.
-// If LRU caching is enabled, this will be an LRUCache instance.
-// Otherwise, we use a Map object for entries.
-const entries = useLRU
-  ? new LRUCache<string, Entry | null>({
-      max: sizeMaxLRU, // 1MB max size
-      length: (entry, key) => {
-        return key.length + (entry ? 100 : 10);
-      },
-      dispose: (key, entry) => {
-        return entry?.close();
-      },
-    })
-  : new Map<string, Entry | null>();
+const entries = new Map<string, Entry | null>();
 
 function getEntry(path: string): Entry | null | undefined {
   return entries.get(path);
@@ -83,10 +63,7 @@ function setEntry(path: string, entry: Entry | null): void {
 }
 
 function deleteEntry(path: string): void {
-  if (useLRU) {
-    return entries.del(path);
-  }
-  return entries.delete(path);
+  entries.delete(path);
 }
 
 // Watch roots are directories for which we have an active ParcelWatcher subscription.
@@ -118,8 +95,7 @@ if (process.env.METEOR_WATCH_PRIORITIZE_CHANGED &&
 }
 
 // Set of paths for which a change event has been fired, watched with
-// watchLibrary.watch if available. This could be an LRU cache, but in
-// practice it should never grow large enough for that to matter.
+// watchLibrary.watch if available.
 const changedPaths = new Set;
 
 function shouldIgnorePath(absPath: string): boolean {
