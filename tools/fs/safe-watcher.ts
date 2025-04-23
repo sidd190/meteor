@@ -1,9 +1,8 @@
 import { Stats } from 'fs';
-import { dirname } from "path";
 import ParcelWatcher from "@parcel/watcher";
 
 import { Profile } from "../tool-env/profile";
-import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile } from "./files";
+import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname } from "./files";
 
 // Register process exit handlers to ensure subscriptions are properly cleaned up
 const registerExitHandlers = () => {
@@ -64,6 +63,27 @@ function setEntry(path: string, entry: Entry | null): void {
 
 function deleteEntry(path: string): void {
   entries.delete(path);
+}
+
+function findNearestEntry(startPath: string): Entry | null {
+  let currentPath = pathResolve(startPath);
+
+  while (true) {
+    const entry = getEntry(currentPath);
+    if (entry) {
+      return entry; // Found it!
+    }
+
+    const parentPath = pathDirname(currentPath);
+    if (parentPath === currentPath) {
+      // Reached root
+      break;
+    }
+
+    currentPath = parentPath;
+  }
+
+  return null;
 }
 
 // Watch roots are directories for which we have an active ParcelWatcher subscription.
@@ -187,6 +207,7 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
     const subscription = await ParcelWatcher.subscribe(
         osDirPath,
         (err, events) => {
+          console.log("--> (safe-watcher.ts-Line: 212) events: ", events);
           if (err) {
             console.error(`Parcel watcher error on ${osDirPath}:`, err);
             // Only disable native watching for critical errors (like ENOSPC).
@@ -200,7 +221,7 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
           // Dispatch each event to any registered entries.
           for (const event of events) {
             const changedPath = toPosixPath(event.path);
-            const entry = getEntry(changedPath);
+            const entry = findNearestEntry(changedPath);
             if (!entry) continue;
             // In Meteor's safe-watcher API, both create/update trigger "change" events.
             const evtType = event.type === "delete" ? "delete" : "change";
@@ -286,9 +307,9 @@ export const watch = Profile(
         let watchTarget: string;
         try {
           const st = statOrNull(convertToOSPath(absPath));
-          watchTarget = st?.isDirectory() ? absPath : toPosixPath(dirname(convertToOSPath(absPath)));
+          watchTarget = st?.isDirectory() ? absPath : toPosixPath(pathDirname(convertToOSPath(absPath)));
         } catch (e) {
-          watchTarget = toPosixPath(dirname(convertToOSPath(absPath)));
+          watchTarget = toPosixPath(pathDirname(convertToOSPath(absPath)));
         }
         // Set up a watcher on the parent directory (or the directory itself) if not already active.
         ensureWatchRoot(watchTarget);
@@ -318,10 +339,10 @@ export function addWatchRoot(absPath: string) {
   try {
     const st = statOrNull(convertToOSPath(absPath));
     if (!st?.isDirectory()) {
-      watchTarget = toPosixPath(dirname(convertToOSPath(absPath)));
+      watchTarget = toPosixPath(pathDirname(convertToOSPath(absPath)));
     }
   } catch (e) {
-    watchTarget = toPosixPath(dirname(convertToOSPath(absPath)));
+    watchTarget = toPosixPath(pathDirname(convertToOSPath(absPath)));
   }
   ensureWatchRoot(watchTarget);
 }
