@@ -2,7 +2,7 @@ import { Stats } from 'fs';
 import ParcelWatcher from "@parcel/watcher";
 
 import { Profile } from "../tool-env/profile";
-import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname } from "./files";
+import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname, exists } from "./files";
 
 // Register process exit handlers to ensure subscriptions are properly cleaned up
 const registerExitHandlers = () => {
@@ -134,6 +134,12 @@ function shouldIgnorePath(absPath: string): boolean {
     // Otherwise, do not automatically ignore .meteor (which includes .meteor/packages, etc).
   }
 
+  const cwd = toPosixPath(process.cwd());
+  const isWithinCwd = absPath.startsWith(cwd);
+  if (isWithinCwd) {
+    return absPath.includes(`${cwd}/node_modules`);
+  }
+
   // For node_modules: ignore contents unless the package directory is a symlink (which means it’s under active development).
   const nmIndex = parts.indexOf("node_modules");
   if (nmIndex !== -1) {
@@ -200,8 +206,11 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
     return;
   }
 
-  // Set up ignore patterns to skip deep node_modules and .meteor/local cache
-  const ignorePatterns = ["**/node_modules/**", "**/.meteor/local/**"];
+  // Set up ignore patterns to skip node_modules and .meteor/local cache
+  const cwd = toPosixPath(process.cwd());
+  const isWithinCwd = dirPath.startsWith(cwd);
+  const ignPrefix = isWithinCwd ? "" : "**/";
+  const ignorePatterns = [`${ignPrefix}node_modules/**`, `${ignPrefix}.meteor/local/**`];
   try {
     watchRoots.add(dirPath);
     const subscription = await ParcelWatcher.subscribe(
