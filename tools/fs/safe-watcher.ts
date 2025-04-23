@@ -207,6 +207,7 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
   // Set up ignore patterns to skip deep node_modules and .meteor/local cache
   const ignorePatterns = ["**/node_modules/**", "**/.meteor/local/**"];
   try {
+    watchRoots.add(dirPath);
     const subscription = await ParcelWatcher.subscribe(
         osDirPath,
         (err, events) => {
@@ -217,6 +218,7 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
             if (err.code === "ENOSPC" || err.errno === require("constants").ENOSPC) {
               fallbackToPolling();
             }
+            watchRoots.delete(dirPath);
             return;
           }
           // Dispatch each event to any registered entries.
@@ -231,7 +233,6 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
         },
         { ignore: ignorePatterns }
     );
-    watchRoots.add(dirPath);
     dirSubscriptions.set(dirPath, subscription);
   } catch (e: any) {
     if (
@@ -249,6 +250,7 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
         fallbackToPolling();
       }
     }
+    watchRoots.delete(dirPath);
   }
 }
 
