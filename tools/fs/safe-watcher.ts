@@ -2,7 +2,7 @@ import { Stats } from 'fs';
 import ParcelWatcher from "@parcel/watcher";
 
 import { Profile } from "../tool-env/profile";
-import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname, exists } from "./files";
+import { statOrNull, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname } from "./files";
 
 // Register process exit handlers to ensure subscriptions are properly cleaned up
 const registerExitHandlers = () => {
@@ -141,22 +141,15 @@ function shouldIgnorePath(absPath: string): boolean {
     // Otherwise, do not automatically ignore .meteor (which includes .meteor/packages, etc).
   }
 
+  // For project node_modules: ignore npm node_modules, rest are valid
   if (isWithinCwd) {
     return absPath.includes(`${cwd}/node_modules`);
   }
 
-  // For node_modules: ignore contents unless the package directory is a symlink (which means it’s under active development).
+  // For external node_modules: ignore contents
   const nmIndex = parts.indexOf("node_modules");
   if (nmIndex !== -1) {
-    try {
-      const stat = lstat(absPath);
-      if (!stat?.isSymbolicLink()) {
-        return true;
-      }
-      // If the package folder is symlinked, we want to watch it.
-    } catch (e) {
-      return true;
-    }
+    return true;
   }
 
   return false;
