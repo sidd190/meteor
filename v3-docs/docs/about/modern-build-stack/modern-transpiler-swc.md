@@ -90,12 +90,12 @@ You can also configure other options using the `.swcrc` format. One common case 
 
 ``` json
 {
-    "jsc": {
-        "parser": {
-            "syntax": "emcascript",
-            "jsx": true
-        }
+  "jsc": {
+    "parser": {
+      "syntax": "emcascript",
+      "jsx": true
     }
+  }
 }
 ```
 
