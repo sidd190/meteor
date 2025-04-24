@@ -2,7 +2,7 @@ import { Stats } from 'fs';
 import ParcelWatcher from "@parcel/watcher";
 
 import { Profile } from "../tool-env/profile";
-import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname, realpathOrNull, readdir, pathJoin } from "./files";
+import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname } from "./files";
 
 // Register process exit handlers to ensure subscriptions are properly cleaned up
 const registerExitHandlers = () => {
