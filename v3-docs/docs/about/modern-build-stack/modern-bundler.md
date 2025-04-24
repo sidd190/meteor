@@ -1,5 +1,9 @@
 # Modern Bundler
 
+:::info
+Starting with Meteor 3.3
+:::
+
 Meteor handles watching and linking all project files into the final bundle. While we'd like to offload more of this to modern bundlers, we're still focused on keeping what's left in the Meteor context as fast as possible.
 
 Integration with a modern bundler is in progress for Meteor 3.4. Meanwhile, we've optimized existing processes for better performance.

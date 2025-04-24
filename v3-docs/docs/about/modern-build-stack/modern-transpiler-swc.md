@@ -1,5 +1,9 @@
 # Modern Transpiler: SWC
 
+:::info
+Starting with Meteor 3.3
+:::
+
 Meteor has long used Babel, a mature and still widely adopted transpiler. However, it lags behind newer tools like SWC in terms of speed. SWC and others are not only faster but are growing in use and features, reaching parity with Babel.
 
 Since transpilation is one of the slowest steps in development, Meteor now gives you the option to use SWC for your apps.
