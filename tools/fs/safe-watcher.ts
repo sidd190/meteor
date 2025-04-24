@@ -170,8 +170,10 @@ function shouldIgnorePath(absPath: string): boolean {
           return false;
         }
       }
+      return true;
+    } else {
+      return false;
     }
-    return false;
   }
 
   // For external node_modules: check if it's a direct node_modules/<package>
