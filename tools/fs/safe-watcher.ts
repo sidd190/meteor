@@ -161,7 +161,7 @@ function shouldIgnorePath(absPath: string): boolean {
       // If it's a direct node_modules/<package>, check if it's a symlink
       // We'll return false here (don't ignore) so that the code can later decide to use polling
       // based on isSymbolicLink check in the watch function
-      if (relParts.length === 2 && isSymbolicLink(absPath, false)) {
+      if (relParts.length === 2 && isSymbolicLink(absPath)) {
         return false;
       }
       // Check if it's within a symlink root to not ignore
