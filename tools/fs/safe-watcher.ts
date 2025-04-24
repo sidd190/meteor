@@ -153,24 +153,25 @@ function shouldIgnorePath(absPath: string): boolean {
   }
 
   // For project node_modules: check if it's a direct node_modules/<package>
-  if (isWithinCwd && absPath.includes(`${cwd}/node_modules`)) {
-    // Check if it's a direct node_modules/<package> path
-    const relPath = absPath.substring(cwd.length + 1); // +1 for the slash
-    const relParts = relPath.split('/');
-    if (relParts.length >= 2 && relParts[0] === 'node_modules') {
-      // If it's a direct node_modules/<package>, check if it's a symlink
-      // We'll return false here (don't ignore) so that the code can later decide to use polling
-      // based on isSymbolicLink check in the watch function
-      if (relParts.length === 2 && isSymbolicLink(absPath)) {
-        return false;
+  if (isWithinCwd) {
+    if (absPath.includes(`${cwd}/node_modules`)) {
+      // Check if it's a direct node_modules/<package> path
+      const relPath = absPath.substring(cwd.length + 1); // +1 for the slash
+      const relParts = relPath.split('/');
+      if (relParts.length >= 2 && relParts[0] === 'node_modules') {
+        // If it's a direct node_modules/<package>, check if it's a symlink
+        // We'll return false here (don't ignore) so that the code can later decide to use polling
+        // based on isSymbolicLink check in the watch function
+        if (relParts.length === 2 && isSymbolicLink(absPath)) {
+          return false;
+        }
+        // Check if it's within a symlink root to not ignore
+        if (isWithinSymlinkRoot(absPath)) {
+          return false;
+        }
       }
-      // Check if it's within a symlink root to not ignore
-      if (isWithinSymlinkRoot(absPath)) {
-        return false;
-      }
-      return true;
     }
-    return true;
+    return false;
   }
 
   // For external node_modules: check if it's a direct node_modules/<package>
