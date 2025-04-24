@@ -53,6 +53,14 @@ interface Entry extends SafeWatcher {
 // Registry mapping normalized absolute paths to their watcher entry.
 const entries = new Map<string, Entry | null>();
 
+// Registry mapping normalized absolute paths to their polling watchers.
+// Each path can have multiple callbacks, but only one active watcher.
+interface PollingWatcherInfo {
+  callbacks: Set<ChangeCallback>;
+  pollCallback: (curr: Stats, prev: Stats) => void;
+}
+const pollingWatchers = new Map<string, PollingWatcherInfo>();
+
 function getEntry(path: string): Entry | null | undefined {
   return entries.get(path);
 }
@@ -480,18 +488,53 @@ function startPolling(absPath: string, callback: ChangeCallback): SafeWatcher {
   const osPath = convertToOSPath(absPath);
   // Initial polling interval.
   let interval = getPollingInterval(absPath);
-  const pollCallback = (curr: Stats, prev: Stats) => {
-    // Compare modification times to detect a change.
-    if (+curr.mtime !== +prev.mtime) {
-      changedPaths.add(absPath);
-      callback("change");
-    }
-  };
-  watchFile(osPath, { interval }, pollCallback);
+
+  // Check if we already have a polling watcher for this path
+  let watcherInfo = pollingWatchers.get(absPath);
+
+  if (watcherInfo) {
+    // Add this callback to the existing watcher
+    watcherInfo.callbacks.add(callback);
+  } else {
+    // Create a new polling watcher
+    const pollCallback = (curr: Stats, prev: Stats) => {
+      // Compare modification times to detect a change.
+      if (+curr.mtime !== +prev.mtime) {
+        changedPaths.add(absPath);
+        // Notify all callbacks registered for this path
+        const info = pollingWatchers.get(absPath);
+        if (info) {
+          for (const cb of info.callbacks) {
+            cb("change");
+          }
+        }
+      }
+    };
+
+    watchFile(osPath, { interval }, pollCallback);
+
+    // Store the new watcher info
+    watcherInfo = {
+      callbacks: new Set([callback]),
+      pollCallback
+    };
+    pollingWatchers.set(absPath, watcherInfo);
+  }
+
   return {
     close() {
-      unwatchFile(osPath, pollCallback);
-      changedPaths.delete(absPath);
+      const info = pollingWatchers.get(absPath);
+      if (info) {
+        // Remove this callback
+        info.callbacks.delete(callback);
+
+        // If no callbacks remain, remove the watcher
+        if (info.callbacks.size === 0) {
+          unwatchFile(osPath, info.pollCallback);
+          pollingWatchers.delete(absPath);
+          changedPaths.delete(absPath);
+        }
+      }
     }
   };
 }
