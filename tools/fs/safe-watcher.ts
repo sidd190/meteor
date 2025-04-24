@@ -2,7 +2,7 @@ import { Stats } from 'fs';
 import ParcelWatcher from "@parcel/watcher";
 
 import { Profile } from "../tool-env/profile";
-import { statOrNull, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname } from "./files";
+import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname, realpathOrNull, readdir, pathJoin } from "./files";
 
 // Register process exit handlers to ensure subscriptions are properly cleaned up
 const registerExitHandlers = () => {
@@ -93,6 +93,9 @@ const dirSubscriptions = new Map<string, ParcelWatcher.AsyncSubscription>();
 // A set of roots that are known to be unwatchable.
 const ignoredWatchRoots = new Set<string>();
 
+// A set of roots that are known to be symbolic links.
+const symlinkRoots = new Set<string>();
+
 // Set METEOR_WATCH_FORCE_POLLING environment variable to a truthy value to
 // force the use of files.watchFile instead of ParcelWatcher.
 let watcherEnabled = !JSON.parse(process.env.METEOR_WATCH_FORCE_POLLING || "false");
@@ -152,6 +155,49 @@ function shouldIgnorePath(absPath: string): boolean {
     return true;
   }
 
+  return false;
+}
+
+/**
+ * Check if a path is a symbolic link.
+ * 
+ * Symbolic links are not supported natively in some operating systems,
+ * so we need to use polling for them to ensure they are properly watched.
+ * This function is used to determine if a path is a symbolic link,
+ * so we can use polling instead of native watching for it.
+ * 
+ * If a path is a symbolic link, its root is added to the symlinkRoots set.
+ */
+function isSymbolicLink(absPath: string): boolean {
+  try {
+    const osPath = convertToOSPath(absPath);
+    const stat = lstat(osPath);
+    if (stat?.isSymbolicLink()) {
+      // Add the directory containing the symlink to the symlinkRoots set
+      const symlinkRoot = toPosixPath(pathDirname(absPath));
+      symlinkRoots.add(symlinkRoot);
+      return true;
+    }
+    return false;
+  } catch (e) {
+    // If we can't stat the file, assume it's not a symlink
+    return false;
+  }
+}
+
+/**
+ * Check if a path is within any symlink root.
+ * 
+ * This is used to determine if a path should use polling instead of native watching,
+ * even if it's not a symlink itself.
+ */
+function isWithinSymlinkRoot(absPath: string): boolean {
+  for (const root of symlinkRoots) {
+    // Check if absPath starts with root + '/'
+    if (absPath === root || (absPath.startsWith(root) && absPath.charAt(root.length) === '/')) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -296,12 +342,18 @@ export const watch = Profile(
     callback: ChangeCallback
     ): SafeWatcher => {
       absPath = toPosixPath(absPath);
+
+      // if (absPath.includes('sym')) {
+      //   console.log("--> (safe-watcher.ts-Line: 318)\n absPath: ", absPath);
+      // }
       // If the path should be ignored, immediately return a noop SafeWatcher.
       if (shouldIgnorePath(absPath)) {
         return { close() {} };
       }
-      // If native watching is disabled, use the polling strategy.
-      if (!watcherEnabled) {
+      // If native watching is disabled, the path is a symbolic link, or the path is within a symlink root,
+      // use the polling strategy. Symbolic links are not supported natively in some operating systems,
+      // and paths within symlink roots should also use polling for consistency.
+      if (!watcherEnabled || isWithinSymlinkRoot(absPath) || isSymbolicLink(absPath)) {
         return startPolling(absPath, callback);
       }
       // Try to reuse an existing entry if one was created before.
