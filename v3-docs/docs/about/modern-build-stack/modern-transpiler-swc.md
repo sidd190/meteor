@@ -39,15 +39,18 @@ If all your code uses SWC, you're good and can turn off verbosity. But if you se
   <more-details>
 ```
 
-There are a few things you can do.
+This means SWC encountered syntax incompatibilities on the files. There are a few things you can do.
 
-First, check the fallback details. It may show why SWC couldn’t handle the file. A common reason is nested imports, `import` statements inside a function. Moving them to the top level may fix it. These nested imports work via a Babel plugin specific to Meteor, which SWC doesn’t support.
+First, check the fallback details to **fix the syntax**. They might explain why SWC failed.
 
-Other reasons might involve features tied to Babel plugins. If so, you’ll need to find a similar plugin for SWC. See the [SWC plugin list](https://plugins.swc.rs/versions/range/271).
+- A common cause is [**nested import statements** inside functions](#nested-imports). Move them to the top level. These work in Babel due to a Meteor-specific plugin, which SWC doesn’t support.
+- Other issues may come from features tied to Babel plugins. You’ll need to find SWC equivalents. See the [SWC plugin list](https://plugins.swc.rs/versions/range/271).
 
-Second, you might choose to ignore the fallback if those files are fine with Babel. Even with SWC enabled, Meteor will continue using Babel for those files on future rebuilds.
+Second, **ignore the fallback** if those files run fine with Babel. SWC will still speed up other files. Meteor will keep using Babel for incompatible files on future builds.
 
-Third, you can exclude files or contexts from SWC. For example, if you're using `babel-plugin-react-compiler`, which SWC doesn't support yet, you can exclude your app code adding this to `package.json`:
+Third, **exclude files or contexts from SWC**. Even though it falls back automatically, you can skip the overhead of trying SWC on known-incompatible files.
+
+For example, if you're using `babel-plugin-react-compiler`, which [SWC doesn't support yet](https://react.dev/blog/2025/04/21/react-compiler-rc), you can exclude your app code adding this to `package.json`:
 
 ```json
 "meteor": {
@@ -69,15 +72,32 @@ Or exclude only specific files like `.jsx`:
 
 You can also use `excludePackages`, `excludeNodeModules`, and `excludeLegacy` for finer control. See the [`modernTranspiler` config docs](#config-api) for more.
 
-When no alternatives exist, these settings let you still get most of SWC’s speed benefits by limiting fallback use.
+When no plugin exists, these settings let you still get most of SWC’s speed benefits by limiting fallback use.
 
-We expect most apps will benefit just by enabling `modernTranspiler: true`. Most Meteor packages should work right away, except ones using nested imports. Node modules will mostly work too, since they follow common standards. Most app code should also work unless it depends on Babel-specific behavior.
+Most apps will benefit just by enabling `modernTranspiler: true`. Most Meteor packages should work right away, except ones using nested imports. Node modules will mostly work too, since they follow common standards. Most app code should also work unless it depends on Babel-specific behavior.
 
 > Remember to turn off verbosity when you're done with optimizations.
 
 ## Custom .swcrc
 
-You can use .swcrc config in the root of your project to describe specific [SWC plugins](https://github.com/swc-project/plugins) there, that will be applied to compile the entire files of your project.
+You can use `.swcrc` config in the root of your project to describe specific [SWC plugins](https://github.com/swc-project/plugins) there, that will be applied to compile the entire files of your project.
+
+You can also configure other options using the `.swcrc` format. One common case is when your project uses `.js` files for React code. React typically uses `.jsx` for components. We still recommend following that convention for compatibility, but if you prefer `.js`, you can provide a custom `.swcrc` like this:
+
+``` json
+{
+    "jsc": {
+        "parser": {
+            "syntax": "emcascript",
+            "jsx": true
+        }
+    }
+}
+```
+
+> You can also configure it for TypeScript, make sure to set `"syntax": "typescript"` and `"tsx": true` instead.
+
+This overrides Meteor's internal SWC config to apply your settings, ensuring SWC processes `.js` or `.ts` files with React components without falling back to Babel.
 
 ## Config API
 
@@ -101,6 +121,35 @@ You can use .swcrc config in the root of your project to describe specific [SWC 
 
 - `modernTranspiler.verbose: [true|false]`
   If true, the transpilation process for files is shown when running the app. This helps understand which transpiler is used for each file, what fallbacks are applied, and gives a chance to either exclude files to always use Babel or migrate fully to SWC.
+
+## Related Topics
+
+### Nested imports
+
+Nested imports are a Meteor-specific feature in its bundler, unlike standard bundlers. Meteor introduced them during a time when bundling standards were still evolving and experimented with its own approach. This feature comes from the [`reify` module](https://github.com/benjamn/reify/tree/main) and works with Babel transpilation. SWC doesn't support them since they were never standardized.
+
+Example with a nested import:
+
+``` javascript
+if (condition) {
+  import { a as b } from "./c";
+  console.log(b);
+}
+```
+
+Without a nested import (moved to top):
+
+``` javascript
+import { a as b } from "./c";
+
+if (condition) {
+  console.log(b);
+}
+```
+
+For background, see: [Why nested import](https://github.com/benjamn/reify/blob/main/WHY_NEST_IMPORTS.md).
+
+With `"modernTranspiler": true`, if SWC finds one, it silently falls back to Babel (only shows in `"verbose": true`). Nested imports isn’t standard, most modern projects use other deferred loading methods. You might want to move imports to the top or use require instead, letting SWC handle the file and speeding up builds. Still, this decision is up to the devs, some Meteor devs use them for valid reasons.
 
 ## Troubleshotting
 
