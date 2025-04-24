@@ -144,12 +144,28 @@ function shouldIgnorePath(absPath: string): boolean {
     // Otherwise, do not automatically ignore .meteor (which includes .meteor/packages, etc).
   }
 
-  // For project node_modules: ignore npm node_modules, rest are valid
-  if (isWithinCwd) {
-    return absPath.includes(`${cwd}/node_modules`);
+  // For project node_modules: check if it's a direct node_modules/<package>
+  if (isWithinCwd && absPath.includes(`${cwd}/node_modules`)) {
+    // Check if it's a direct node_modules/<package> path
+    const relPath = absPath.substring(cwd.length + 1); // +1 for the slash
+    const relParts = relPath.split('/');
+    if (relParts.length >= 2 && relParts[0] === 'node_modules') {
+      // If it's a direct node_modules/<package>, check if it's a symlink
+      // We'll return false here (don't ignore) so that the code can later decide to use polling
+      // based on isSymbolicLink check in the watch function
+      if (relParts.length === 2 && isSymbolicLink(absPath, false)) {
+        return false;
+      }
+      // Check if it's within a symlink root to not ignore
+      if (isWithinSymlinkRoot(absPath)) {
+        return false;
+      }
+      return true;
+    }
+    return true;
   }
 
-  // For external node_modules: ignore contents
+  // For external node_modules: check if it's a direct node_modules/<package>
   const nmIndex = parts.indexOf("node_modules");
   if (nmIndex !== -1) {
     return true;
@@ -168,14 +184,16 @@ function shouldIgnorePath(absPath: string): boolean {
  * 
  * If a path is a symbolic link, its root is added to the symlinkRoots set.
  */
-function isSymbolicLink(absPath: string): boolean {
+function isSymbolicLink(absPath: string, addToRoots = true): boolean {
   try {
     const osPath = convertToOSPath(absPath);
     const stat = lstat(osPath);
     if (stat?.isSymbolicLink()) {
-      // Add the directory containing the symlink to the symlinkRoots set
-      const symlinkRoot = toPosixPath(pathDirname(absPath));
-      symlinkRoots.add(symlinkRoot);
+      if (addToRoots) {
+        // Add the directory containing the symlink to the symlinkRoots set
+        const symlinkRoot = toPosixPath(absPath);
+        symlinkRoots.add(symlinkRoot);
+      }
       return true;
     }
     return false;
@@ -343,9 +361,6 @@ export const watch = Profile(
     ): SafeWatcher => {
       absPath = toPosixPath(absPath);
 
-      // if (absPath.includes('sym')) {
-      //   console.log("--> (safe-watcher.ts-Line: 318)\n absPath: ", absPath);
-      // }
       // If the path should be ignored, immediately return a noop SafeWatcher.
       if (shouldIgnorePath(absPath)) {
         return { close() {} };
