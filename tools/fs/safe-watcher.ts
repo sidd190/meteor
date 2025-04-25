@@ -204,6 +204,8 @@ function isSymbolicLink(absPath: string, addToRoots = true): boolean {
         // Add the directory containing the symlink to the symlinkRoots set
         const symlinkRoot = toPosixPath(absPath);
         symlinkRoots.add(symlinkRoot);
+        // Rewatch using polling any existing watchers under this symlink root
+        rewatchPolling(symlinkRoot);
       }
       return true;
     }
@@ -540,6 +542,35 @@ function startPolling(absPath: string, callback: ChangeCallback): SafeWatcher {
       }
     }
   };
+}
+
+/**
+ * Rewatch entries under a symlink root from native watchers to polling watchers.
+ * This is called when a new symlink root is discovered.
+ */
+function rewatchPolling(root: string) {
+  for (const [watchedPath, entry] of entries) {
+    // if it lives under the new symlink root...
+    if (watchedPath === root ||
+        (watchedPath.startsWith(root) && watchedPath.charAt(root.length) === '/')) {
+      // Skip if entry is null or already closed
+      if (!entry) continue;
+
+      // Store the callbacks before closing the entry
+      const callbacks = Array.from(entry.callbacks);
+
+      // Tear down the old native watcher
+      entry.close();
+
+      // Remove it from the map
+      entries.delete(watchedPath);
+
+      // Re-watch via polling for each callback
+      for (const cb of callbacks) {
+        startPolling(watchedPath, cb);
+      }
+    }
+  }
 }
 
 /**
