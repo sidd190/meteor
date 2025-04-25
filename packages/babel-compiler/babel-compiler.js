@@ -91,9 +91,7 @@ function compileWithSwc(source, swcOptions = {}, { inputFilePath, features, arch
         generateLetDeclarations: true,
       }),
     });
-    if (!result.identical) {
-      content = result.code;
-    }
+    content = result.code;
 
     return {
       code: content,
