@@ -154,6 +154,7 @@ function shouldIgnorePath(absPath: string): boolean {
 
   // For project node_modules: check if it's a direct node_modules/<package>
   if (isWithinCwd) {
+    // Check if it's the project node_modules
     if (absPath.includes(`${cwd}/node_modules`)) {
       // Check if it's a direct node_modules/<package> path
       const relPath = absPath.substring(cwd.length + 1); // +1 for the slash
@@ -172,6 +173,7 @@ function shouldIgnorePath(absPath: string): boolean {
       }
       return true;
     } else {
+      // Otherwise, don't ignore non-npm node_modules
       return false;
     }
   }
@@ -179,6 +181,12 @@ function shouldIgnorePath(absPath: string): boolean {
   // For external node_modules: check if it's a direct node_modules/<package>
   const nmIndex = parts.indexOf("node_modules");
   if (nmIndex !== -1) {
+    // Don't ignore node_modules within .npm/package/ paths
+    const npmPackageIndex = parts.indexOf(".npm");
+    if (npmPackageIndex !== -1 && parts[npmPackageIndex + 1] === "package" && 
+        nmIndex > npmPackageIndex && parts[nmIndex - 1] === "package") {
+      return false;
+    }
     return true;
   }
 
