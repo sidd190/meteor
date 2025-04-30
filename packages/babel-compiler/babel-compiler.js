@@ -64,9 +64,6 @@ function compileWithSwc(source, swcOptions = {}, { inputFilePath, features, arch
         ? deepMerge(baseSwcConfig, swcOptions, [
             'env.targets',
             'module.type',
-            'jsc.parser.syntax',
-            'jsc.parser.jsx',
-            'jsc.parser.tsx',
           ])
         : baseSwcConfig;
 
