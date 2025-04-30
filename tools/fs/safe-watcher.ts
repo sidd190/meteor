@@ -1,5 +1,6 @@
 import { Stats } from 'fs';
 import ParcelWatcher from "@parcel/watcher";
+import { watch as watchLegacy, addWatchRoot as addWatchRootLegacy, closeAllWatchers as closeAllWatchersLegacy } from './safe-watcher-legacy';
 
 import { Profile } from "../tool-env/profile";
 import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname } from "./files";
@@ -380,6 +381,11 @@ export const watch = Profile(
     absPath: string,
     callback: ChangeCallback
     ): SafeWatcher => {
+      // @ts-ignore
+      if (!global.modernWatcher) {
+        // @ts-ignore
+        return watchLegacy(absPath, callback);
+      }
       absPath = toPosixPath(absPath);
 
       // If the path should be ignored, immediately return a noop SafeWatcher.
@@ -428,6 +434,12 @@ export const watch = Profile(
  * If the provided path is a file, its parent directory is used.
  */
 export function addWatchRoot(absPath: string) {
+  // @ts-ignore
+  if (!global.modernWatcher) {
+    // @ts-ignore
+    return addWatchRootLegacy(absPath);
+  }
+
   absPath = toPosixPath(absPath);
   let watchTarget = absPath;
   try {
@@ -455,6 +467,11 @@ async function safeUnsubscribeSub(root: string) {
 }
 
 export async function closeAllWatchers() {
+  // @ts-ignore
+  if (!global.modernWatcher) {
+    // @ts-ignore
+    return closeAllWatchersLegacy();
+  }
   for (const root of Array.from(watchRoots)) {
     await safeUnsubscribeSub(root);
   }

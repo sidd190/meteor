@@ -261,14 +261,28 @@ export function parseRunTargets(targets) {
   });
 };
 
-function isModernArchsOnlyEnabled(appDir) {
+let meteorConfig;
+
+function getMeteorConfig(appDir) {
+  if (meteorConfig) return meteorConfig;
   const packageJsonPath = files.pathJoin(appDir, 'package.json');
   if (!files.exists(packageJsonPath)) {
     return false;
   }
   const packageJsonFile = files.readFile(packageJsonPath, 'utf8');
   const packageJson = JSON.parse(packageJsonFile);
-  return packageJson?.meteor?.modern?.webArchsOnly === true || packageJson?.meteor?.modern === true;
+  meteorConfig = packageJson?.meteor;
+  return meteorConfig;
+}
+
+function isModernArchsOnlyEnabled(appDir) {
+  const meteorConfig = getMeteorConfig(appDir);
+  return meteorConfig?.modern?.webArchsOnly === true || meteorConfig?.modern === true;
+}
+
+export function isModernWatcherEnabled(appDir) {
+  const meteorConfig = getMeteorConfig(appDir);
+  return meteorConfig?.modern?.watcher === true || meteorConfig?.modern === true;
 }
 
 function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
@@ -547,6 +561,7 @@ async function doRunCommand(options) {
   webArchs = filterWebArchs(webArchs, options['exclude-archs'], options.appDir, options);
   // Set the webArchs to include for compilation later
   global.includedWebArchs = webArchs;
+  global.modernWatcher = isModernWatcherEnabled(options.appDir);
 
   const buildMode = options.production ? 'production' : 'development';
 
@@ -1447,6 +1462,7 @@ on an OS X system.");
       ...options,
       platforms: projectContext.platformList.getPlatforms(),
     });
+    global.modernWatcher = isModernWatcherEnabled(options.appDir);
   }
 
   var buildDir = projectContext.getProjectLocalDirectory('build_tar');
@@ -2517,6 +2533,7 @@ var runTestAppForPackages = async function (projectContext, options) {
   buildOptions.webArchs = filterWebArchs(webArchs, options['exclude-archs'], projectContext.appDirectory, options);
   // Set the webArchs to include for compilation later
   global.includedWebArchs = buildOptions.webArchs;
+  global.modernWatcher = isModernWatcherEnabled(projectContext.appDirectory);
 
   if (options.deploy) {
     // Run the constraint solver and build local packages.
