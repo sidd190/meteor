@@ -264,10 +264,10 @@ BCp.processOneFileForTarget = function (inputFile, source) {
     this.inferExtraBabelOptions(inputFile, babelOptions, cacheOptions.cacheDeps);
 
     babelOptions.sourceMaps = true;
-    babelOptions.filename =
-      babelOptions.sourceFileName = packageName
-        ? "packages/" + packageName + "/" + inputFilePath
+    const filename = packageName
+        ? `packages/${packageName}/${inputFilePath}`
         : inputFilePath;
+    babelOptions.filename = babelOptions.sourceFileName = filename;
 
     if (this.modifyBabelConfig) {
       this.modifyBabelConfig(babelOptions, inputFile);
@@ -339,15 +339,10 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               return compilation;
             }
 
-
-            const filename = packageName
-              ? `packages/${packageName}/${inputFilePath}`
-              : inputFilePath;
-            const sourceFileName = filename;
             compilation = compileWithSwc(
               source,
               lastModifiedSwcConfig,
-              { inputFilePath, features, arch, filename, sourceFileName },
+              { inputFilePath, features, arch, filename, sourceFileName: filename },
             );
             // Save result in cache
             this.writeToSwcCache({ cacheKey, compilation });
