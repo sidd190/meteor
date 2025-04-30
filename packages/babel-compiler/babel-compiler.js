@@ -277,7 +277,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
         const config = lastModifiedMeteorConfig?.modern?.transpiler;
         const hasModernTranspiler =
-          lastModifiedMeteorConfig?.modern?.transpiler === true ||
+          lastModifiedMeteorConfig?.modern?.transpiler !== false ||
             lastModifiedMeteorConfig?.modern === true;
         const shouldSkipSwc =
           !hasModernTranspiler ||
