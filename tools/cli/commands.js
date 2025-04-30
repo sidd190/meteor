@@ -287,7 +287,7 @@ function isModernArchsOnlyEnabled(appDir) {
   }
   const packageJsonFile = files.readFile(packageJsonPath, 'utf8');
   const packageJson = JSON.parse(packageJsonFile);
-  return normalizeModern(packageJson?.meteor?.modern).webArchOnly === true;
+  return normalizeModern(packageJson?.meteor?.modern).webArchOnly !== false;
 }
 
 function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
