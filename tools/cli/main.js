@@ -865,8 +865,8 @@ makeGlobalAsyncLocalStorage().run({}, async function () {
   var appDir = files.findAppDir();
   if (appDir) {
     appDir = files.pathResolve(appDir);
+    global.modernWatcher = isModernWatcherEnabled(appDir);
   }
-  global.modernWatcher = isModernWatcherEnabled(appDir);
 
   await require('../tool-env/isopackets.js').ensureIsopacketsLoadable();
 
