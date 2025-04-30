@@ -261,6 +261,25 @@ export function parseRunTargets(targets) {
   });
 };
 
+const DEFAULT_MODERN = {
+  transpiler: true,
+  webArchsOnly: true,
+  watcher: true,
+};
+
+const normalizeModern = r => Object.fromEntries(
+    Object.entries(DEFAULT_MODERN).map(([k, def]) => [
+      k,
+      r === true
+          ? def
+          : r === false || r?.[k] === false
+              ? false
+              : typeof r?.[k] === 'object'
+                  ? { ...r[k] }
+                  : def,
+    ]),
+);
+
 function isModernArchsOnlyEnabled(appDir) {
   const packageJsonPath = files.pathJoin(appDir, 'package.json');
   if (!files.exists(packageJsonPath)) {
@@ -268,7 +287,7 @@ function isModernArchsOnlyEnabled(appDir) {
   }
   const packageJsonFile = files.readFile(packageJsonPath, 'utf8');
   const packageJson = JSON.parse(packageJsonFile);
-  return packageJson?.meteor?.modern?.webArchsOnly === true || packageJson?.meteor?.modern === true;
+  return normalizeModern(packageJson?.meteor?.modern).webArchOnly === true;
 }
 
 function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
@@ -292,7 +311,7 @@ function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
       const hasExcludeArchsOptions = (excludeArchsOptions?.length || 0) > 0;
       const hasModernArchsOnlyEnabled = appDir && isModernArchsOnlyEnabled(appDir);
       if (hasExcludeArchsOptions && hasModernArchsOnlyEnabled) {
-        console.warn('modernWebArchsOnly and --exclude-archs are both active. If both are set, --exclude-archs takes priority.');
+        console.warn('modern.webArchsOnly and --exclude-archs are both active. If both are set, --exclude-archs takes priority.');
       }
       const automaticallyIgnoredLegacyArchs = (!hasExcludeArchsOptions && hasModernArchsOnlyEnabled) ? ['web.browser.legacy', 'web.cordova'] : [];
       if (hasExcludeArchsOptions || automaticallyIgnoredLegacyArchs.length) {
