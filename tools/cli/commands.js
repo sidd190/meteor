@@ -582,7 +582,6 @@ async function doRunCommand(options) {
   webArchs = filterWebArchs(webArchs, options['exclude-archs'], options.appDir, options);
   // Set the webArchs to include for compilation later
   global.includedWebArchs = webArchs;
-  global.modernWatcher = isModernWatcherEnabled(options.appDir);
 
   const buildMode = options.production ? 'production' : 'development';
 
@@ -1483,7 +1482,6 @@ on an OS X system.");
       ...options,
       platforms: projectContext.platformList.getPlatforms(),
     });
-    global.modernWatcher = isModernWatcherEnabled(options.appDir);
   }
 
   var buildDir = projectContext.getProjectLocalDirectory('build_tar');
@@ -2554,7 +2552,6 @@ var runTestAppForPackages = async function (projectContext, options) {
   buildOptions.webArchs = filterWebArchs(webArchs, options['exclude-archs'], projectContext.appDirectory, options);
   // Set the webArchs to include for compilation later
   global.includedWebArchs = buildOptions.webArchs;
-  global.modernWatcher = isModernWatcherEnabled(projectContext.appDirectory);
 
   if (options.deploy) {
     // Run the constraint solver and build local packages.
