@@ -114,6 +114,8 @@ const normalizeModern = r => Object.fromEntries(
     ]),
 );
 
+let modernForced = Boolean(JSON.parse(process.env.METEOR_MODERN || "false"));
+
 let lastModifiedMeteorConfig;
 let lastModifiedMeteorConfigTime;
 BCp.initializeMeteorAppConfig = function () {
@@ -128,7 +130,7 @@ BCp.initializeMeteorAppConfig = function () {
     lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
     lastModifiedMeteorConfig = {
       ...lastModifiedMeteorConfig,
-      modern: normalizeModern(lastModifiedMeteorConfig?.modern),
+      modern: normalizeModern(modernForced || lastModifiedMeteorConfig?.modern),
     };
 
     if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
