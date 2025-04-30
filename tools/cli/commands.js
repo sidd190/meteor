@@ -267,7 +267,7 @@ const DEFAULT_MODERN = {
   watcher: true,
 };
 
-const normalizeModern = r => Object.fromEntries(
+const normalizeModern = (r = false) => Object.fromEntries(
     Object.entries(DEFAULT_MODERN).map(([k, def]) => [
       k,
       r === true

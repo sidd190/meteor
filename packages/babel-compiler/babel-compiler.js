@@ -103,7 +103,7 @@ const DEFAULT_MODERN = {
   transpiler: true,
 };
 
-const normalizeModern = r => Object.fromEntries(
+const normalizeModern = (r = false) => Object.fromEntries(
     Object.entries(DEFAULT_MODERN).map(([k, def]) => [
       k,
       r === true
@@ -128,10 +128,10 @@ BCp.initializeMeteorAppConfig = function () {
   if (currentLastModifiedConfigTime !== lastModifiedMeteorConfigTime) {
     lastModifiedMeteorConfigTime = currentLastModifiedConfigTime;
     lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
-    lastModifiedMeteorConfig = {
+    lastModifiedMeteorConfig = lastModifiedMeteorConfig != null ? {
       ...lastModifiedMeteorConfig,
       modern: normalizeModern(lastModifiedMeteorConfig?.modern),
-    };
+    } : {};
 
     if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
       logConfigBlock('Meteor Config', lastModifiedMeteorConfig);
