@@ -263,7 +263,7 @@ export function parseRunTargets(targets) {
 
 const DEFAULT_MODERN = {
     transpiler: true,
-    webArchsOnly: true,
+    webArchOnly: true,
     watcher: true,
 };
 
@@ -325,7 +325,7 @@ function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
       const hasExcludeArchsOptions = (excludeArchsOptions?.length || 0) > 0;
       const hasModernArchsOnlyEnabled = appDir && isModernArchsOnlyEnabled(appDir);
       if (hasExcludeArchsOptions && hasModernArchsOnlyEnabled) {
-        console.warn('modern.webArchsOnly and --exclude-archs are both active. If both are set, --exclude-archs takes priority.');
+        console.warn('modern.webArchOnly and --exclude-archs are both active. If both are set, --exclude-archs takes priority.');
       }
       const automaticallyIgnoredLegacyArchs = (!hasExcludeArchsOptions && hasModernArchsOnlyEnabled) ? ['web.browser.legacy', 'web.cordova'] : [];
       if (hasExcludeArchsOptions || automaticallyIgnoredLegacyArchs.length) {
