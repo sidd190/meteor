@@ -2,7 +2,7 @@ import { Stats } from 'fs';
 import ParcelWatcher from "@parcel/watcher";
 
 import { Profile } from "../tool-env/profile";
-import { statOrNull, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname } from "./files";
+import { statOrNull, lstat, toPosixPath, convertToOSPath, pathRelative, watchFile, unwatchFile, pathResolve, pathDirname } from "./files";
 
 // Register process exit handlers to ensure subscriptions are properly cleaned up
 const registerExitHandlers = () => {
@@ -53,6 +53,14 @@ interface Entry extends SafeWatcher {
 // Registry mapping normalized absolute paths to their watcher entry.
 const entries = new Map<string, Entry | null>();
 
+// Registry mapping normalized absolute paths to their polling watchers.
+// Each path can have multiple callbacks, but only one active watcher.
+interface PollingWatcherInfo {
+  callbacks: Set<ChangeCallback>;
+  pollCallback: (curr: Stats, prev: Stats) => void;
+}
+const pollingWatchers = new Map<string, PollingWatcherInfo>();
+
 function getEntry(path: string): Entry | null | undefined {
   return entries.get(path);
 }
@@ -92,6 +100,9 @@ const watchRoots = new Set<string>();
 const dirSubscriptions = new Map<string, ParcelWatcher.AsyncSubscription>();
 // A set of roots that are known to be unwatchable.
 const ignoredWatchRoots = new Set<string>();
+
+// A set of roots that are known to be symbolic links.
+const symlinkRoots = new Set<string>();
 
 // Set METEOR_WATCH_FORCE_POLLING environment variable to a truthy value to
 // force the use of files.watchFile instead of ParcelWatcher.
@@ -141,17 +152,91 @@ function shouldIgnorePath(absPath: string): boolean {
     // Otherwise, do not automatically ignore .meteor (which includes .meteor/packages, etc).
   }
 
-  // For project node_modules: ignore npm node_modules, rest are valid
+  // For project node_modules: check if it's a direct node_modules/<package>
   if (isWithinCwd) {
-    return absPath.includes(`${cwd}/node_modules`);
+    // Check if it's the project node_modules
+    if (absPath.includes(`${cwd}/node_modules`)) {
+      // Check if it's a direct node_modules/<package> path
+      const relPath = absPath.substring(cwd.length + 1); // +1 for the slash
+      const relParts = relPath.split('/');
+      if (relParts.length >= 2 && relParts[0] === 'node_modules') {
+        // If it's a direct node_modules/<package>, check if it's a symlink
+        // We'll return false here (don't ignore) so that the code can later decide to use polling
+        // based on isSymbolicLink check in the watch function
+        if (relParts.length === 2 && isSymbolicLink(absPath)) {
+          return false;
+        }
+        // Check if it's within a symlink root to not ignore
+        if (isWithinSymlinkRoot(absPath)) {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      // Otherwise, don't ignore non-npm node_modules
+      return false;
+    }
   }
 
-  // For external node_modules: ignore contents
+  // For external node_modules: check if it's a direct node_modules/<package>
   const nmIndex = parts.indexOf("node_modules");
   if (nmIndex !== -1) {
+    // Don't ignore node_modules within .npm/package/ paths
+    const npmPackageIndex = parts.indexOf(".npm");
+    if (npmPackageIndex !== -1 && parts[npmPackageIndex + 1] === "package" && 
+        nmIndex > npmPackageIndex && parts[nmIndex - 1] === "package") {
+      return false;
+    }
     return true;
   }
 
+  return false;
+}
+
+/**
+ * Check if a path is a symbolic link.
+ * 
+ * Symbolic links are not supported natively in some operating systems,
+ * so we need to use polling for them to ensure they are properly watched.
+ * This function is used to determine if a path is a symbolic link,
+ * so we can use polling instead of native watching for it.
+ * 
+ * If a path is a symbolic link, its root is added to the symlinkRoots set.
+ */
+function isSymbolicLink(absPath: string, addToRoots = true): boolean {
+  try {
+    const osPath = convertToOSPath(absPath);
+    const stat = lstat(osPath);
+    if (stat?.isSymbolicLink()) {
+      if (addToRoots) {
+        // Add the directory containing the symlink to the symlinkRoots set
+        const symlinkRoot = toPosixPath(absPath);
+        symlinkRoots.add(symlinkRoot);
+        // Rewatch using polling any existing watchers under this symlink root
+        rewatchPolling(symlinkRoot);
+      }
+      return true;
+    }
+    return false;
+  } catch (e) {
+    // If we can't stat the file, assume it's not a symlink
+    return false;
+  }
+}
+
+/**
+ * Check if a path is within any symlink root.
+ * 
+ * This is used to determine if a path should use polling instead of native watching,
+ * even if it's not a symlink itself.
+ */
+function isWithinSymlinkRoot(absPath: string): boolean {
+  for (const root of symlinkRoots) {
+    // Check if absPath starts with root + '/'
+    if (absPath === root || (absPath.startsWith(root) && absPath.charAt(root.length) === '/')) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -296,12 +381,15 @@ export const watch = Profile(
     callback: ChangeCallback
     ): SafeWatcher => {
       absPath = toPosixPath(absPath);
+
       // If the path should be ignored, immediately return a noop SafeWatcher.
       if (shouldIgnorePath(absPath)) {
         return { close() {} };
       }
-      // If native watching is disabled, use the polling strategy.
-      if (!watcherEnabled) {
+      // If native watching is disabled, the path is a symbolic link, or the path is within a symlink root,
+      // use the polling strategy. Symbolic links are not supported natively in some operating systems,
+      // and paths within symlink roots should also use polling for consistency.
+      if (!watcherEnabled || isWithinSymlinkRoot(absPath) || isSymbolicLink(absPath)) {
         return startPolling(absPath, callback);
       }
       // Try to reuse an existing entry if one was created before.
@@ -413,20 +501,84 @@ function startPolling(absPath: string, callback: ChangeCallback): SafeWatcher {
   const osPath = convertToOSPath(absPath);
   // Initial polling interval.
   let interval = getPollingInterval(absPath);
-  const pollCallback = (curr: Stats, prev: Stats) => {
-    // Compare modification times to detect a change.
-    if (+curr.mtime !== +prev.mtime) {
-      changedPaths.add(absPath);
-      callback("change");
-    }
-  };
-  watchFile(osPath, { interval }, pollCallback);
+
+  // Check if we already have a polling watcher for this path
+  let watcherInfo = pollingWatchers.get(absPath);
+
+  if (watcherInfo) {
+    // Add this callback to the existing watcher
+    watcherInfo.callbacks.add(callback);
+  } else {
+    // Create a new polling watcher
+    const pollCallback = (curr: Stats, prev: Stats) => {
+      // Compare modification times to detect a change.
+      if (+curr.mtime !== +prev.mtime) {
+        changedPaths.add(absPath);
+        // Notify all callbacks registered for this path
+        const info = pollingWatchers.get(absPath);
+        if (info) {
+          for (const cb of info.callbacks) {
+            cb("change");
+          }
+        }
+      }
+    };
+
+    watchFile(osPath, { interval }, pollCallback);
+
+    // Store the new watcher info
+    watcherInfo = {
+      callbacks: new Set([callback]),
+      pollCallback
+    };
+    pollingWatchers.set(absPath, watcherInfo);
+  }
+
   return {
     close() {
-      unwatchFile(osPath, pollCallback);
-      changedPaths.delete(absPath);
+      const info = pollingWatchers.get(absPath);
+      if (info) {
+        // Remove this callback
+        info.callbacks.delete(callback);
+
+        // If no callbacks remain, remove the watcher
+        if (info.callbacks.size === 0) {
+          unwatchFile(osPath, info.pollCallback);
+          pollingWatchers.delete(absPath);
+          changedPaths.delete(absPath);
+        }
+      }
     }
   };
+}
+
+/**
+ * Rewatch entries under a symlink root from native watchers to polling watchers.
+ * This is called when a new symlink root is discovered.
+ */
+function rewatchPolling(root: string) {
+  for (const [watchedPath, entry] of entries) {
+    // if it lives under the new symlink root...
+    if (watchedPath === root ||
+        (watchedPath.startsWith(root) && watchedPath.charAt(root.length) === '/')) {
+      // Skip if entry is null or already closed
+      if (!entry) continue;
+
+      // Store the callbacks before closing the entry
+      const callbacks = Array.from(entry.callbacks);
+
+      // Tear down the old native watcher
+      entry.close();
+
+      // Remove it from the map
+      entries.delete(watchedPath);
+
+      // Re-watch via polling for each callback
+      for (const cb of callbacks) {
+        startPolling(watchedPath, cb);
+      }
+    }
+  }
 }
 
 /**
