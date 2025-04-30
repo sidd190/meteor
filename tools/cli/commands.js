@@ -296,12 +296,12 @@ function getMeteorConfig(appDir) {
 
 function isModernArchsOnlyEnabled(appDir) {
   const meteorConfig = getMeteorConfig(appDir);
-  return normalizeModern(meteorConfig?.modern).webArchOnly === true;
+  return normalizeModern(meteorConfig?.modern).webArchOnly !== false;
 }
 
 export function isModernWatcherEnabled(appDir) {
   const meteorConfig = getMeteorConfig(appDir);
-  return normalizeModern(meteorConfig?.modern).watcher === true;
+  return normalizeModern(meteorConfig?.modern).watcher !== false;
 }
 
 function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {

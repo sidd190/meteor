@@ -296,9 +296,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const isLegacyWebArch = arch.includes('legacy');
 
         const config = lastModifiedMeteorConfig?.modern?.transpiler;
-        const hasModernTranspiler =
-          lastModifiedMeteorConfig?.modern?.transpiler !== false ||
-            lastModifiedMeteorConfig?.modern === true;
+        const hasModernTranspiler = lastModifiedMeteorConfig?.modern?.transpiler !== false;
         const shouldSkipSwc =
           !hasModernTranspiler ||
           (isAppCode && config?.excludeApp === true) ||
