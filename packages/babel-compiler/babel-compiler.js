@@ -276,30 +276,32 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const isLegacyWebArch = arch.includes('legacy');
 
         const config = lastModifiedMeteorConfig?.modern?.transpiler;
-        const hasModernTranspiler = config != null;
+        const hasModernTranspiler =
+          lastModifiedMeteorConfig?.modern?.transpiler === true ||
+            lastModifiedMeteorConfig?.modern === true;
         const shouldSkipSwc =
           !hasModernTranspiler ||
-          (isAppCode && config.excludeApp === true) ||
-          (isNodeModulesCode && config.excludeNodeModules === true) ||
-          (isPackageCode && config.excludePackages === true) ||
-          (isLegacyWebArch && config.excludeLegacy === true) ||
+          (isAppCode && config?.excludeApp === true) ||
+          (isNodeModulesCode && config?.excludeNodeModules === true) ||
+          (isPackageCode && config?.excludePackages === true) ||
+          (isLegacyWebArch && config?.excludeLegacy === true) ||
           (isAppCode &&
-            Array.isArray(config.excludeApp) &&
-            isExcludedConfig(inputFilePath, config.excludeApp || [])) ||
+            Array.isArray(config?.excludeApp) &&
+            isExcludedConfig(inputFilePath, config?.excludeApp || [])) ||
           (isNodeModulesCode &&
-            Array.isArray(config.excludeNodeModules) &&
-            (isExcludedConfig(inputFilePath, config.excludeNodeModules || []) ||
+            Array.isArray(config?.excludeNodeModules) &&
+            (isExcludedConfig(inputFilePath, config?.excludeNodeModules || []) ||
               isExcludedConfig(
                 inputFilePath.replace('node_modules/', ''),
-                config.excludeNodeModules || [],
+                config?.excludeNodeModules || [],
                 true,
               ))) ||
           (isPackageCode &&
-            Array.isArray(config.excludePackages) &&
-            (isExcludedConfig(packageName, config.excludePackages || []) ||
+            Array.isArray(config?.excludePackages) &&
+            (isExcludedConfig(packageName, config?.excludePackages || []) ||
               isExcludedConfig(
                 `${packageName}/${inputFilePath}`,
-                config.excludePackages || [],
+                config?.excludePackages || [],
               )));
 
         const cacheKey = [
