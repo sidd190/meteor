@@ -97,6 +97,22 @@ function compileWithSwc(source, swcOptions = {}, { inputFilePath, features, arch
     };
   });
 }
+const DEFAULT_MODERN = {
+  transpiler: true,
+};
+
+const normalizeModern = r => Object.fromEntries(
+    Object.entries(DEFAULT_MODERN).map(([k, def]) => [
+      k,
+      r === true
+        ? def
+        : r === false || r?.[k] === false
+        ? false
+        : typeof r?.[k] === 'object'
+        ? { ...r[k] }
+        : def,
+    ]),
+);
 
 let lastModifiedMeteorConfig;
 let lastModifiedMeteorConfigTime;
@@ -110,6 +126,10 @@ BCp.initializeMeteorAppConfig = function () {
   if (currentLastModifiedConfigTime !== lastModifiedMeteorConfigTime) {
     lastModifiedMeteorConfigTime = currentLastModifiedConfigTime;
     lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
+    lastModifiedMeteorConfig = {
+      ...lastModifiedMeteorConfig,
+      modern: normalizeModern(lastModifiedMeteorConfig?.modern),
+    };
 
     if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
       logConfigBlock('Meteor Config', lastModifiedMeteorConfig);
@@ -277,7 +297,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
         const config = lastModifiedMeteorConfig?.modern?.transpiler;
         const hasModernTranspiler =
-          lastModifiedMeteorConfig?.modern?.transpiler === true ||
+          lastModifiedMeteorConfig?.modern?.transpiler !== false ||
             lastModifiedMeteorConfig?.modern === true;
         const shouldSkipSwc =
           !hasModernTranspiler ||

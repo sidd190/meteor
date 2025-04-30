@@ -261,6 +261,25 @@ export function parseRunTargets(targets) {
   });
 };
 
+const DEFAULT_MODERN = {
+    transpiler: true,
+    webArchsOnly: true,
+    watcher: true,
+};
+
+const normalizeModern = r => Object.fromEntries(
+    Object.entries(DEFAULT_MODERN).map(([k, def]) => [
+        k,
+        r === true
+            ? def
+            : r === false || r?.[k] === false
+                ? false
+                : typeof r?.[k] === 'object'
+                    ? { ...r[k] }
+                    : def,
+    ]),
+);
+
 let meteorConfig;
 
 function getMeteorConfig(appDir) {
@@ -277,12 +296,12 @@ function getMeteorConfig(appDir) {
 
 function isModernArchsOnlyEnabled(appDir) {
   const meteorConfig = getMeteorConfig(appDir);
-  return meteorConfig?.modern?.webArchsOnly === true || meteorConfig?.modern === true;
+  return normalizeModern(meteorConfig?.modern).webArchOnly === true;
 }
 
 export function isModernWatcherEnabled(appDir) {
   const meteorConfig = getMeteorConfig(appDir);
-  return meteorConfig?.modern?.watcher === true || meteorConfig?.modern === true;
+  return normalizeModern(meteorConfig?.modern).watcher === true;
 }
 
 function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
@@ -306,7 +325,7 @@ function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
       const hasExcludeArchsOptions = (excludeArchsOptions?.length || 0) > 0;
       const hasModernArchsOnlyEnabled = appDir && isModernArchsOnlyEnabled(appDir);
       if (hasExcludeArchsOptions && hasModernArchsOnlyEnabled) {
-        console.warn('modernWebArchsOnly and --exclude-archs are both active. If both are set, --exclude-archs takes priority.');
+        console.warn('modern.webArchsOnly and --exclude-archs are both active. If both are set, --exclude-archs takes priority.');
       }
       const automaticallyIgnoredLegacyArchs = (!hasExcludeArchsOptions && hasModernArchsOnlyEnabled) ? ['web.browser.legacy', 'web.cordova'] : [];
       if (hasExcludeArchsOptions || automaticallyIgnoredLegacyArchs.length) {
