@@ -339,10 +339,11 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               return compilation;
             }
 
+            const sourceFileName = filename;
             compilation = compileWithSwc(
               source,
               lastModifiedSwcConfig,
-              { inputFilePath, features, arch, filename, sourceFileName: filename },
+              { inputFilePath, features, arch, filename, sourceFileName },
             );
             // Save result in cache
             this.writeToSwcCache({ cacheKey, compilation });
