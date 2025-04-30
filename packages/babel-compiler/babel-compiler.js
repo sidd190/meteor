@@ -111,7 +111,7 @@ BCp.initializeMeteorAppConfig = function () {
     lastModifiedMeteorConfigTime = currentLastModifiedConfigTime;
     lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
 
-    if (lastModifiedMeteorConfig?.modernTranspiler?.verbose) {
+    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
       logConfigBlock('Meteor Config', lastModifiedMeteorConfig);
     }
   }
@@ -131,7 +131,7 @@ BCp.initializeMeteorAppSwcrc = function () {
     lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
     lastModifiedSwcConfig = getMeteorAppSwcrc();
 
-    if (lastModifiedMeteorConfig?.modernTranspiler?.verbose) {
+    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
   }
@@ -141,7 +141,7 @@ BCp.initializeMeteorAppSwcrc = function () {
 let lastModifiedSwcLegacyConfig;
 BCp.initializeMeteorAppLegacyConfig = function () {
   const swcLegacyConfig = convertBabelTargetsForSwc(Babel.getMinimumModernBrowserVersions());
-  if (lastModifiedMeteorConfig?.modernTranspiler?.verbose && !lastModifiedSwcLegacyConfig) {
+  if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose && !lastModifiedSwcLegacyConfig) {
     logConfigBlock('SWC Legacy Config', swcLegacyConfig);
   }
   lastModifiedSwcLegacyConfig = swcLegacyConfig;
@@ -275,7 +275,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const isPackageCode = packageName != null;
         const isLegacyWebArch = arch.includes('legacy');
 
-        const config = lastModifiedMeteorConfig?.modernTranspiler;
+        const config = lastModifiedMeteorConfig?.modern?.transpiler;
         const hasModernTranspiler = config != null;
         const shouldSkipSwc =
           !hasModernTranspiler ||

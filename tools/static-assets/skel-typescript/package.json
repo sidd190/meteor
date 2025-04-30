@@ -26,7 +26,6 @@
       "server": "server/main.ts"
     },
     "testModule": "tests/main.ts",
-    "modernWebArchsOnly": true,
-    "modernTranspiler": true
+    "modern": true
   }
 }

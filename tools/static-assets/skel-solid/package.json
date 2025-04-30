@@ -19,8 +19,7 @@
       "server": "server/entry-meteor.js"
     },
     "testModule": "tests/main.js",
-    "modernWebArchsOnly": true,
-    "modernTranspiler": true
+    "modern": true
   },
   "devDependencies": {
     "babel-preset-solid": "^1.8.15",

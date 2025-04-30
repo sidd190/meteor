@@ -14,11 +14,21 @@ Add this to your app's `package.json`:
 
 ```json
 "meteor": {
-  "modernTranspiler": true
+  "modern": true
 }
 ```
 
 When starting your app for web or native, SWC will handle all files: your app, npm packages, and Atmosphere packages. This also applies to production builds.
+
+By default, `"modern": true` enables all build stack upgrades: new transpiler, web arch-only compilation, watcher and more. To opt out of SWC, set `"transpiler": false` in your `package.json`.
+
+```json
+"meteor": {
+  "modern": {
+    "transpiler": false
+  }
+}
+```
 
 ## Verbose transpilation process
 
@@ -26,8 +36,10 @@ To analyze and improve transpilation, you can enable verbose output. Add this to
 
 ```json
 "meteor": {
-  "modernTranspiler": {
-	  "verbose": true
+  "modern": {
+    "transpiler": {
+      "verbose": true
+    }
   }
 }
 ```
@@ -58,8 +70,10 @@ For example, if you're using `babel-plugin-react-compiler`, which [SWC doesn't s
 
 ```json
 "meteor": {
-  "modernTranspiler": {
-	  "excludeApp": true
+  "modern": {
+    "transpiler": {
+      "excludeApp": true
+    }
   }
 }
 ```
@@ -68,8 +82,10 @@ Or exclude only specific files like `.jsx`:
 
 ```json
 "meteor": {
-  "modernTranspiler": {
-	  "excludeApp": ["\\.jsx"]
+  "modern": {
+    "transpiler": {
+      "excludeApp": ["\\.jsx"]
+    }
   }
 }
 ```
@@ -105,25 +121,25 @@ This overrides Meteor's internal SWC config to apply your settings, ensuring SWC
 
 ## Config API
 
-- `modernTranspiler: [true|false]`
+- `modern.transpiler: [true|false]` - Default: `true`
   Enables or disables the use of the modern transpiler (SWC). If disabled, Babel will be used directly instead.
 
-- `modernTranspiler.excludeApp: [true|false] or [string[]]`
+- `modern.transpiler.excludeApp: [true|false] or [string[]]`
   If true, the app’s own code (outside of Meteor core and packages) will continue using Babel.
   Otherwise, a list of file paths or regex-like patterns within the app to exclude from SWC transpilation.
 
-- `modernTranspiler.excludeNodeModules: [true|false] or [string[]]`
+- `modern.transpiler.excludeNodeModules: [true|false] or [string[]]`
   If true, the app’s node_modules will continue using Babel.
   Otherwise, a list of NPM packages names, file paths or regex-like patterns within the node_modules folder to exclude from SWC transpilation.
 
-- `modernTranspiler.excludePackages: [true|false] or [string[]]`
+- `modern.transpiler.excludePackages: [true|false] or [string[]]`
   If true, the Meteor’s packages will continue using Babel.
   Otherwise, a list of package names, file paths or regex-like patterns within the package to exclude from SWC transpilation.
 
-- `modernTranspiler.excludeLegacy: [true|false]`
+- `modern.transpiler.excludeLegacy: [true|false]`
   If true, the Meteor’s bundle for legacy browsers will continue using Babel.
 
-- `modernTranspiler.verbose: [true|false]`
+- `modern.transpiler.verbose: [true|false]`
   If true, the transpilation process for files is shown when running the app. This helps understand which transpiler is used for each file, what fallbacks are applied, and gives a chance to either exclude files to always use Babel or migrate fully to SWC.
 
 ## Related Topics
@@ -153,7 +169,7 @@ if (condition) {
 
 For background, see: [Why nested import](https://github.com/benjamn/reify/blob/main/WHY_NEST_IMPORTS.md).
 
-With `"modernTranspiler": true`, if SWC finds one, it silently falls back to Babel (only shows in `"verbose": true`). Nested imports isn’t standard, most modern projects use other deferred loading methods. You might want to move imports to the top or use require instead, letting SWC handle the file and speeding up builds. Still, this decision is up to the devs, some Meteor devs use them for valid reasons.
+With `"modern.transpiler": true`, if SWC finds one, it silently falls back to Babel (only shows in `"verbose": true`). Nested imports isn’t standard, most modern projects use other deferred loading methods. You might want to move imports to the top or use require instead, letting SWC handle the file and speeding up builds. Still, this decision is up to the devs, some Meteor devs use them for valid reasons.
 
 ## Troubleshotting
 
