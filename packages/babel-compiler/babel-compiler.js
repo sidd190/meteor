@@ -35,7 +35,7 @@ function compileWithBabel(source, babelOptions, cacheOptions) {
   });
 }
 
-function compileWithSwc(source, swcOptions = {}, { inputFilePath, features, arch }) {
+function compileWithSwc(source, swcOptions = {}, { inputFilePath, filename, sourceFileName, features, arch }) {
   return profile('SWC.compile', function () {
     // Determine file extension based syntax.
     const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
@@ -55,6 +55,8 @@ function compileWithSwc(source, swcOptions = {}, { inputFilePath, features, arch
       module: { type: 'es6' },
       minify: false,
       sourceMaps: true,
+      filename,
+      sourceFileName,
       ...(isLegacyWebArch && {
         env: { targets: lastModifiedSwcLegacyConfig || {} },
       }),
@@ -259,10 +261,10 @@ BCp.processOneFileForTarget = function (inputFile, source) {
     this.inferExtraBabelOptions(inputFile, babelOptions, cacheOptions.cacheDeps);
 
     babelOptions.sourceMaps = true;
-    babelOptions.filename =
-      babelOptions.sourceFileName = packageName
-        ? "packages/" + packageName + "/" + inputFilePath
+    const filename = packageName
+        ? `packages/${packageName}/${inputFilePath}`
         : inputFilePath;
+    babelOptions.filename = babelOptions.sourceFileName = filename;
 
     if (this.modifyBabelConfig) {
       this.modifyBabelConfig(babelOptions, inputFile);
@@ -333,10 +335,12 @@ BCp.processOneFileForTarget = function (inputFile, source) {
               }
               return compilation;
             }
+
+            const sourceFileName = filename;
             compilation = compileWithSwc(
               source,
               lastModifiedSwcConfig,
-              { inputFilePath, features, arch },
+              { inputFilePath, features, arch, filename, sourceFileName },
             );
             // Save result in cache
             this.writeToSwcCache({ cacheKey, compilation });
