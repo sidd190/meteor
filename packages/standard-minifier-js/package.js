@@ -1,7 +1,7 @@
 Package.describe({
   name: 'standard-minifier-js',
   version: '3.1.0',
-  summary: 'Standard javascript minifiers used with Meteor apps by default. inspered into https://github.com/zodern/minify-js-sourcemaps',
+  summary: 'Standard javascript minifiers used with Meteor apps by default. Inspired into https://github.com/zodern/minify-js-sourcemaps',
   documentation: 'README.md',
 });
 
@@ -12,7 +12,7 @@ Package.registerBuildPlugin({
     'ecmascript'
   ],
   npmDependencies: {
-    'meteor-package-install-swc': '1.1.2',
+    '@meteorjs/swc-core': '1.1.2',
     'acorn': '8.10.0',
     "@babel/runtime": "7.18.9",
     '@babel/parser': '7.22.7',
