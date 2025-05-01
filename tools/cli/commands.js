@@ -262,32 +262,46 @@ export function parseRunTargets(targets) {
 };
 
 const DEFAULT_MODERN = {
-  transpiler: true,
-  webArchOnly: true,
-  watcher: true,
+    transpiler: true,
+    webArchOnly: true,
+    watcher: true,
 };
 
 const normalizeModern = (r = false) => Object.fromEntries(
     Object.entries(DEFAULT_MODERN).map(([k, def]) => [
-      k,
-      r === true
-          ? def
-          : r === false || r?.[k] === false
-              ? false
-              : typeof r?.[k] === 'object'
-                  ? { ...r[k] }
-                  : def,
+        k,
+        r === true
+            ? def
+            : r === false || r?.[k] === false
+                ? false
+                : typeof r?.[k] === 'object'
+                    ? { ...r[k] }
+                    : def,
     ]),
 );
 
-function isModernArchsOnlyEnabled(appDir) {
+let meteorConfig;
+
+function getMeteorConfig(appDir) {
+  if (meteorConfig) return meteorConfig;
   const packageJsonPath = files.pathJoin(appDir, 'package.json');
   if (!files.exists(packageJsonPath)) {
     return false;
   }
   const packageJsonFile = files.readFile(packageJsonPath, 'utf8');
   const packageJson = JSON.parse(packageJsonFile);
-  return normalizeModern(packageJson?.meteor?.modern).webArchOnly !== false;
+  meteorConfig = packageJson?.meteor;
+  return meteorConfig;
+}
+
+function isModernArchsOnlyEnabled(appDir) {
+  const meteorConfig = getMeteorConfig(appDir);
+  return normalizeModern(meteorConfig?.modern).webArchOnly !== false;
+}
+
+export function isModernWatcherEnabled(appDir) {
+  const meteorConfig = getMeteorConfig(appDir);
+  return normalizeModern(meteorConfig?.modern).watcher !== false;
 }
 
 function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {

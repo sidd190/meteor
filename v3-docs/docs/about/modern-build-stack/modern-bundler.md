@@ -34,9 +34,27 @@ By default, `"modern": true` enables all build stack upgrades: new transpiler, w
 
 ## Modern watcher
 
-Starting with Meteor 3.3, development mode uses a modern, cross-platform watcher: [`@parcel/watcher`](https://github.com/parcel-bundler/watcher). It responds quickly to file changes using native file watching. Symbolic link changes and all traversed files are supported via polling.
+Starting with Meteor 3.3, new apps use a modern, cross-platform watcher: [`@parcel/watcher`](https://github.com/parcel-bundler/watcher). It responds quickly to file changes using native file watching. Symbolic link changes and all traversed files are supported via polling.
 
-If the watcher doesn’t work properly, such as when using WSL with host, a volume, or a remote setup, switch fully to the polling strategy.
+For existing apps, enable this by adding to `package.json`:
+
+```json
+"meteor": {
+  "modern": true
+}
+```
+
+If you run into issues with the new watcher, you can revert to the previous implementation for better file change detection. To disable the new watcher, set `"watcher": false` in your package.json.
+
+```json
+"meteor": {
+  "modern": {
+    "watcher": false
+  }
+}
+```
+
+The modern watcher uses the OS's native file watching with a performance-first approach. Both modern and legacy watchers support environment variables for polling, useful in edge cases like WSL with host, volumes, or remote setups.
 
 To enable polling, run your Meteor app with:
 
