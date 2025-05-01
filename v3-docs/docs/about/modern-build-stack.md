@@ -18,8 +18,7 @@ Start using the new build stack by creating a Meteor app, or add this to your `p
 
 ```json
 "meteor": {
-  "modernWebArchsOnly": true,
-  "modernTranspiler": true
+  "modern": true
 }
 ```
 

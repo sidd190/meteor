@@ -16,11 +16,21 @@ For existing apps, enable this by adding to `package.json`:
 
 ```json
 "meteor": {
-  "modernWebArchsOnly": true
+  "modern": true
 }
 ```
 
 This works like using `--exclude-archs web.browser.legacy,web.cordova` with `meteor run`.
+
+By default, `"modern": true` enables all build stack upgrades: new transpiler, web arch-only compilation, watcher and more. To opt out of web arch-only compilation, set `"webArchOnly": false` in your `package.json`.
+
+```json
+"meteor": {
+  "modern": {
+    "webArchOnly": false
+  }
+}
+```
 
 ## Modern watcher
 

@@ -28,7 +28,6 @@
       }
     },
     "testModule": "tests/main.js",
-    "modernWebArchsOnly": true,
-    "modernTranspiler": true
+    "modern": true
   }
 }

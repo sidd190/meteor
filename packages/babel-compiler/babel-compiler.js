@@ -99,6 +99,22 @@ function compileWithSwc(source, swcOptions = {}, { inputFilePath, filename, sour
     };
   });
 }
+const DEFAULT_MODERN = {
+  transpiler: true,
+};
+
+const normalizeModern = (r = false) => Object.fromEntries(
+    Object.entries(DEFAULT_MODERN).map(([k, def]) => [
+      k,
+      r === true
+        ? def
+        : r === false || r?.[k] === false
+        ? false
+        : typeof r?.[k] === 'object'
+        ? { ...r[k] }
+        : def,
+    ]),
+);
 
 let lastModifiedMeteorConfig;
 let lastModifiedMeteorConfigTime;
@@ -112,8 +128,12 @@ BCp.initializeMeteorAppConfig = function () {
   if (currentLastModifiedConfigTime !== lastModifiedMeteorConfigTime) {
     lastModifiedMeteorConfigTime = currentLastModifiedConfigTime;
     lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
+    lastModifiedMeteorConfig = lastModifiedMeteorConfig != null ? {
+      ...lastModifiedMeteorConfig,
+      modern: normalizeModern(lastModifiedMeteorConfig?.modern),
+    } : {};
 
-    if (lastModifiedMeteorConfig?.modernTranspiler?.verbose) {
+    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
       logConfigBlock('Meteor Config', lastModifiedMeteorConfig);
     }
   }
@@ -133,7 +153,7 @@ BCp.initializeMeteorAppSwcrc = function () {
     lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
     lastModifiedSwcConfig = getMeteorAppSwcrc();
 
-    if (lastModifiedMeteorConfig?.modernTranspiler?.verbose) {
+    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
   }
@@ -143,7 +163,7 @@ BCp.initializeMeteorAppSwcrc = function () {
 let lastModifiedSwcLegacyConfig;
 BCp.initializeMeteorAppLegacyConfig = function () {
   const swcLegacyConfig = convertBabelTargetsForSwc(Babel.getMinimumModernBrowserVersions());
-  if (lastModifiedMeteorConfig?.modernTranspiler?.verbose && !lastModifiedSwcLegacyConfig) {
+  if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose && !lastModifiedSwcLegacyConfig) {
     logConfigBlock('SWC Legacy Config', swcLegacyConfig);
   }
   lastModifiedSwcLegacyConfig = swcLegacyConfig;
@@ -277,31 +297,31 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const isPackageCode = packageName != null;
         const isLegacyWebArch = arch.includes('legacy');
 
-        const config = lastModifiedMeteorConfig?.modernTranspiler;
-        const hasModernTranspiler = config != null;
+        const config = lastModifiedMeteorConfig?.modern?.transpiler;
+        const hasModernTranspiler = lastModifiedMeteorConfig?.modern?.transpiler !== false;
         const shouldSkipSwc =
           !hasModernTranspiler ||
-          (isAppCode && config.excludeApp === true) ||
-          (isNodeModulesCode && config.excludeNodeModules === true) ||
-          (isPackageCode && config.excludePackages === true) ||
-          (isLegacyWebArch && config.excludeLegacy === true) ||
+          (isAppCode && config?.excludeApp === true) ||
+          (isNodeModulesCode && config?.excludeNodeModules === true) ||
+          (isPackageCode && config?.excludePackages === true) ||
+          (isLegacyWebArch && config?.excludeLegacy === true) ||
           (isAppCode &&
-            Array.isArray(config.excludeApp) &&
-            isExcludedConfig(inputFilePath, config.excludeApp || [])) ||
+            Array.isArray(config?.excludeApp) &&
+            isExcludedConfig(inputFilePath, config?.excludeApp || [])) ||
           (isNodeModulesCode &&
-            Array.isArray(config.excludeNodeModules) &&
-            (isExcludedConfig(inputFilePath, config.excludeNodeModules || []) ||
+            Array.isArray(config?.excludeNodeModules) &&
+            (isExcludedConfig(inputFilePath, config?.excludeNodeModules || []) ||
               isExcludedConfig(
                 inputFilePath.replace('node_modules/', ''),
-                config.excludeNodeModules || [],
+                config?.excludeNodeModules || [],
                 true,
               ))) ||
           (isPackageCode &&
-            Array.isArray(config.excludePackages) &&
-            (isExcludedConfig(packageName, config.excludePackages || []) ||
+            Array.isArray(config?.excludePackages) &&
+            (isExcludedConfig(packageName, config?.excludePackages || []) ||
               isExcludedConfig(
                 `${packageName}/${inputFilePath}`,
-                config.excludePackages || [],
+                config?.excludePackages || [],
               )));
 
         const cacheKey = [
