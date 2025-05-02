@@ -24,7 +24,7 @@ const meteorInstallRegExp = new RegExp([
 export function extractModuleSizesTree(source) {
   const match = meteorInstallRegExp.exec(source);
   if (match) {
-    try{
+    try {
       ast = acorn.parse(source, {
         ecmaVersion: 'latest',
         sourceType: 'script',
