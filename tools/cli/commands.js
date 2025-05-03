@@ -596,7 +596,8 @@ async function doRunCommand(options) {
   const buildMode = options.production ? 'production' : 'development';
 
   let cordovaRunner;
-  if (!_.isEmpty(runTargets)) {
+  const shouldDisableCordova =  Boolean(JSON.parse(process.env.METEOR_CORDOVA_DISABLE || 'false'));
+  if (!shouldDisableCordova && !_.isEmpty(runTargets)) {
 
     async function prepareCordovaProject() {
       import { CordovaProject } from '../cordova/project.js';
