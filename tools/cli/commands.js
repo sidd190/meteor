@@ -332,9 +332,21 @@ function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
         const excludeArchs = [...excludeArchsOptions, ...automaticallyIgnoredLegacyArchs];
         webArchs = webArchs.filter(arch => !excludeArchs.includes(arch));
       }
-      return webArchs;
     }
   }
+
+  const forcedInclArchs = process.env.METEOR_FORCE_INCLUDE_ARCHS;
+  if (forcedInclArchs != null) {
+    const nextInclArchs = forcedInclArchs.trim().split(/\s*,\s*/);
+    webArchs = Array.from(new Set([...webArchs, ...nextInclArchs]));
+  }
+
+  const forcedExclArchs = process.env.METEOR_FORCE_EXCLUDE_ARCHS;
+  if (forcedExclArchs != null) {
+    const nextExclArchs = forcedExclArchs.trim().split(/\s*,\s*/);
+    webArchs = webArchs.filter(_webArch => !nextExclArchs.includes(_webArch));
+  }
+
   return webArchs;
 }
 
