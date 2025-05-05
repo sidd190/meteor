@@ -153,6 +153,11 @@ BCp.initializeMeteorAppSwcrc = function () {
     lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
     lastModifiedSwcConfig = getMeteorAppSwcrc();
 
+    // Resolve custom baseUrl to an absolute path pointing to the project root
+    if (lastModifiedSwcConfig.jsc && lastModifiedSwcConfig.jsc.baseUrl) {
+      lastModifiedSwcConfig.jsc.baseUrl = path.resolve(process.cwd(), lastModifiedSwcConfig.jsc.baseUrl);
+    }
+
     if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
