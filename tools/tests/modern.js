@@ -1,7 +1,8 @@
 var selftest = require('../tool-testing/selftest.js');
 var Sandbox = selftest.Sandbox;
 
-const waitToStart = 10;
+// No need for a high value since the asserts already wait long enough to pass tests
+const waitToStart = 5;
 
 async function writeModernConfig(s, modernConfig) {
   const json = JSON.parse(s.read("package.json"));
