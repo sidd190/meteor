@@ -194,6 +194,20 @@ export default class Run {
     return this.stdoutMatcher.match(pattern, timeout, _strict);
   }
 
+  async matchAsync(pattern, _strict, fullBuffer) {
+    this._ensureStarted();
+
+    let timeout = this.baseTimeout + this.extraTime;
+    timeout *= timeoutScaleFactor;
+    this.extraTime = 0;
+    Console.simpleDebug('matchAsync', pattern);
+    return this.stdoutMatcher.matchAsync(pattern, {
+      timeout,
+      strict: _strict,
+      matchFullBuffer: fullBuffer,
+    });
+  }
+
   getMatcherFullBuffer() {
     return this.stdoutMatcher.getFullBuffer();
   }
