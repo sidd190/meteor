@@ -33,9 +33,9 @@ selftest.define("legacy build stack", async function () {
   await run.match("App running at");
 
   /* check legacy stack */
-  await run.matchAsync(/Babel\.compile/, false, true);
-  await run.matchAsync(/safeWatcher\.watchLegacy/, false, true);
-  await run.matchAsync(/_findSources for web\.browser.legacy/, false, true);
+  await run.match(/Babel\.compile/, false, true);
+  await run.match(/safeWatcher\.watchLegacy/, false, true);
+  await run.match(/_findSources for web\.browser.legacy/, false, true);
 
   await run.stop();
 });
@@ -57,9 +57,9 @@ selftest.define("modern build stack", async function () {
   await run.match("App running at");
 
   /* check modern stack */
-  await run.matchAsync(/SWC\.compile/, false, true);
-  await run.matchAsync(/safeWatcher\.watchModern/, false, true);
-  await run.matchAsync(/_findSources for web\.browser/, false, true);
+  await run.match(/SWC\.compile/, false, true);
+  await run.match(/safeWatcher\.watchModern/, false, true);
+  await run.match(/_findSources for web\.browser/, false, true);
 
   run.forbid(/Babel\.compile/, false, true);
   run.forbid(/_findSources for web\.browser\.legacy/, false, true);
@@ -85,11 +85,11 @@ selftest.define("modern build stack - disable transpiler", async function () {
 
   /* disable transpiler */
   run.forbid(/SWC\.compile/, false, true);
-  await run.matchAsync(/Babel\.compile/, false, true);
+  await run.match(/Babel\.compile/, false, true);
 
   /* Keep rest of modern build stack */
-  await run.matchAsync(/safeWatcher\.watchModern/, false, true);
-  await run.matchAsync(/_findSources for web\.browser/, false, true);
+  await run.match(/safeWatcher\.watchModern/, false, true);
+  await run.match(/_findSources for web\.browser/, false, true);
   run.forbid(/_findSources for web\.browser\.legacy/, false, true);
 
   await run.stop();
@@ -113,11 +113,11 @@ selftest.define("modern build stack - disable watcher", async function () {
 
   /* disable watcher */
   run.forbid(/safeWatcher\.watchModern/, false, true);
-  await run.matchAsync(/safeWatcher\.watchLegacy/, false, true);
+  await run.match(/safeWatcher\.watchLegacy/, false, true);
 
   /* Keep rest of modern build stack */
-  await run.matchAsync(/SWC\.compile/, false, true);
-  await run.matchAsync(/_findSources for web\.browser/, false, true);
+  await run.match(/SWC\.compile/, false, true);
+  await run.match(/_findSources for web\.browser/, false, true);
   run.forbid(/_findSources for web\.browser\.legacy/, false, true);
 
   await run.stop();
@@ -140,12 +140,12 @@ selftest.define("modern build stack - disable webArchOnly", async function () {
   await run.match("App running at");
 
   /* disable webArchOnly */
-  await run.matchAsync(/_findSources for web\.browser/, false, true);
-  await run.matchAsync(/_findSources for web\.browser\.legacy/, false, true);
+  await run.match(/_findSources for web\.browser/, false, true);
+  await run.match(/_findSources for web\.browser\.legacy/, false, true);
 
   /* Keep rest of modern build stack */
-  await run.matchAsync(/safeWatcher\.watchModern/, false, true);
-  await run.matchAsync(/SWC\.compile/, false, true);
+  await run.match(/safeWatcher\.watchModern/, false, true);
+  await run.match(/SWC\.compile/, false, true);
 
   await run.stop();
 });
@@ -171,8 +171,8 @@ selftest.define("modern build stack - transpiler boolean-like options", async fu
   await run.match("App running at");
 
   /* check transpiler options */
-  await run.matchAsync(/\[Transpiler] Used SWC.*\(app\)/, false, true);
-  await run.matchAsync(/\[Transpiler] Used SWC.*\(package\)/, false, true);
+  await run.match(/\[Transpiler] Used SWC.*\(app\)/, false, true);
+  await run.match(/\[Transpiler] Used SWC.*\(package\)/, false, true);
 
   await writeModernConfig(s, {
     transpiler: {
@@ -180,7 +180,7 @@ selftest.define("modern build stack - transpiler boolean-like options", async fu
       excludeApp: true,
     },
   });
-  await run.matchAsync(/\[Transpiler] Used Babel.*\(app\)/, false, true);
+  await run.match(/\[Transpiler] Used Babel.*\(app\)/, false, true);
 
   await writeModernConfig(s, {
     transpiler: {
@@ -188,7 +188,7 @@ selftest.define("modern build stack - transpiler boolean-like options", async fu
       excludePackages: true,
     },
   });
-  await run.matchAsync(/\[Transpiler] Used Babel.*\(package\)/, false, true);
+  await run.match(/\[Transpiler] Used Babel.*\(package\)/, false, true);
 
   await run.stop();
 });
@@ -214,8 +214,8 @@ selftest.define("modern build stack - transpiler string-like options", async fun
   await run.match("App running at");
 
   /* check transpiler options */
-  await run.matchAsync(/\[Transpiler] Used SWC.*\(app\)/, false, true);
-  await run.matchAsync(/\[Transpiler] Used SWC.*\(package\)/, false, true);
+  await run.match(/\[Transpiler] Used SWC.*\(app\)/, false, true);
+  await run.match(/\[Transpiler] Used SWC.*\(package\)/, false, true);
 
   await writeModernConfig(s, {
     transpiler: {
@@ -223,7 +223,7 @@ selftest.define("modern build stack - transpiler string-like options", async fun
       excludeApp: ['main.js'],
     },
   });
-  await run.matchAsync(/\[Transpiler] Used Babel.*\(app\)/, false, true);
+  await run.match(/\[Transpiler] Used Babel.*\(app\)/, false, true);
 
   await writeModernConfig(s, {
     transpiler: {
@@ -231,7 +231,7 @@ selftest.define("modern build stack - transpiler string-like options", async fun
       excludePackages: ['ejson'],
     },
   });
-  await run.matchAsync(/\[Transpiler] Used Babel.*\(package\)/, false, true);
+  await run.match(/\[Transpiler] Used Babel.*\(package\)/, false, true);
 
   await run.stop();
 });
