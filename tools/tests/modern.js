@@ -70,6 +70,9 @@ selftest.define("modern build stack", async function () {
   /* check debug stack */
   await run.match(/server\/main\.js:6:22/, false, true);
 
+  // /* custom .swcrc and alias resolution */
+  // await run.match(/alias resolved/, false, true);
+
   await run.stop();
 });
 
@@ -219,6 +222,9 @@ selftest.define("modern build stack - transpiler string-like options", async fun
   run.waitSecs(waitToStart);
   await run.match("App running at");
 
+  /* custom .swcrc and alias resolution */
+  await run.match(/alias resolved/, false, true);
+
   /* check transpiler options */
   await run.match(/\[Transpiler] Used SWC.*\(app\)/, false, true);
   await run.match(/\[Transpiler] Used SWC.*\(package\)/, false, true);
@@ -238,6 +244,43 @@ selftest.define("modern build stack - transpiler string-like options", async fun
     },
   });
   await run.match(/\[Transpiler] Used Babel.*\(package\)/, false, true);
+
+  await run.stop();
+});
+
+async function writConfig(s, config) {
+  const json = JSON.parse(s.read("package.json"));
+
+  json.meteor = {
+    ...json.meteor,
+    ...config,
+  };
+
+  s.write("package.json", JSON.stringify(json, null, 2) + "\n");
+}
+
+selftest.define("modern build stack - transpiler custom .swcrc", async function () {
+  const s = new Sandbox();
+  await s.init();
+
+  await s.createApp("modern", "modern");
+  await s.cd("modern");
+
+  await writConfig(s, {
+    modern: true,
+    mainModule: {
+      client: 'client/main.js',
+      server: 'server/alias.js',
+    },
+  });
+
+  const run = s.run();
+
+  run.waitSecs(waitToStart);
+  await run.match("App running at");
+
+  /* custom .swcrc and alias resolution */
+  await run.match(/alias resolved/, false, true);
 
   await run.stop();
 });
