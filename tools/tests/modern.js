@@ -16,7 +16,7 @@ async function writeModernConfig(s, modernConfig) {
 
 }
 
-selftest.define("legacy build stack", async function () {
+selftest.define("modern build stack - legacy", async function () {
   const s = new Sandbox();
   await s.init();
 
