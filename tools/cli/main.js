@@ -1544,6 +1544,9 @@ makeGlobalAsyncLocalStorage().run({}, async function () {
       });
     }
 
+    // Set the currentCommand in the global object to spread context
+    global.currentCommand = { name: command.name, options };
+
     var ret = await command.func(options, { rawOptions });
 
   } catch (e) {
