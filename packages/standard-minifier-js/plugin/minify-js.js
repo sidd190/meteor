@@ -1,9 +1,11 @@
 import { extractModuleSizesTree } from "./stats.js";
 import CombinedFile from "./comibinedFile.js";
+import fs from 'fs';
 
 function getConfig() {
+  const meteorAppDir = process.cwd();
   // read the meteor project pakcgae.json file
-  const packageJson = fs.readFileSync(`${getMeteorAppDir()}/package.json`, 'utf8');
+  const packageJson = fs.readFileSync(`${meteorAppDir}/package.json`, 'utf8');
   const meteorConfig = JSON.parse(packageJson).meteor;
   return meteorConfig;
 };
@@ -100,7 +102,9 @@ class MeteorMinifier {
 
   minifyOneFile(file) {
     // TODO: create a function to check if the file should be skipped and share it with babel-compiler.js file
-    if(this.config.modernTranspiler) return this._minifyWithTerser(file).await();
+    if(this.config.modernTranspiler === false) {
+      return this._minifyWithTerser(file).await();
+    }
     // TODO: read the pkg.json file from the meteor project and ceck the swc build option
     // TODO: add a flag to the minifier to use swc or terser inside the meteor project package.json
     try {
