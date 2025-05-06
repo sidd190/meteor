@@ -375,17 +375,23 @@ function startNewEntry(absPath: string): Entry {
  * This registers the callback on the internally managed entry and
  * ensures that a Parcel watcher is subscribed to a covering directory.
  */
-export const watch = Profile(
-    "safeWatcher.watch",
+export function watch (absPath: string, callback: ChangeCallback): SafeWatcher {
+  // @ts-ignore
+  if (!global.modernWatcher) {
+    // @ts-ignore
+    return watchLegacy(absPath, callback);
+  }
+  // @ts-ignore
+  return watchModern(absPath, callback);
+};
+
+const watchModern =
+    Profile(
+    "safeWatcher.watchModern",
     (
     absPath: string,
     callback: ChangeCallback
     ): SafeWatcher => {
-      // @ts-ignore
-      if (!global.modernWatcher) {
-        // @ts-ignore
-        return watchLegacy(absPath, callback);
-      }
       absPath = toPosixPath(absPath);
 
       // If the path should be ignored, immediately return a noop SafeWatcher.

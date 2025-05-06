@@ -405,7 +405,7 @@ function maybeSuggestRaisingWatchLimit(error: Error & { errno: number }) {
 }
 
 export const watch = Profile(
-    "safeWatcher.watch",
+    "safeWatcher.watchLegacy",
     (absPath: string, callback: EntryCallback) => {
         const entry = acquireWatcher(absPath, callback);
         return {

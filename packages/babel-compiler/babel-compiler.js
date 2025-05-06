@@ -914,8 +914,10 @@ function isExcludedConfig(name, excludeList = [], startsWith) {
   });
 }
 
+const disableTextColors = Boolean(JSON.parse(process.env.METEOR_DISABLE_COLORS || "false"));
+
 function color(text, code) {
-  return `\x1b[${code}m${text}\x1b[0m`;
+  return disableTextColors ? text : `\x1b[${code}m${text}\x1b[0m`;
 }
 
 function logTranspilation({
