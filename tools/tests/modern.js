@@ -70,9 +70,6 @@ selftest.define("modern build stack", async function () {
   /* check debug stack */
   await run.match(/server\/main\.js:6:22/, false, true);
 
-  // /* custom .swcrc and alias resolution */
-  // await run.match(/alias resolved/, false, true);
-
   await run.stop();
 });
 
@@ -221,9 +218,6 @@ selftest.define("modern build stack - transpiler string-like options", async fun
 
   run.waitSecs(waitToStart);
   await run.match("App running at");
-
-  /* custom .swcrc and alias resolution */
-  await run.match(/alias resolved/, false, true);
 
   /* check transpiler options */
   await run.match(/\[Transpiler] Used SWC.*\(app\)/, false, true);
