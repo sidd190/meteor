@@ -17,6 +17,7 @@ Package.registerBuildPlugin({
     "@babel/runtime": "7.18.9",
     '@babel/parser': '7.22.7',
     'terser': '5.19.2',
+    '@meteorjs/reify': '0.25.4',
   },
   sources: [
     'plugin/minify-js.js',

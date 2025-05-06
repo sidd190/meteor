@@ -1,6 +1,13 @@
 import { extractModuleSizesTree } from "./stats.js";
 import CombinedFile from "./comibinedFile.js";
 
+function getConfig() {
+  // read the meteor project pakcgae.json file
+  const packageJson = fs.readFileSync(`${getMeteorAppDir()}/package.json`, 'utf8');
+  const meteorConfig = JSON.parse(packageJson).meteor;
+  return meteorConfig;
+};
+
 const statsEnabled = process.env.DISABLE_CLIENT_STATS !== 'true'
 
 if (typeof Profile === 'undefined') {
@@ -29,11 +36,14 @@ Plugin.registerMinifier({
 
 class MeteorMinifier {
 
-  _minifyWithSwc(file) {
-    process.stdout.write('minifyWithSwc...\n');
-    swc = swc || require('meteor-package-install-swc'); 
-    const NODE_ENV = process.env.NODE_ENV || 'development';
+  constructor() {
+    this.config = getConfig();
+  }
 
+  _minifyWithSWC(file) {
+    swc = swc || require('@meteorjs/swc-core'); 
+    const NODE_ENV = process.env.NODE_ENV || 'development';
+    
     let map = file.getSourceMap();
     let content = file.getContentsAsString();
 
@@ -89,8 +99,12 @@ class MeteorMinifier {
   }
 
   minifyOneFile(file) {
+    // TODO: create a function to check if the file should be skipped and share it with babel-compiler.js file
+    if(this.config.modernTranspiler) return this._minifyWithTerser(file).await();
+    // TODO: read the pkg.json file from the meteor project and ceck the swc build option
+    // TODO: add a flag to the minifier to use swc or terser inside the meteor project package.json
     try {
-      return this._minifyWithSwc(file);
+      return this._minifyWithSWC(file);
     } catch (swcError) {
       try {
         // swc always parses as if the file is a module, which is
