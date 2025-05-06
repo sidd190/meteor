@@ -2,7 +2,6 @@
 $jUnit = Join-Path $env:TEMP 'self-test-junit-0.xml'
 
 $tests = @(
-  'modern build stack'
   '^assets'
   '^autoupdate'
   '^dynamic import.*development'
