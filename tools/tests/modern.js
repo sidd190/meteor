@@ -253,6 +253,15 @@ async function writConfig(s, config) {
   s.write("package.json", JSON.stringify(json, null, 2) + "\n");
 }
 
+async function writeSwcrcConfig(s, config) {
+  let json = JSON.parse(s.read("package.json"));
+  json = {
+    ...json,
+    ...config,
+  };
+  s.write(".swcrc", JSON.stringify(json, null, 2) + "\n");
+}
+
 selftest.define("modern build stack - transpiler custom .swcrc", async function () {
   const s = new Sandbox();
   await s.init();
@@ -275,6 +284,76 @@ selftest.define("modern build stack - transpiler custom .swcrc", async function 
 
   /* custom .swcrc and alias resolution */
   await run.match(/alias resolved/, false, true);
+
+  await run.stop();
+});
+
+selftest.define("modern build stack - transpiler files", async function () {
+  const s = new Sandbox();
+  await s.init();
+
+  await s.createApp("modern", "modern");
+  await s.cd("modern");
+
+  await writConfig(s, {
+    modern: true,
+    mainModule: {
+      client: 'client/main.js',
+      server: 'server/javascript.js',
+    },
+  });
+
+  const run = s.run();
+
+  run.waitSecs(waitToStart);
+  await run.match("App running at");
+
+  await run.match(/javascript\.js/, false, true);
+
+  await writConfig(s, {
+    modern: true,
+    mainModule: {
+      client: 'client/main.js',
+      server: 'server/javascript-component.jsx',
+    },
+  });
+  await run.match(/javascript-component\.jsx/, false, true);
+
+  await writConfig(s, {
+    modern: true,
+    mainModule: {
+      client: 'client/main.js',
+      server: 'server/typescript.ts',
+    },
+  });
+  await run.match(/typescript\.ts/, false, true);
+
+  await writConfig(s, {
+    modern: true,
+    mainModule: {
+      client: 'client/main.js',
+      server: 'server/typescript-component.tsx',
+    },
+  });
+  await run.match(/typescript-component\.tsx/, false, true);
+
+  await writeSwcrcConfig(s, {
+    jsc: {
+      parser: {
+        syntax: 'typescript',
+        tsx: true,
+        jsx: true,
+      },
+    },
+  });
+  await writConfig(s, {
+    modern: true,
+    mainModule: {
+      client: 'client/main.js',
+      server: 'server/custom-component.js',
+    },
+  });
+  await run.match(/custom-component\.js/, false, true);
 
   await run.stop();
 });
