@@ -37,6 +37,9 @@ selftest.define("legacy build stack", async function () {
   await run.match(/safeWatcher\.watchLegacy/, false, true);
   await run.match(/_findSources for web\.browser.legacy/, false, true);
 
+  /* check debug stack */
+  await run.match(/server\/main\.js:6:22/, false, true);
+
   await run.stop();
 });
 
@@ -63,6 +66,9 @@ selftest.define("modern build stack", async function () {
 
   run.forbid(/Babel\.compile/, false, true);
   run.forbid(/_findSources for web\.browser\.legacy/, false, true);
+
+  /* check debug stack */
+  await run.match(/server\/main\.js:6:22/, false, true);
 
   await run.stop();
 });
