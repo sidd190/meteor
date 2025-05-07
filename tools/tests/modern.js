@@ -17,6 +17,7 @@ async function writeModernConfig(s, modernConfig) {
 }
 
 selftest.define("modern build stack - legacy", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
   process.env.METEOR_MODERN = 'false';
 
   const s = new Sandbox();
@@ -43,6 +44,8 @@ selftest.define("modern build stack - legacy", async function () {
   await run.match(/server\/main\.js:6:22/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 selftest.define("modern build stack", async function () {
