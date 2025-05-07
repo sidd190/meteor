@@ -334,9 +334,21 @@ function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
         const excludeArchs = [...excludeArchsOptions, ...automaticallyIgnoredLegacyArchs];
         webArchs = webArchs.filter(arch => !excludeArchs.includes(arch));
       }
-      return webArchs;
     }
   }
+
+  const forcedInclArchs = process.env.METEOR_FORCE_INCLUDE_ARCHS;
+  if (forcedInclArchs != null) {
+    const nextInclArchs = forcedInclArchs.trim().split(/\s*,\s*/);
+    webArchs = Array.from(new Set([...webArchs, ...nextInclArchs]));
+  }
+
+  const forcedExclArchs = process.env.METEOR_FORCE_EXCLUDE_ARCHS;
+  if (forcedExclArchs != null) {
+    const nextExclArchs = forcedExclArchs.trim().split(/\s*,\s*/);
+    webArchs = webArchs.filter(_webArch => !nextExclArchs.includes(_webArch));
+  }
+
   return webArchs;
 }
 
@@ -586,7 +598,8 @@ async function doRunCommand(options) {
   const buildMode = options.production ? 'production' : 'development';
 
   let cordovaRunner;
-  if (!_.isEmpty(runTargets)) {
+  const shouldDisableCordova =  Boolean(JSON.parse(process.env.METEOR_CORDOVA_DISABLE || 'false'));
+  if (!shouldDisableCordova && !_.isEmpty(runTargets)) {
 
     async function prepareCordovaProject() {
       import { CordovaProject } from '../cordova/project.js';
