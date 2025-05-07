@@ -116,7 +116,7 @@ const normalizeModern = (r = false) => Object.fromEntries(
     ]),
 );
 
-let modernForced = Boolean(JSON.parse(process.env.METEOR_MODERN || "false"));
+let modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
 
 let lastModifiedMeteorConfig;
 let lastModifiedMeteorConfigTime;
