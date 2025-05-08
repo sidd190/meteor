@@ -280,6 +280,8 @@ const normalizeModern = (r = false) => Object.fromEntries(
     ]),
 );
 
+
+let modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
 let meteorConfig;
 
 function getMeteorConfig(appDir) {
@@ -296,12 +298,12 @@ function getMeteorConfig(appDir) {
 
 function isModernArchsOnlyEnabled(appDir) {
   const meteorConfig = getMeteorConfig(appDir);
-  return normalizeModern(meteorConfig?.modern).webArchOnly !== false;
+  return normalizeModern(modernForced || meteorConfig?.modern).webArchOnly !== false;
 }
 
 export function isModernWatcherEnabled(appDir) {
   const meteorConfig = getMeteorConfig(appDir);
-  return normalizeModern(meteorConfig?.modern).watcher !== false;
+  return normalizeModern(modernForced || meteorConfig?.modern).watcher !== false;
 }
 
 function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {

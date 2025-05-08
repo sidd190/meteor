@@ -17,6 +17,9 @@ async function writeModernConfig(s, modernConfig) {
 }
 
 selftest.define("modern build stack - legacy", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = 'false';
+
   const s = new Sandbox();
   await s.init();
 
@@ -41,9 +44,14 @@ selftest.define("modern build stack - legacy", async function () {
   await run.match(/server\/main\.js:6:22/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 selftest.define("modern build stack", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+
   const s = new Sandbox();
   await s.init();
 
@@ -71,9 +79,14 @@ selftest.define("modern build stack", async function () {
   await run.match(/server\/main\.js:6:22/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 selftest.define("modern build stack - disable transpiler", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+
   const s = new Sandbox();
   await s.init();
 
@@ -99,9 +112,14 @@ selftest.define("modern build stack - disable transpiler", async function () {
   run.forbid(/_findSources for web\.browser\.legacy/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 selftest.define("modern build stack - disable watcher", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+
   const s = new Sandbox();
   await s.init();
 
@@ -127,9 +145,14 @@ selftest.define("modern build stack - disable watcher", async function () {
   run.forbid(/_findSources for web\.browser\.legacy/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 selftest.define("modern build stack - disable webArchOnly", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+
   const s = new Sandbox();
   await s.init();
 
@@ -154,9 +177,14 @@ selftest.define("modern build stack - disable webArchOnly", async function () {
   await run.match(/SWC\.compile/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 selftest.define("modern build stack - transpiler boolean-like options", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+
   const s = new Sandbox();
   await s.init();
 
@@ -197,9 +225,14 @@ selftest.define("modern build stack - transpiler boolean-like options", async fu
   await run.match(/\[Transpiler] Used Babel.*\(package\)/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 selftest.define("modern build stack - transpiler string-like options", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+
   const s = new Sandbox();
   await s.init();
 
@@ -240,6 +273,8 @@ selftest.define("modern build stack - transpiler string-like options", async fun
   await run.match(/\[Transpiler] Used Babel.*\(package\)/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 async function writConfig(s, config) {
@@ -263,6 +298,9 @@ async function writeSwcrcConfig(s, config) {
 }
 
 selftest.define("modern build stack - transpiler custom .swcrc", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+
   const s = new Sandbox();
   await s.init();
 
@@ -286,9 +324,14 @@ selftest.define("modern build stack - transpiler custom .swcrc", async function 
   await run.match(/alias resolved/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 selftest.define("modern build stack - transpiler files", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+
   const s = new Sandbox();
   await s.init();
 
@@ -356,4 +399,6 @@ selftest.define("modern build stack - transpiler files", async function () {
   await run.match(/custom-component\.js/, false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });

@@ -22,6 +22,10 @@ async function startRun(sandbox) {
 
 // Tests the actual cache logic used by coffeescript.
 selftest.define("compiler plugin caching - coffee", async () => {
+  // Enable legacy builds for testing.
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '{ "webArchOnly": false }';
+
   var s = new Sandbox({ fakeMongo: true });
   await s.init();
 
@@ -134,6 +138,8 @@ selftest.define("compiler plugin caching - coffee", async () => {
   await run.match('Coffeescript X is 2 Y is edited FromPackage is 5');
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 // Tests the actual cache logic used by less and stylus.
@@ -142,6 +148,10 @@ selftest.define("compiler plugin caching - coffee", async () => {
   const hasCompileOneFileLaterSupport = packageName === "less";
 
   selftest.define("compiler plugin caching - " + packageName, async () => {
+    // Enable legacy builds for testing.
+    const currentMeteorModern = process.env.METEOR_MODERN;
+    process.env.METEOR_MODERN = '{ "webArchOnly": false }';
+
     var s = new Sandbox({ fakeMongo: true });
     await s.init();
 
@@ -319,6 +329,8 @@ selftest.define("compiler plugin caching - coffee", async () => {
     await run.match('Waiting for file change');
 
     await run.stop();
+
+    process.env.METEOR_MODERN = currentMeteorModern;
   });
 });
 
