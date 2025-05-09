@@ -8,11 +8,10 @@ Package.describe({
 });
 
 Npm.depends({
-  mongodb: "6.16.0"
+  mongodb: "6.9.0",
 });
 
 Package.onUse(function (api) {
-  api.use(['npm-mongo-legacy', "ecmascript"], "server");
   api.addFiles("wrapper.js", "server");
   api.export(["NpmModuleMongodb", "NpmModuleMongodbVersion"], "server");
   api.addAssets("index.d.ts", "server");
