@@ -1,9 +1,4 @@
-import {
-  NpmModuleMongodb as NpmModuleMongodbLegacy,
-  NpmModuleMongodbVersion as NpmModuleMongodbVersionLegacy
-} from 'meteor/npm-mongo-legacy';
-
-const useLegacyMongo = process.env.METEOR_USE_LEGACY_MONGO;
+const useLegacyMongo = !!Package['npm-mongo-legacy'];
 
 const oldNoDeprecationValue = process.noDeprecation;
 try {
@@ -11,12 +6,12 @@ try {
   // https://github.com/meteor/meteor/pull/9942#discussion_r218564879
   process.noDeprecation = true;
   NpmModuleMongodb = useLegacyMongo
-    ? NpmModuleMongodbLegacy
+    ? Package['npm-mongo-legacy'].NpmModuleMongodb
     : Npm.require('mongodb');
 } finally {
   process.noDeprecation = oldNoDeprecationValue;
 }
 
 NpmModuleMongodbVersion = useLegacyMongo
-  ? NpmModuleMongodbVersionLegacy
+  ? Package['npm-mongo-legacy'].NpmModuleMongodbVersion
   : Npm.require('mongodb/package.json').version;

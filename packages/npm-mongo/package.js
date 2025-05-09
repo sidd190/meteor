@@ -12,7 +12,6 @@ Npm.depends({
 });
 
 Package.onUse(function (api) {
-  api.use(['npm-mongo-legacy', "ecmascript"], "server");
   api.addFiles("wrapper.js", "server");
   api.export(["NpmModuleMongodb", "NpmModuleMongodbVersion"], "server");
   api.addAssets("index.d.ts", "server");
