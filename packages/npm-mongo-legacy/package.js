@@ -2,7 +2,7 @@
 // via isopacket, without having to also load ddp-server.
 
 Package.describe({
-  summary: "Wrapper around the mongo npm package",
+  summary: "Wrapper around the mongo npm package (legacy)",
   version: "6.10.2",
   documentation: null,
 });
