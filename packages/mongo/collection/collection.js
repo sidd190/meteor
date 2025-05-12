@@ -3,7 +3,6 @@ import { AsyncMethods } from './methods_async';
 import { SyncMethods } from './methods_sync';
 import { IndexMethods } from './methods_index';
 import {
-  ID_GENERATION_DEFAULT,
   ID_GENERATORS,
   normalizeOptions,
   setupAutopublish,
