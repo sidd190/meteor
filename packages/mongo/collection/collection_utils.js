@@ -13,6 +13,8 @@ export const ID_GENERATORS = {
   }
 };
 
+export const ID_GENERATION_DEFAULT = ID_GENERATORS.STRING;
+
 export function setupConnection(name, options) {
   if (!name || options.connection === null) return null;
   if (options.connection) return options.connection;
