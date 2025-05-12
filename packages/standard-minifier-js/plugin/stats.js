@@ -36,7 +36,7 @@ export function extractModuleSizesTree(source) {
       });
     }
     catch(e){
-      process.stderr.write(`Error while parsing with acorn. Falling back to babel minifier. ${e}`);
+      console.log(`Error while parsing with acorn. Falling back to babel minifier. ${e}`);
       ast = Babel.parse(source);
     }
     

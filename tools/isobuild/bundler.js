@@ -490,6 +490,7 @@ class NodeModulesDirectory {
           // answer by calling isWithinProdPackage(real).
           // guard against broken symlinks (#11241)
           const realpath = files.realpathOrNull(path);
+
           if (!realpath) {
             throw new Error(`Broken symbolic link encountered at ${path}`);
           }
@@ -1546,6 +1547,9 @@ class Target {
   // with the original sources.
   rewriteSourceMaps() {
     const rewriteSourceMap = function (sm) {
+      if (!sm.sources) {
+        return sm;
+      }
       sm.sources = sm.sources.map(function (path) {
         const prefix = SOURCE_URL_PREFIX;
         if (path.slice(0, prefix.length) === prefix) {

@@ -28,3 +28,10 @@ Package.registerBuildPlugin({
 Package.onUse(function(api) {
   api.use('isobuild:minifier-plugin@1.0.0');
 });
+
+Package.onTest(function(api) {
+  api.use('ecmascript');
+  api.use('tinytest');
+  api.use('standard-minifier-js');
+  api.addFiles('minifier-tests.js');
+});
