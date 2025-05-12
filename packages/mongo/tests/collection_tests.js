@@ -492,7 +492,7 @@ Tinytest.addAsync('collection - default idGeneration when not provided', async f
   }
   // Create a collection without specifying idGeneration option
   var collectionName = 'defaultIdGeneration' + test.id;
-  var collection = new Mongo.Collection(collectionName);
+  var collection = new Mongo.Collection(collectionName, { idGeneration: undefined });
 
   // Insert a document
   var id = await collection.insertAsync({a: 1});
@@ -511,7 +511,7 @@ Tinytest.addAsync('collection - compare default idGeneration with explicit idGen
   }
     // Create a collection without specifying idGeneration option (should use ID_GENERATION_DEFAULT)
   var defaultCollectionName = 'defaultIdGeneration2' + test.id;
-  var defaultCollection = new Mongo.Collection(defaultCollectionName);
+  var defaultCollection = new Mongo.Collection(defaultCollectionName, { idGeneration: undefined });
 
   // Create a collection with explicit STRING idGeneration
   var stringCollectionName = 'stringIdGeneration' + test.id;
