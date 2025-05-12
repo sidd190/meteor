@@ -43,9 +43,7 @@ Mongo.Collection = function Collection(name, options) {
 
   options = normalizeOptions(options);
 
-  this._makeNewID = (
-    ID_GENERATORS[options.idGeneration] || ID_GENERATION_DEFAULT
-  )?.(name);
+  this._makeNewID = ID_GENERATORS[options.idGeneration]?.(name);
 
   this._transform = LocalCollection.wrapTransform(options.transform);
   this.resolverType = options.resolverType;

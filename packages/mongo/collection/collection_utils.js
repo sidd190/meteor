@@ -13,8 +13,6 @@ export const ID_GENERATORS = {
   }
 };
 
-export const ID_GENERATION_DEFAULT = ID_GENERATORS.STRING;
-
 export function setupConnection(name, options) {
   if (!name || options.connection === null) return null;
   if (options.connection) return options.connection;
@@ -90,12 +88,17 @@ export function normalizeOptions(options) {
     options.connection = options.manager;
   }
 
+  const cleanedOptions = Object.fromEntries(
+    Object.entries(options || {}).filter(([_, v]) => v !== undefined),
+  );
+
+  // 2) Spread defaults first, then only the defined overrides
   return {
     connection: undefined,
     idGeneration: 'STRING',
     transform: null,
     _driver: undefined,
     _preventAutopublish: false,
-    ...options,
+    ...cleanedOptions,
   };
 }
