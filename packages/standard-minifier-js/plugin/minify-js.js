@@ -4,7 +4,6 @@ import fs from 'fs';
 export function getConfig() {
   try{
     const meteorAppDir = process.cwd();
-    // read the meteor project pakcgae.json file
     const packageJson = fs.readFileSync(`${meteorAppDir}/package.json`, 'utf8');
     const meteorConfig = JSON.parse(packageJson).meteor;
     return meteorConfig;
@@ -25,7 +24,7 @@ const Meteor = typeof global.Meteor !== 'undefined' ? global.Meteor : {
   }
 };
 
-// Perfil para ambiente de teste e produção
+// Profile for test and production environments
 let Profile;
 if (typeof global.Profile !== 'undefined') {
   Profile = global.Profile;
@@ -44,7 +43,7 @@ if (typeof global.Profile !== 'undefined') {
 
 let swc;
 
-// Registrar o minificador apenas quando o Plugin estiver disponível (não nos testes)
+// Register the minifier only when Plugin is available (not in tests)
 if (typeof Plugin !== 'undefined') {
   Plugin.registerMinifier({
       extensions: ['js'],
@@ -61,74 +60,79 @@ export class MeteorMinifier {
   }
 
   _minifyWithSWC(file) {
-    swc = swc || require('@meteorjs/swc-core'); 
-    const NODE_ENV = process.env.NODE_ENV || 'development';
-    
-    let content = file.getContentsAsString();
+    return Profile('_minifyWithSWC', () => {
+      swc = swc || require('@meteorjs/swc-core'); 
+      const NODE_ENV = process.env.NODE_ENV || 'development';
+      
+      let content = file.getContentsAsString();
 
+      return swc.minifySync(
+        content,
+        {
+          ecma: 5,
+          compress: {
+            drop_debugger: false,
 
-    return swc.minifySync(
-      content,
-      {
-        ecma: 5,
-        compress: {
-          drop_debugger: false,
+            unused: true,
+            dead_code: true,
+            typeofs: false,
 
-          unused: true,
-          dead_code: true,
-          typeofs: false,
-
-          global_defs: {
-            'process.env.NODE_ENV': NODE_ENV,
+            global_defs: {
+              'process.env.NODE_ENV': NODE_ENV,
+            },
           },
-        },
-        safari10: true,
-        inlineSourcesContent: true
-      }
-    );
+          safari10: true,
+          inlineSourcesContent: true
+        }
+      );
+    })();
   }
 
   _minifyWithTerser(file) {
-    let terser = require('terser');
-    const NODE_ENV = process.env.NODE_ENV || 'development';
-    const content = file.getContentsAsString();
-    
-    return terser.minify(content, {
-      compress: {
-        drop_debugger: false,
-        unused: false,
-        dead_code: true,
-        global_defs: {
-          "process.env.NODE_ENV": NODE_ENV
+    return Profile('_minifyWithTerser', async () => {
+      let terser = require('terser');
+      const NODE_ENV = process.env.NODE_ENV || 'development';
+      const content = file.getContentsAsString();
+      
+      return terser.minify(content, {
+        compress: {
+          drop_debugger: false,
+          unused: false,
+          dead_code: true,
+          global_defs: {
+            "process.env.NODE_ENV": NODE_ENV
+          }
+        },
+        // Fix issue meteor/meteor#9866, as explained in this comment:
+        // https://github.com/mishoo/UglifyJS2/issues/1753#issuecomment-324814782
+        // And fix terser issue #117: https://github.com/terser-js/terser/issues/117
+        safari10: true
+      }).then(result => {
+        if (!result) {
+          throw new Error(`Terser produced empty result for ${file.getPathInBundle()}`);
         }
-      },
-      // Fix issue meteor/meteor#9866, as explained in this comment:
-      // https://github.com/mishoo/UglifyJS2/issues/1753#issuecomment-324814782
-      // And fix terser issue #117: https://github.com/terser-js/terser/issues/117
-      safari10: true
-    }).then(result => {
-      if (!result) {
-        throw new Error(`Terser produced empty result for ${file.getPathInBundle()}`);
-      }
-      return result;
-    }).catch(error => {
-      throw error;
-    });
+        return result;
+      }).catch(error => {
+        throw error;
+      });
+    })();
   }
 
   minifyOneFile(file) {
-    const modern = this.config && this.config.modern;
+    return Profile('minifyOneFile', () => {
+      const modern = this.config && this.config.modern;
 
-    Meteor._debug(`Minifying using ${modern ? "SWC" : "Terser"}`);
-    if(modern === false || (modern && modern.minifier === false)) {
-      return this._minifyWithTerser(file);
-    }
+      Meteor._debug(`Minifying using ${modern ? "SWC" : "Terser"}`);
+      if(modern === false || (modern && modern.minifier === false)) {
+        return this._minifyWithTerser(file);
+      }
 
-    try {
-      return this._minifyWithSWC(file);
-    } catch (swcError) {
-      return this._minifyWithTerser(file);
-    }
+      try {
+        return this._minifyWithSWC(file);
+      } catch (swcError) {
+        return this._minifyWithTerser(file);
+      }
+    })();
   }
 }
 
