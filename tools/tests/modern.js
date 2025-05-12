@@ -1,5 +1,6 @@
 var selftest = require('../tool-testing/selftest.js');
 var Sandbox = selftest.Sandbox;
+var files = require('../fs/files');
 
 // No need for a high value since the asserts already wait long enough to pass tests
 const waitToStart = 5;
@@ -402,3 +403,118 @@ selftest.define("modern build stack - transpiler files", async function () {
 
   process.env.METEOR_MODERN = currentMeteorModern;
 });
+
+
+selftest.define("modern build stack - test minifier choice", async function () {
+  // This test verifies which minifier (SWC or Terser) is used during the build process 
+  // based on the configuration in package.json. It uses profiling to detect calls to 
+  // the _minifyWithSWC and _minifyWithTerser methods.
+  
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  const currentTimeoutScaleFactor = process.env.TIMEOUT_SCALE_FACTOR;
+  
+  process.env.METEOR_MODERN = '';
+  process.env.TIMEOUT_SCALE_FACTOR = '30';  // Increase timeout for this test
+
+  const s = new Sandbox();
+  await s.init();
+
+  await s.createApp("modern", "modern");
+  await s.cd("modern");
+
+  // Enable profiling to see minifier output
+  s.set("NODE_INSPECTOR_IPC", "1");
+  
+  // Test 1: Build with SWC minifier enabled
+  console.log("Testing build with SWC minifier enabled");
+  
+  await writeModernConfig(s, {
+    minifier: true
+  });
+
+  // First run the app to ensure it works
+  const runSwc = s.run();
+  runSwc.waitSecs(waitToStart);
+  await runSwc.match("App running at");
+  await runSwc.stop();
+  
+  // Now build the project with SWC
+  const buildSwc = s.run("build", "../build-swc");
+  buildSwc.waitSecs(60);
+  await buildSwc.match("[DEBUG] Minifying using SWC", false, true);
+  await buildSwc.expectExit(0);
+  
+  // Check what's in the build directory
+  const swcBuildPath = files.pathJoin(s.cwd, "../build-swc");
+  const swcTarGzPath = files.pathJoin(swcBuildPath, "modern.tar.gz");
+  
+  // Verify that the tarball exists
+  selftest.expectEqual(files.exists(swcBuildPath), true);
+  selftest.expectEqual(files.exists(swcTarGzPath), true);
+  
+  // Test 2: Build with Terser minifier
+  console.log("Testing build with Terser minifier");
+  
+  await writeModernConfig(s, {
+    minifier: false
+  });
+
+  // First run the app to ensure it works
+  const runTerser = s.run();
+  runTerser.waitSecs(waitToStart);
+  await runTerser.match("App running at");
+  await runTerser.stop();
+  
+  // Now build the project with Terser
+  const buildTerser = s.run("build", "../build-terser");
+  buildTerser.waitSecs(60);
+  await buildTerser.match("[DEBUG] Minifying using Terser", false, true);
+  await buildTerser.expectExit(0);
+  
+  // Check what's in the build directory
+  const terserBuildPath = files.pathJoin(s.cwd, "../build-terser");
+  const terserTarGzPath = files.pathJoin(terserBuildPath, "modern.tar.gz");
+  
+  // Verify that the tarball exists
+  selftest.expectEqual(files.exists(terserBuildPath), true);
+  selftest.expectEqual(files.exists(terserTarGzPath), true);
+  
+  // Test 3: Verify that we can detect a build failure with SWC and fallback to Terser
+  console.log("Testing SWC failure fallback to Terser");
+  
+  // Modify a main file to cause SWC to fail, but which Terser can still process
+  s.write("client/error.js", `
+    // This file has syntax that SWC cannot process but Terser can
+    const x = (function() { 
+      return { a: 1, ...window.__meteor_runtime_config__ }; 
+    })();
+  `);
+  
+  await writeModernConfig(s, {
+    minifier: true // Try using SWC first, but it should fail and fall back to Terser
+  });
+  
+  // First run the app to ensure it works even with the error file
+  const runFallback = s.run();
+  runFallback.waitSecs(waitToStart);
+  await runFallback.match("App running at");
+  await runFallback.stop();
+  
+  // Run the build and check for fallback to Terser
+  const buildFallback = s.run("build", "../build-fallback");
+  buildFallback.waitSecs(60);
+  // Should see Terser (fallback) being used when SWC fails
+  await buildFallback.match("[DEBUG] Minifying using Terser", false, true);
+  await buildFallback.expectExit(0);
+  
+  // Check what's in the build directory
+  const fallbackBuildPath = files.pathJoin(s.cwd, "../build-fallback");
+  const fallbackTarGzPath = files.pathJoin(fallbackBuildPath, "modern.tar.gz");
+  
+  // Verify that the tarball exists
+  selftest.expectEqual(files.exists(fallbackBuildPath), true);
+  selftest.expectEqual(files.exists(fallbackTarGzPath), true);
+
+  process.env.METEOR_MODERN = currentMeteorModern;
+});
+

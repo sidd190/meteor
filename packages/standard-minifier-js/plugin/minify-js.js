@@ -16,6 +16,15 @@ export function getConfig() {
 
 const statsEnabled = process.env.DISABLE_CLIENT_STATS !== 'true'
 
+
+const Meteor = typeof global.Meteor !== 'undefined' ? global.Meteor : {
+  _debug: function(...args) {
+    if (typeof console !== 'undefined' && typeof console.log !== 'undefined') {
+      console.log('[DEBUG]', ...args);
+    }
+  }
+};
+
 // Perfil para ambiente de teste e produção
 let Profile;
 if (typeof global.Profile !== 'undefined') {
@@ -108,22 +117,13 @@ export class MeteorMinifier {
   }
 
   minifyOneFile(file) {
-    // TODO: create a function to check if the file should be skipped and share it with babel-compiler.js file
-    
-    // Legacy config check - kept for backwards compatibility
-    if(this.config && this.config.modernTranspiler === false) {
-      return this._minifyWithTerser(file);
-    }
-    
-    // New config approach
     const modern = this.config && this.config.modern;
-    // If modern is false or modern.minifier is explicitly false, use Terser
+
+    Meteor._debug(`Minifying using ${modern ? "SWC" : "Terser"}`);
     if(modern === false || (modern && modern.minifier === false)) {
       return this._minifyWithTerser(file);
     }
-    
-    // TODO: read the pkg.json file from the meteor project and ceck the swc build option
-    // TODO: add a flag to the minifier to use swc or terser inside the meteor project package.json
+
     try {
       return this._minifyWithSWC(file);
     } catch (swcError) {
