@@ -865,9 +865,9 @@ makeGlobalAsyncLocalStorage().run({}, async function () {
   var appDir = files.findAppDir();
   if (appDir) {
     appDir = files.pathResolve(appDir);
-    // Initialize meteorConfig globally for command context
-    global.meteorConfig = getMeteorConfig(appDir);
   }
+  // Initialize meteorConfig globally for command context
+  global.meteorConfig = getMeteorConfig(appDir);
 
   await require('../tool-env/isopackets.js').ensureIsopacketsLoadable();
 

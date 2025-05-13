@@ -263,17 +263,20 @@ export function parseRunTargets(targets) {
 
 export function getMeteorConfig(appDir) {
   if (global.meteorConfig) return global.meteorConfig;
-  const packageJsonPath = files.pathJoin(appDir, 'package.json');
-  if (!files.exists(packageJsonPath)) {
-    return false;
+  let packageJson;
+  if (appDir) {
+    const packageJsonPath = files.pathJoin(appDir, 'package.json');
+    if (!files.exists(packageJsonPath)) {
+      return false;
+    }
+    const packageJsonFile = files.readFile(packageJsonPath, 'utf8');
+    packageJson = JSON.parse(packageJsonFile);
   }
-  const packageJsonFile = files.readFile(packageJsonPath, 'utf8');
-  const packageJson = JSON.parse(packageJsonFile);
-  const meteorConfig = {
+  const modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
+  global.meteorConfig = {
     ...(packageJson?.meteor || {}),
-    modern: projectContextModule.normalizeModern(projectContextModule.modernForced || packageJson?.meteor?.modern),
+    modern: projectContextModule.normalizeModern(modernForced || packageJson?.meteor?.modern || false),
   };
-  global.meteorConfig = meteorConfig;
   return global.meteorConfig;
 }
 

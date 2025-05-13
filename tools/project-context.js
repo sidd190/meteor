@@ -1788,8 +1788,6 @@ export const normalizeModern = (r = false) => Object.fromEntries(
     ]),
 );
 
-export const modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
-
 export class MeteorConfig {
   constructor({
     appDirectory,
@@ -1834,11 +1832,12 @@ export class MeteorConfig {
             },
           }),
         } : this._config;
+    const modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
     // Reinitialize meteorConfig globally for project context
     // Updates config when package.json changes trigger rebuilds
     global.meteorConfig = {
       ...(this._config || {}),
-      modern: normalizeModern(modernForced || this._config?.modern),
+      modern: normalizeModern(modernForced || this._config?.modern || false),
     };
     return this._config;
   }
