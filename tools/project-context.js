@@ -492,6 +492,9 @@ Object.assign(ProjectContext.prototype, {
       self.meteorConfig = new MeteorConfig({
         appDirectory: self.projectDir,
       });
+      self.meteorConfig._ensureInitialized();
+      global.meteorConfig = self.meteorConfig?._config;
+
       if (buildmessage.jobHasMessages()) {
         return;
       }

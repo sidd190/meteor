@@ -293,6 +293,7 @@ function getMeteorConfig(appDir) {
   const packageJsonFile = files.readFile(packageJsonPath, 'utf8');
   const packageJson = JSON.parse(packageJsonFile);
   meteorConfig = packageJson?.meteor;
+  global.meteorConfig = packageJson?.meteor;
   return meteorConfig;
 }
 

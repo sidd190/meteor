@@ -121,6 +121,9 @@ let modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
 let lastModifiedMeteorConfig;
 let lastModifiedMeteorConfigTime;
 BCp.initializeMeteorAppConfig = function () {
+  if (global.meteorConfig) {
+    return global.meteorConfig;
+  }
   if (!lastModifiedMeteorConfig && !fs.existsSync(`${getMeteorAppDir()}/package.json`)) {
     return;
   }
