@@ -99,50 +99,12 @@ function compileWithSwc(source, swcOptions = {}, { inputFilePath, filename, sour
     };
   });
 }
-const DEFAULT_MODERN = {
-  transpiler: true,
-};
 
-const normalizeModern = (r = false) => Object.fromEntries(
-    Object.entries(DEFAULT_MODERN).map(([k, def]) => [
-      k,
-      r === true
-        ? def
-        : r === false || r?.[k] === false
-        ? false
-        : typeof r?.[k] === 'object'
-        ? { ...r[k] }
-        : def,
-    ]),
-);
-
-let modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
-
-let lastModifiedMeteorConfig;
-let lastModifiedMeteorConfigTime;
 BCp.initializeMeteorAppConfig = function () {
-  if (global.meteorConfig) {
-    return global.meteorConfig;
+  if (global.meteorConfig?.modern?.transpiler?.verbose) {
+    logConfigBlock('Meteor Config', global.meteorConfig);
   }
-  if (!lastModifiedMeteorConfig && !fs.existsSync(`${getMeteorAppDir()}/package.json`)) {
-    return;
-  }
-  const currentLastModifiedConfigTime = fs
-    .statSync(`${getMeteorAppDir()}/package.json`)
-    ?.mtime?.getTime();
-  if (currentLastModifiedConfigTime !== lastModifiedMeteorConfigTime) {
-    lastModifiedMeteorConfigTime = currentLastModifiedConfigTime;
-    lastModifiedMeteorConfig = getMeteorAppPackageJson()?.meteor;
-    lastModifiedMeteorConfig = lastModifiedMeteorConfig != null ? {
-      ...lastModifiedMeteorConfig,
-      modern: normalizeModern(modernForced || lastModifiedMeteorConfig?.modern),
-    } : {};
-
-    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
-      logConfigBlock('Meteor Config', lastModifiedMeteorConfig);
-    }
-  }
-  return lastModifiedMeteorConfig;
+  return global.meteorConfig;
 };
 
 let lastModifiedSwcConfig;
@@ -163,7 +125,7 @@ BCp.initializeMeteorAppSwcrc = function () {
       lastModifiedSwcConfig.jsc.baseUrl = path.resolve(process.cwd(), lastModifiedSwcConfig.jsc.baseUrl);
     }
 
-    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
+    if (global.meteorConfig?.modern?.transpiler?.verbose) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
   }
@@ -173,7 +135,7 @@ BCp.initializeMeteorAppSwcrc = function () {
 let lastModifiedSwcLegacyConfig;
 BCp.initializeMeteorAppLegacyConfig = function () {
   const swcLegacyConfig = convertBabelTargetsForSwc(Babel.getMinimumModernBrowserVersions());
-  if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose && !lastModifiedSwcLegacyConfig) {
+  if (global.meteorConfig?.modern?.transpiler?.verbose && !lastModifiedSwcLegacyConfig) {
     logConfigBlock('SWC Legacy Config', swcLegacyConfig);
   }
   lastModifiedSwcLegacyConfig = swcLegacyConfig;
@@ -307,8 +269,8 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         const isPackageCode = packageName != null;
         const isLegacyWebArch = arch.includes('legacy');
 
-        const config = lastModifiedMeteorConfig?.modern?.transpiler;
-        const hasModernTranspiler = lastModifiedMeteorConfig?.modern?.transpiler !== false;
+        const config = global.meteorConfig?.modern?.transpiler;
+        const hasModernTranspiler = global.meteorConfig?.modern?.transpiler !== false;
         const shouldSkipSwc =
           !hasModernTranspiler ||
           (isAppCode && config?.excludeApp === true) ||

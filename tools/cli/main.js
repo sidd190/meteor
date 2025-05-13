@@ -287,7 +287,7 @@ main.captureAndExit = async function (header, title, f) {
 
 // NB: files required up to this point may not define commands
 
-const { isModernWatcherEnabled } = require('./commands.js');
+const { getMeteorConfig } = require('./commands.js');
 require('./commands-packages.js');
 require('./commands-packages-query.js');
 require('./commands-cordova.js');
@@ -865,7 +865,7 @@ makeGlobalAsyncLocalStorage().run({}, async function () {
   var appDir = files.findAppDir();
   if (appDir) {
     appDir = files.pathResolve(appDir);
-    global.modernWatcher = isModernWatcherEnabled(appDir);
+    global.meteorConfig = getMeteorConfig(appDir);
   }
 
   await require('../tool-env/isopackets.js').ensureIsopacketsLoadable();

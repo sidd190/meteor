@@ -493,7 +493,6 @@ Object.assign(ProjectContext.prototype, {
         appDirectory: self.projectDir,
       });
       self.meteorConfig._ensureInitialized();
-      global.meteorConfig = self.meteorConfig?._config;
 
       if (buildmessage.jobHasMessages()) {
         return;
@@ -1814,7 +1813,11 @@ export class MeteorConfig {
             },
           }),
         } : this._config;
-
+    this._config = {
+      ...(this._config || {}),
+      modern: global.normalizeModern(global.modernForced || global.meteorConfig?.modern),
+    };
+    global.meteorConfig = this._config;
     return this._config;
   }
 
