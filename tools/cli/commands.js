@@ -261,30 +261,6 @@ export function parseRunTargets(targets) {
   });
 };
 
-const DEFAULT_MODERN = {
-    transpiler: true,
-    webArchOnly: true,
-    watcher: true,
-};
-global.DEFAULT_MODERN = DEFAULT_MODERN;
-
-const normalizeModern = (r = false) => Object.fromEntries(
-    Object.entries(DEFAULT_MODERN).map(([k, def]) => [
-        k,
-        r === true
-            ? def
-            : r === false || r?.[k] === false
-                ? false
-                : typeof r?.[k] === 'object'
-                    ? { ...r[k] }
-                    : def,
-    ]),
-);
-global.normalizeModern = normalizeModern;
-
-let modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
-global.modernForced = modernForced;
-
 export function getMeteorConfig(appDir) {
   if (global.meteorConfig) return global.meteorConfig;
   const packageJsonPath = files.pathJoin(appDir, 'package.json');
@@ -295,7 +271,7 @@ export function getMeteorConfig(appDir) {
   const packageJson = JSON.parse(packageJsonFile);
   const meteorConfig = {
     ...(packageJson?.meteor || {}),
-    modern: normalizeModern(modernForced || packageJson?.meteor?.modern),
+    modern: projectContextModule.normalizeModern(projectContextModule.modernForced || packageJson?.meteor?.modern),
   };
   global.meteorConfig = meteorConfig;
   return global.meteorConfig;

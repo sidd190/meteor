@@ -1769,6 +1769,27 @@ Object.assign(exports.FinishedUpgraders.prototype, {
   }
 });
 
+const DEFAULT_MODERN = {
+  transpiler: true,
+  webArchOnly: true,
+  watcher: true,
+};
+
+export const normalizeModern = (r = false) => Object.fromEntries(
+    Object.entries(DEFAULT_MODERN).map(([k, def]) => [
+      k,
+      r === true
+          ? def
+          : r === false || r?.[k] === false
+              ? false
+              : typeof r?.[k] === 'object'
+                  ? { ...r[k] }
+                  : def,
+    ]),
+);
+
+export const modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
+
 export class MeteorConfig {
   constructor({
     appDirectory,
@@ -1817,7 +1838,7 @@ export class MeteorConfig {
     // Updates config when package.json changes trigger rebuilds
     global.meteorConfig = {
       ...(this._config || {}),
-      modern: global.normalizeModern(global.modernForced || this._config?.modern),
+      modern: normalizeModern(modernForced || this._config?.modern),
     };
     return this._config;
   }
