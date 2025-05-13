@@ -285,7 +285,7 @@ global.normalizeModern = normalizeModern;
 let modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
 global.modernForced = modernForced;
 
-function getMeteorConfig(appDir) {
+export function getMeteorConfig(appDir) {
   if (global.meteorConfig) return global.meteorConfig;
   const packageJsonPath = files.pathJoin(appDir, 'package.json');
   if (!files.exists(packageJsonPath)) {
