@@ -1813,13 +1813,12 @@ export class MeteorConfig {
             },
           }),
         } : this._config;
-    this._config = {
+    // Reinitialize meteorConfig globally for project context
+    // Updates config when package.json changes trigger rebuilds
+    global.meteorConfig = {
       ...(this._config || {}),
       modern: global.normalizeModern(global.modernForced || this._config?.modern),
     };
-    // Reinitialize meteorConfig globally for project context
-    // Updates config when package.json changes trigger rebuilds
-    global.meteorConfig = this._config;
     return this._config;
   }
 
