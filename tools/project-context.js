@@ -1815,7 +1815,7 @@ export class MeteorConfig {
         } : this._config;
     this._config = {
       ...(this._config || {}),
-      modern: global.normalizeModern(global.modernForced || global.meteorConfig?.modern),
+      modern: global.normalizeModern(global.modernForced || this._config?.modern),
     };
     global.meteorConfig = this._config;
     return this._config;
