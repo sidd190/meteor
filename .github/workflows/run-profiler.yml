@@ -6,7 +6,7 @@ on:
 
 jobs:
   run-profiler:
-    if: ${{ github.event.issue.pull_request }} && contains(${{ github.event.comment.body }}, '/profile')
+    if:  github.event.issue.pull_request && contains(github.event.comment.body , '/profile')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -16,9 +16,18 @@ jobs:
           node-version: 22.x
 
       - name: Run CI
+        env:
+          IS_PR: ${{ github.event.issue.pull_request }}
+          PR_BODY: ${{ github.event.comment.body }}
         run: |
           echo "Running meteor profiler..."
+          git status
           ls
+          value="VALUE"
+          echo $IS_PR
+          echo $PR_BODY
+          echo contains($PR_BODY, '/profile')
+          echo "Key=$value" >> $GITHUB_ENV
           # Add your CI commands here
 
       - name: Comment PR
@@ -26,4 +35,6 @@ jobs:
         with:
           message: |
             Hello world !!!! :wave:
+            this pr is ran on
+            testing value: ${{ env.VALUE }}
           pr-number: ${{ github.event.issue.number }}
