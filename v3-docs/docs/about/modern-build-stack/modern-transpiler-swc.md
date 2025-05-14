@@ -144,7 +144,7 @@ This overrides Meteor's internal SWC config to apply your settings, ensuring SWC
 
 ## Migration Topics
 
-### Nested imports
+### Nested Imports
 
 Nested imports are a Meteor-specific feature in its bundler, unlike standard bundlers. Meteor introduced them during a time when bundling standards were still evolving and experimented with its own approach. This feature comes from the [`reify` module](https://github.com/benjamn/reify/tree/main) and works with Babel transpilation. SWC doesn't support them since they were never standardized.
 
@@ -190,7 +190,7 @@ To use the same aliases in SWC, add them to your [.swcrc](#custom-swcrc):
 
 This enables you to use `@ui/components` instead of `./ui/components` in your imports.
 
-### React runtime
+### React Runtime
 
 Meteor Babel lets you skip importing React in your files by using the [`@babel/plugin-transform-react-jsx`](https://www.npmjs.com/package/@babel/plugin-transform-react-jsx) runtime config.
 
