@@ -1,0 +1,29 @@
+name: Run Profiler
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  run-profiler:
+    if: ${{ github.event.issue.pull_request }} && contains(${{ github.event.comment.body }}, '/profile')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+
+      - name: Run CI
+        run: |
+          echo "Running meteor profiler..."
+          ls
+          # Add your CI commands here
+
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v3
+        with:
+          message: |
+            Hello world !!!! :wave:
+          pr-number: ${{ github.event.issue.number }}
