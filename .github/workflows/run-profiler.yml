@@ -16,6 +16,9 @@ jobs:
           node-version: 22.x
       - name: Set ENVs
         run: |
+          value="VALUE"
+          echo "Key=$value" >> $GITHUB_ENV
+
           PR_NUMBER="${{ github.event.issue.number }}"
           echo "PrNumber=$PR_NUMBER" >> $GITHUB_ENV
       - name: Run CI
@@ -27,8 +30,6 @@ jobs:
           echo $PR_NUMBER
           git status
           ls
-          value="VALUE"
-          echo "Key=$value" >> $GITHUB_ENV
           # Add your CI commands here
 
       - name: Comment PR
