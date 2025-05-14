@@ -48,7 +48,7 @@ This shows each file being processed, its context, cache usage, and whether it f
 
 ## Adapt your code to benefit from SWC
 
-If all your code uses SWC, you're good and can turn off verbosity. But if you see logs like:
+If all your code uses SWC, you're good and can turn off verbosity. But if you [see logs like](https://forums.meteor.com/uploads/default/original/3X/e/1/e1a2c285284f82ab736bcada647d88bd4fa8d3ec.png):
 
 ``` shell
 [Transpiler] Used Babel for <file>     (<context>)     Fallback
