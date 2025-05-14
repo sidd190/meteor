@@ -6,11 +6,14 @@ on:
 
 jobs:
   run-profiler:
-    if: github.event.issue.pull_request && contains(github.event.comment.body , '/meteor-profile')
+    if: github.event.issue.pull_request && contains(github.event.comment.body , '/profile')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.issue.pull_request.head.ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
@@ -33,6 +36,6 @@ jobs:
         with:
           message: |
             Hello world !!!! :wave:
-            this pr is ran on
-            testing value: ${{ env.VALUE }}
+            this pr(#${{ env.PrNumber }}) is ran on
+            testing value: ${{ env.Key }}
           pr-number: ${{ github.event.issue.number }}
