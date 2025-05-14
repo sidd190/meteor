@@ -18,6 +18,7 @@ jobs:
       - name: Run CI
         run: |
           echo "Running meteor profiler..."
+          git status
           ls
           # Add your CI commands here
 
