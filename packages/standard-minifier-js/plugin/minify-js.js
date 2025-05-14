@@ -18,7 +18,7 @@ const statsEnabled = process.env.DISABLE_CLIENT_STATS !== 'true'
 
 const Meteor = typeof global.Meteor !== 'undefined' ? global.Meteor : {
   _debug: function(...args) {
-    if (typeof console !== 'undefined' && typeof console.log !== 'undefined') {
+    if (typeof console !== 'undefined' && typeof console.log !== 'undefined' && process.env.NODE_INSPECTOR_IPC) {
       console.log('[DEBUG]', ...args);
     }
   }
@@ -120,16 +120,18 @@ export class MeteorMinifier {
 
   minifyOneFile(file) {
     return Profile('minifyOneFile', () => {
-      const modern = this.config && this.config.modern;
-
-      Meteor._debug(`Minifying using ${modern ? "SWC" : "Terser"}`);
-      if(modern === false || (modern && modern.minifier === false)) {
+      const modern = this.config && (this.config.modern === true || (this.config.modern && this.config.modern.minifier === true));
+      // check if config is an empty object
+      if(this.config && Object.keys(this.config).length === 0 || !modern) {
+        Meteor._debug(`Minifying using Terser  | file: ${file.getPathInBundle()}`);
         return this._minifyWithTerser(file);
       }
 
       try {
+        Meteor._debug(`Minifying using SWC  | file: ${file.getPathInBundle()}`);
         return this._minifyWithSWC(file);
       } catch (swcError) {
+        Meteor._debug(`SWC failed  | file: ${file.getPathInBundle()}`);
         return this._minifyWithTerser(file);
       }
     })();
@@ -190,7 +192,6 @@ MeteorMinifier.prototype.processFilesForBundle = Profile('processFilesForBundle'
   };
 
   for (let file of files) {
-    if(file instanceof Promise) file = await file;
     // Don't reminify *.min.js.
     if (/\.min\.js$/.test(file.getPathInBundle())) {
       toBeAdded.data += file.getContentsAsString();
