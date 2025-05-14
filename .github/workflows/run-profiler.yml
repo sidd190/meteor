@@ -6,7 +6,7 @@ on:
 
 jobs:
   run-profiler:
-    if: ${{ github.event.issue.pull_request }} && contains(${{ github.event.comment.body }}, '/profile')
+    if:  github.event.issue.pull_request && contains(github.event.comment.body , '/profile')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
