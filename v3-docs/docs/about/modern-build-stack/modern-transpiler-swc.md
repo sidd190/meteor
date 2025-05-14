@@ -142,7 +142,7 @@ This overrides Meteor's internal SWC config to apply your settings, ensuring SWC
 - `modern.transpiler.verbose: [true|false]`
   If true, the transpilation process for files is shown when running the app. This helps understand which transpiler is used for each file, what fallbacks are applied, and gives a chance to either exclude files to always use Babel or migrate fully to SWC.
 
-## Migration guide
+## Migration Topics
 
 ### Nested imports
 
