@@ -21,6 +21,9 @@ jobs:
           git status
           ls
           value="VALUE"
+          echo ${{ github.event.issue.pull_request }}
+          echo ${{ github.event.comment.body }}
+          echo contains(${{ github.event.comment.body }}, '/profile')
           echo "Key=$value" >> $GITHUB_ENV
           # Add your CI commands here
 
