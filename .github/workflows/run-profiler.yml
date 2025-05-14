@@ -6,7 +6,7 @@ on:
 
 jobs:
   run-profiler:
-    if:  github.event.issue.pull_request && contains(github.event.comment.body , '/meteor-profile')
+    if: github.event.issue.pull_request && contains(github.event.comment.body , '/profile')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -14,19 +14,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
-
+      - name: Set ENVs
+        run: |
+          PR_NUMBER="${{ github.event.issue.number }}"
+          echo "PrNumber=$PR_NUMBER" >> $GITHUB_ENV
       - name: Run CI
         env:
           IS_PR: ${{ github.event.issue.pull_request }}
           PR_BODY: ${{ github.event.comment.body }}
         run: |
           echo "Running meteor profiler..."
+          echo $PR_NUMBER
           git status
           ls
           value="VALUE"
-          echo $IS_PR
-          echo $PR_BODY
-          echo contains($PR_BODY, '/profile')
           echo "Key=$value" >> $GITHUB_ENV
           # Add your CI commands here
 
