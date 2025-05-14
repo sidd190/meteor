@@ -18,7 +18,13 @@ jobs:
       - name: Run CI
         run: |
           echo "Running meteor profiler..."
+          git status
           ls
+          value="VALUE"
+          echo ${{ github.event.issue.pull_request }}
+          echo ${{ github.event.comment.body }}
+          echo contains(${{ github.event.comment.body }}, '/profile')
+          echo "Key=$value" >> $GITHUB_ENV
           # Add your CI commands here
 
       - name: Comment PR
@@ -26,4 +32,6 @@ jobs:
         with:
           message: |
             Hello world !!!! :wave:
+            this pr is ran on
+            testing value: ${{ env.VALUE }}
           pr-number: ${{ github.event.issue.number }}
