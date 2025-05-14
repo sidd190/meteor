@@ -9,14 +9,18 @@ jobs:
     if: github.event.issue.pull_request && contains(github.event.comment.body , '/profile')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.issue.pull_request.head.ref }}
+
+      - name: Checkout Pull Request
+        run: hub pr checkout ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22.x
+
       - name: Set ENVs
         run: |
           value="VALUE"
@@ -24,6 +28,7 @@ jobs:
 
           PR_NUMBER="${{ github.event.issue.number }}"
           echo "PrNumber=$PR_NUMBER" >> $GITHUB_ENV
+
       - name: Run CI
         run: |
           echo "Running meteor profiler..."
@@ -36,6 +41,6 @@ jobs:
         with:
           message: |
             Hello world !!!! :wave:
-            this pr(#${{ env.PrNumber }}) is ran on
+            this is pr number: #${{ env.PrNumber }}
             testing value: ${{ env.Key }}
           pr-number: ${{ github.event.issue.number }}
