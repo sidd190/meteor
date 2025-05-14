@@ -1910,8 +1910,6 @@ export class MeteorConfig {
 
   _getEntryModulesByArch(...keys) {
     const configEntryModule = this.get(...keys);
-    console.log("--> (project-context.js-Line: 1911)\n configEntryModule: ", configEntryModule);
-    console.log("--> (project-context.js-Line: 1911)\n keys: ", keys);
     const entryModulesByArch = Object.create(null);
 
     if (typeof configEntryModule === "string" ||
@@ -1931,7 +1929,6 @@ export class MeteorConfig {
       });
     }
 
-    console.log("--> (project-context.js-Line: 1931)\n entryModulesByArch: ", entryModulesByArch);
     return entryModulesByArch;
   }
 
@@ -1941,13 +1938,9 @@ export class MeteorConfig {
   ) {
     const entryMatch = archinfo.mostSpecificMatch(
       arch, Object.keys(entryModulesByArch));
-    // console.log("--> (project-context.js-Line: 1939)\n archinfo: ", archinfo);
-    // console.log("--> (project-context.js-Line: 1939)\n Object.keys(entryModulesByArch): ", Object.keys(entryModulesByArch));
 
     if (entryMatch) {
       const entryModule = entryModulesByArch[entryMatch];
-      console.log("--> (project-context.js-Line: 1944)\n entryModulesByArch: ", entryModulesByArch);
-      console.log("--> (project-context.js-Line: 1942)\n entryModule: ", entryModule);
 
       if (entryModule === false) {
         // If meteor.{main,test}Module.{client,server,...} === false, no
@@ -1976,7 +1969,6 @@ export class MeteorConfig {
         "./" + files.pathNormalize(entryModule),
         this.packageJsonPath
       );
-      console.log("--> (project-context.js-Line: 1970)\n res: ", res);
 
       if (res && typeof res === "object") {
         return files.pathRelative(this.appDirectory, res.path);
