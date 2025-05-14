@@ -22,15 +22,11 @@ jobs:
           PR_NUMBER="${{ github.event.issue.number }}"
           echo "PrNumber=$PR_NUMBER" >> $GITHUB_ENV
       - name: Run CI
-        env:
-          IS_PR: ${{ github.event.issue.pull_request }}
-          PR_BODY: ${{ github.event.comment.body }}
         run: |
           echo "Running meteor profiler..."
           echo $PR_NUMBER
           git status
           ls
-          # Add your CI commands here
 
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v3
