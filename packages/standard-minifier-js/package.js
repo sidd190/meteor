@@ -1,7 +1,7 @@
 Package.describe({
   name: 'standard-minifier-js',
-  version: '3.1.0',
-  summary: 'Standard javascript minifiers used with Meteor apps by default. Inspired into https://github.com/zodern/minify-js-sourcemaps',
+  version: '3.1.0-beta330.1',
+  summary: 'Standard javascript minifiers used with Meteor apps by default.',
   documentation: 'README.md',
 });
 
