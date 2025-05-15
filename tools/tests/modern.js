@@ -425,7 +425,7 @@ selftest.define("modern build stack - test terser minifier", async function () {
   const buildTerser = s.run("build", `../${appName}`);
   buildTerser.waitSecs(60);
   await buildTerser.match("[DEBUG] Minifying using Terser", false, true);
-  
+
   const terserBuildPath = files.pathJoin(s.cwd, `../${appName}`);
   selftest.expectEqual(files.exists(terserBuildPath), true);
 
@@ -465,7 +465,7 @@ selftest.define("modern build stack - test swc minifier", async function () {
   const buildSwc = s.run("build", `../${appName}`);
   buildSwc.waitSecs(60);
   await buildSwc.match("[DEBUG] Minifying using SWC", false, true);
-  
+
   // Check what's in the build directory
   const swcBuildPath = files.pathJoin(s.cwd, `../${appName}`);
   selftest.expectEqual(files.exists(swcBuildPath), true);
@@ -473,5 +473,67 @@ selftest.define("modern build stack - test swc minifier", async function () {
   process.env.METEOR_MODERN = currentMeteorModern;
 });
 
+selftest.define("modern build stack - enable build", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
 
+  const s = new Sandbox();
+  await s.init();
 
+  await s.createApp("modern", "modern");
+  await s.cd("modern");
+
+  s.set("METEOR_PROFILE", "0");
+  s.set("NODE_INSPECTOR_IPC", "1");
+
+  await writeModernConfig(s, true);
+
+  const buildSwc = s.run("build", `../modern`);
+  buildSwc.waitSecs(waitToStart);
+
+  /* Perserve legacy and modern on build */
+  await buildSwc.match(/_findSources for web\.browser/, false, true);
+  await buildSwc.match(/_findSources for web\.browser\.legacy/, false, true);
+
+  /* Keep rest of modern build stack */
+  await buildSwc.match(/safeWatcher\.watchModern/, false, true);
+  await buildSwc.match(/SWC\.compile/, false, true);
+  await buildSwc.match("[DEBUG] Minifying using SWC", false, true);
+
+  process.env.METEOR_MODERN = currentMeteorModern;
+});
+
+selftest.define("modern build stack - disable build", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+
+  const s = new Sandbox();
+  await s.init();
+
+  await s.createApp("modern", "modern");
+  await s.cd("modern");
+
+  s.set("METEOR_PROFILE", "0");
+  s.set("NODE_INSPECTOR_IPC", "1");
+
+  await writeModernConfig(s, {
+    watcher: false,
+    transpiler: false,
+    minifier: false,
+    webArchOnly: true, // Even when webArchOnly is false, the legacy build should be built
+  });
+
+  const buildLegacy = s.run("build", `../modern`);
+  buildLegacy.waitSecs(waitToStart);
+
+  /* Perserve legacy and modern on build */
+  await buildLegacy.match(/_findSources for web\.browser/, false, true);
+  await buildLegacy.match(/_findSources for web\.browser\.legacy/, false, true);
+
+  /* Keep rest of modern build stack */
+  await buildLegacy.match(/safeWatcher\.watchLegacy/, false, true);
+  await buildLegacy.match(/Babel\.compile/, false, true);
+  await buildLegacy.match("[DEBUG] Minifying using Terser", false, true);
+
+  process.env.METEOR_MODERN = currentMeteorModern;
+});
