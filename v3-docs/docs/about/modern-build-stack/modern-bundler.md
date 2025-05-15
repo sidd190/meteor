@@ -4,7 +4,7 @@ Meteor handles linking all project files into the final bundle. While we'd like 
 
 Integration with a modern bundler is in progress for Meteor 3.4. Meanwhile, we've optimized existing processes for better performance.
 
-## Modern Web Archs
+## Modern Web Arch
 
 :::info
 Starting with Meteor 3.3
