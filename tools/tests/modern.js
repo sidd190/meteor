@@ -520,7 +520,7 @@ selftest.define("modern build stack - disable build", async function () {
     watcher: false,
     transpiler: false,
     minifier: false,
-    webArchOnly: true, // Even when webArchOnly is false, the legacy build should be built
+    webArchOnly: true, // Even when webArchOnly is true, the legacy build should be built
   });
 
   const buildLegacy = s.run("build", `../modern`);
