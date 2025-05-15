@@ -1,5 +1,6 @@
 var selftest = require('../tool-testing/selftest.js');
 var Sandbox = selftest.Sandbox;
+var files = require('../fs/files');
 
 // No need for a high value since the asserts already wait long enough to pass tests
 const waitToStart = 5;
@@ -13,7 +14,6 @@ async function writeModernConfig(s, modernConfig) {
   };
 
   s.write("package.json", JSON.stringify(json, null, 2) + "\n");
-
 }
 
 selftest.define("modern build stack - legacy", async function () {
@@ -277,7 +277,7 @@ selftest.define("modern build stack - transpiler string-like options", async fun
   process.env.METEOR_MODERN = currentMeteorModern;
 });
 
-async function writConfig(s, config) {
+async function writeConfig(s, config) {
   const json = JSON.parse(s.read("package.json"));
 
   json.meteor = {
@@ -307,7 +307,7 @@ selftest.define("modern build stack - transpiler custom .swcrc", async function 
   await s.createApp("modern", "modern");
   await s.cd("modern");
 
-  await writConfig(s, {
+  await writeConfig(s, {
     modern: true,
     mainModule: {
       client: 'client/main.js',
@@ -329,16 +329,14 @@ selftest.define("modern build stack - transpiler custom .swcrc", async function 
 });
 
 selftest.define("modern build stack - transpiler files", async function () {
-  const currentMeteorModern = process.env.METEOR_MODERN;
-  process.env.METEOR_MODERN = '';
-
+  process.env.METEOR_MODERN = 'true';
   const s = new Sandbox();
   await s.init();
 
   await s.createApp("modern", "modern");
   await s.cd("modern");
 
-  await writConfig(s, {
+  await writeConfig(s, {
     modern: true,
     mainModule: {
       client: 'client/main.js',
@@ -353,7 +351,7 @@ selftest.define("modern build stack - transpiler files", async function () {
 
   await run.match(/javascript\.js/, false, true);
 
-  await writConfig(s, {
+  await writeConfig(s, {
     modern: true,
     mainModule: {
       client: 'client/main.js',
@@ -362,7 +360,7 @@ selftest.define("modern build stack - transpiler files", async function () {
   });
   await run.match(/javascript-component\.jsx/, false, true);
 
-  await writConfig(s, {
+  await writeConfig(s, {
     modern: true,
     mainModule: {
       client: 'client/main.js',
@@ -371,7 +369,7 @@ selftest.define("modern build stack - transpiler files", async function () {
   });
   await run.match(/typescript\.ts/, false, true);
 
-  await writConfig(s, {
+  await writeConfig(s, {
     modern: true,
     mainModule: {
       client: 'client/main.js',
@@ -389,7 +387,7 @@ selftest.define("modern build stack - transpiler files", async function () {
       },
     },
   });
-  await writConfig(s, {
+  await writeConfig(s, {
     modern: true,
     mainModule: {
       client: 'client/main.js',
@@ -400,5 +398,80 @@ selftest.define("modern build stack - transpiler files", async function () {
 
   await run.stop();
 
+});
+
+selftest.define("modern build stack - test terser minifier", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '';
+  const s = new Sandbox();  
+  await s.init();
+
+  const appName = "terser-app";
+
+  await s.createApp(appName, "modern");
+  await s.cd(appName);
+
+  await writeConfig(s, {
+    modern: false
+  });
+
+  s.set("NODE_INSPECTOR_IPC", "1");
+
+  const runTerser = s.run();
+  runTerser.waitSecs(waitToStart);
+  await runTerser.match("App running at");
+  await runTerser.stop();
+
+  const buildTerser = s.run("build", `../${appName}`);
+  buildTerser.waitSecs(60);
+  await buildTerser.match("[DEBUG] Minifying using Terser", false, true);
+  
+  const terserBuildPath = files.pathJoin(s.cwd, `../${appName}`);
+  selftest.expectEqual(files.exists(terserBuildPath), true);
+
   process.env.METEOR_MODERN = currentMeteorModern;
 });
+
+selftest.define("modern build stack - test swc minifier", async function () {
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = 'true';
+  const s = new Sandbox();
+  await s.init();
+
+  const appName = "modern-swc";
+
+  await s.createApp(appName, "modern");
+  await s.cd(appName);
+  
+  await writeConfig(s, {
+    modern: true,
+    mainModule: {
+      client: 'client/main.js',
+      server: 'server/main.js',
+    },
+  });
+
+  s.set("NODE_INSPECTOR_IPC", "1");
+  
+  await writeModernConfig(s, {
+    minifier: true
+  });
+
+  const runSwc = s.run();
+  runSwc.waitSecs(waitToStart);
+  await runSwc.match("App running at");
+  await runSwc.stop();
+
+  const buildSwc = s.run("build", `../${appName}`);
+  buildSwc.waitSecs(60);
+  await buildSwc.match("[DEBUG] Minifying using SWC", false, true);
+  
+  // Check what's in the build directory
+  const swcBuildPath = files.pathJoin(s.cwd, `../${appName}`);
+  selftest.expectEqual(files.exists(swcBuildPath), true);
+
+  process.env.METEOR_MODERN = currentMeteorModern;
+});
+
+
+
