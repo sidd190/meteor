@@ -1,4 +1,4 @@
-# Modern Transpiler: SWC
+# Transpiler: SWC
 
 :::info
 Starting with Meteor 3.3
@@ -218,4 +218,4 @@ For help or to report issues, post on [GitHub](https://github.com/meteor/meteor/
 
 You can compare performance before and after enabling `modernTranspiler` by running [`meteor profile`](../../cli/index.md#meteorprofile). Share your results to show progress to others.
 
-> **[Check out modern bundler options](./modern-bundler.md) to improve performance and access newer build features.**
+> **[Check out modern bundler options](bundler.md) to improve performance and access newer build features.**

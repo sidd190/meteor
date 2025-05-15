@@ -1,10 +1,10 @@
-# Modern Bundler
+# Bundler
 
 Meteor handles linking all project files into the final bundle. While we'd like to offload more of this to a modern bundler, we're still focused on keeping what's left in the Meteor context as fast as possible.
 
 Integration with a modern bundler is in progress for Meteor 3.4. Meanwhile, we've optimized existing processes for better performance.
 
-## Modern Web Arch
+## Web Arch
 
 :::info
 Starting with Meteor 3.3
@@ -34,7 +34,7 @@ By default, `"modern": true` enables all build stack upgrades. To opt out of web
 }
 ```
 
-## Modern Minifier
+## Minifier
 
 :::info
 Starting with Meteor 3.3

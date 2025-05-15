@@ -26,6 +26,6 @@ With this configuration, you enable all improvements from the modern build stack
 
 See the following sections to learn about each component and its settings:
 
-- [Modern Transpiler](modern-build-stack/modern-transpiler-swc.md)
-- [Modern Bundler](modern-build-stack/modern-bundler.md)
-- [Modern Dev Server](modern-build-stack/modern-dev-server.md)
+- [Transpiler](modern-build-stack/transpiler-swc.md)
+- [Bundler](modern-build-stack/bundler.md)
+- [Dev Server](modern-build-stack/dev-server.md)

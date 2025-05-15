@@ -1,10 +1,10 @@
-# Modern Dev Server
+# Dev Server
 
 Meteor Dev Server provides real-time file watching during development, with fast feedback through HMR, bundle visualizers, debug tools, Mongo built-in instance, CLI tools and more. At runtime, it offers a complete server environment supporting SSR and modern Express-based APIs.
 
 As part of the modern build stack, we update each component for improved performance, smarter tooling, and better bundle observability and debugging. While Meteor Dev Server remains at the core, we’ll integrate modern tools and a new bundler to enhance your app development.
 
-## Modern Watcher
+## Watcher
 
 :::info
 Starting with Meteor 3.3
