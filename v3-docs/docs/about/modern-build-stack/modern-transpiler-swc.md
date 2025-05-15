@@ -48,7 +48,7 @@ This shows each file being processed, its context, cache usage, and whether it f
 
 ## Adapt your code to benefit from SWC
 
-If all your code uses SWC, you're good and can turn off verbosity. But if you see logs like:
+If all your code uses SWC, you're good and can turn off verbosity. But if you [see logs like](https://forums.meteor.com/uploads/default/original/3X/e/1/e1a2c285284f82ab736bcada647d88bd4fa8d3ec.png):
 
 ``` shell
 [Transpiler] Used Babel for <file>     (<context>)     Fallback
@@ -142,9 +142,9 @@ This overrides Meteor's internal SWC config to apply your settings, ensuring SWC
 - `modern.transpiler.verbose: [true|false]`
   If true, the transpilation process for files is shown when running the app. This helps understand which transpiler is used for each file, what fallbacks are applied, and gives a chance to either exclude files to always use Babel or migrate fully to SWC.
 
-## Related Topics
+## Migration Topics
 
-### Nested imports
+### Nested Imports
 
 Nested imports are a Meteor-specific feature in its bundler, unlike standard bundlers. Meteor introduced them during a time when bundling standards were still evolving and experimented with its own approach. This feature comes from the [`reify` module](https://github.com/benjamn/reify/tree/main) and works with Babel transpilation. SWC doesn't support them since they were never standardized.
 
@@ -170,6 +170,43 @@ if (condition) {
 For background, see: [Why nested import](https://github.com/benjamn/reify/blob/main/WHY_NEST_IMPORTS.md).
 
 With `"modern.transpiler": true`, if SWC finds one, it silently falls back to Babel (only shows in `"verbose": true`). Nested imports isn’t standard, most modern projects use other deferred loading methods. You might want to move imports to the top or use require instead, letting SWC handle the file and speeding up builds. Still, this decision is up to the devs, some Meteor devs use them for valid reasons.
+
+### Import Aliases
+
+Meteor Babel lets you define aliases for import paths with [babel-plugin-module-resolver](https://www.npmjs.com/package/babel-plugin-module-resolver).
+
+To use the same aliases in SWC, add them to your [.swcrc](#custom-swcrc):
+
+```json
+{
+  "jsc": {
+    "baseUrl": "./",
+    "paths": {
+      "@ui/*": ["ui/*"]
+    }
+  }
+}
+```
+
+This enables you to use `@ui/components` instead of `./ui/components` in your imports.
+
+### React Runtime
+
+Meteor Babel lets you skip importing React in your files by using the [`@babel/plugin-transform-react-jsx`](https://www.npmjs.com/package/@babel/plugin-transform-react-jsx) runtime config.
+
+To use the same config in SWC, add it to your [.swcrc](#custom-swcrc):
+
+```json
+{
+  "jsc": {
+    "transform": {
+      "react": {
+        "runtime": "automatic"
+      }
+    }
+  }
+}
+```
 
 ## Troubleshotting
 
