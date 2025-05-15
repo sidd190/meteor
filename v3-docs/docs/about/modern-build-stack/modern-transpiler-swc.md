@@ -4,6 +4,8 @@
 Starting with Meteor 3.3
 :::
 
+> The transpiler converts modern JS syntax in all app code to a cross-browser compatible version.
+
 Meteor has long used Babel, a mature and still widely adopted transpiler. However, it lags behind newer tools like SWC in terms of speed. SWC and others are not only faster but are growing in use and features, reaching parity with Babel.
 
 Since transpilation is one of the slowest steps in development, Meteor now gives you the option to use SWC for your apps.
@@ -20,7 +22,7 @@ Add this to your app's `package.json`:
 
 When starting your app for web or native, SWC will handle all files: your app, npm packages, and Atmosphere packages. This also applies to production builds.
 
-By default, `"modern": true` enables all build stack upgrades: new transpiler, web arch-only compilation, watcher and more. To opt out of SWC, set `"transpiler": false` in your `package.json`.
+By default, `"modern": true` enables all build stack upgrades. To opt out of SWC transpiler, set `"transpiler": false` in your `package.json`.
 
 ```json
 "meteor": {
