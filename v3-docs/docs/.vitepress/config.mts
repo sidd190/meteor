@@ -179,6 +179,10 @@ export default defineConfig({
                 text: "Modern Bundler",
                 link: "/about/modern-build-stack/modern-bundler.md",
               },
+              {
+                text: "Modern Dev Server",
+                link: "/about/modern-build-stack/modern-dev-server.md",
+              },
             ]
           },
         ],
