@@ -200,11 +200,11 @@ You can use `swc.config.js` to define different aliases based on an environment 
 var mode = process.env.MODE_ENV;
 
 var userAliases = {
-  "@user/*": ["user/*"],
+  "@ui/*": ["user/*"],
 };
 
 var adminAliases = {
-  "@admin/*": ["admin/*"],
+  "@ui/*": ["admin/*"],
 };
 
 module.exports = {
