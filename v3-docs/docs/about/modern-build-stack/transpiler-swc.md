@@ -210,7 +210,7 @@ var adminAliases = {
 module.exports = {
     jsc: {
         baseUrl: "./",
-        paths: mode === "USER" ? uiAliases : adminAliases,
+        paths: mode === "USER" ? userAliases : adminAliases,
     },
 };
 ```
