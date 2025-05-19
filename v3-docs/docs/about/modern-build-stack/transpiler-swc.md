@@ -121,6 +121,10 @@ You can also configure other options using the `.swcrc` format. One common case 
 
 This overrides Meteor's internal SWC config to apply your settings, ensuring SWC processes `.js` or `.ts` files with React components without falling back to Babel.
 
+Use `swc.config.js` in your project root for dynamic configuration. Meteor will import and apply the SWC config automatically. This lets you choose a config based on environment variables or other runtime factors.
+
+Explore additional custom SWC configs, including ["Import Aliases"](#import-aliases) and ["React Runtime"](#react-runtime).
+
 ## Config API
 
 - `modern.transpiler: [true|false]` - Default: `true`
@@ -188,6 +192,27 @@ To use the same aliases in SWC, add them to your [.swcrc](#custom-swcrc):
     }
   }
 }
+```
+
+You can use `swc.config.js` to define different aliases based on an environment variable.
+
+``` js
+var mode = process.env.MODE_ENV;
+
+var userAliases = {
+  "@user/*": ["user/*"],
+};
+
+var adminAliases = {
+  "@admin/*": ["admin/*"],
+};
+
+module.exports = {
+    jsc: {
+        baseUrl: "./",
+        paths: mode === "USER" ? uiAliases : adminAliases,
+    },
+};
 ```
 
 This enables you to use `@ui/components` instead of `./ui/components` in your imports.
