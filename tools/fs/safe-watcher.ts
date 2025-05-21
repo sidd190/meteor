@@ -307,7 +307,6 @@ async function ensureWatchRoot(dirPath: string): Promise<void> {
             // Only disable native watching for critical errors (like ENOSPC).
             // @ts-ignore
             if (err.code === "ENOSPC" || err.errno === require("constants").ENOSPC) {
-              console.log('fallbackToPolling');
               fallbackToPolling();
             }
             watchRoots.delete(dirPath);
