@@ -192,6 +192,41 @@ To use the same aliases in SWC, add them to your [.swcrc](#custom-swcrc):
 
 This enables you to use `@ui/components` instead of `./ui/components` in your imports.
 
+:::warning
+SWC only resolves aliases to binding imports, not `side-effect` imports or require calls.
+:::
+
+- Binding imports
+
+Import a module for use.
+
+``` javascript
+import Button from "@ui/button";
+import { Button } from "@ui/button";
+```
+
+- Side-effect imports
+
+Run the module’s code without importing any modules.
+
+``` javascript
+import "@ui/button";
+```
+
+- Require calls
+
+Can import values or run the module’s code.
+
+``` javascript
+const { Button } = require("@ui/button");
+
+require("@ui/button");
+```
+
+SWC resolve aliases for binding imports correctly, but side-effect imports and require calls won’t. Use relative paths for side-effect imports. For require calls, use a binding import or a relative path depending on whether they import modules or run side effects.
+
+SWC has no [module-resolver plugin like Babel’s](https://www.npmjs.com/package/babel-plugin-module-resolver) yet. You’ll need to stick with relative paths or binding imports.
+
 ### React Runtime
 
 Meteor Babel lets you skip importing React in your files by using the [`@babel/plugin-transform-react-jsx`](https://www.npmjs.com/package/@babel/plugin-transform-react-jsx) runtime config.
