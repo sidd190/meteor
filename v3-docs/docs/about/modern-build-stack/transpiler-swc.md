@@ -193,23 +193,21 @@ To use the same aliases in SWC, add them to your [.swcrc](#custom-swcrc):
 This enables you to use `@ui/components` instead of `./ui/components` in your imports.
 
 :::warning
-SWC only resolves aliases to binding imports, not `side-effect` imports or require calls.
+SWC only resolves aliases to imports, not `require` calls.
 :::
 
-- Binding imports
+- Imports
 
-Import a module for use.
+Binding imports a module for use.
+
+Side-effect imports run the module’s code.
 
 ``` javascript
+# Binding imports
 import Button from "@ui/button";
 import { Button } from "@ui/button";
-```
 
-- Side-effect imports
-
-Run the module’s code without importing any modules.
-
-``` javascript
+# Side effect import
 import "@ui/button";
 ```
 
@@ -223,9 +221,9 @@ const { Button } = require("@ui/button");
 require("@ui/button");
 ```
 
-SWC resolve aliases for binding imports correctly, but side-effect imports and require calls won’t. Use relative paths for side-effect imports. For require calls, use a binding import or a relative path depending on whether they import modules or run side effects.
+SWC resolve aliases for imports correctly, but require calls won’t. For require calls, use an import or a relative path.
 
-SWC has no [module-resolver plugin like Babel’s](https://www.npmjs.com/package/babel-plugin-module-resolver) yet. You’ll need to stick with relative paths or binding imports.
+SWC has no [module-resolver plugin like Babel’s](https://www.npmjs.com/package/babel-plugin-module-resolver) yet, which could affect require calls in the future.
 
 ### React Runtime
 
