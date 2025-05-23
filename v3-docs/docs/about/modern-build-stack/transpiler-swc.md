@@ -198,16 +198,18 @@ SWC only resolves aliases to imports, not `require` calls.
 
 - Imports
 
-Binding imports a module for use.
+Binding imports inject a module to use.
+
+``` javascript
+// Binding imports
+import Button from "@ui/button";
+import { Button } from "@ui/button";
+```
 
 Side-effect imports run the module’s code.
 
 ``` javascript
-# Binding imports
-import Button from "@ui/button";
-import { Button } from "@ui/button";
-
-# Side effect import
+// Side effect import
 import "@ui/button";
 ```
 
