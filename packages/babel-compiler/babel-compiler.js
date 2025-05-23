@@ -5,6 +5,8 @@ const reifyCompile = Npm.require("@meteorjs/reify/lib/compiler").compile;
 const reifyAcornParse = Npm.require("@meteorjs/reify/lib/parsers/acorn").parse;
 var fs = Npm.require('fs');
 var path = Npm.require('path');
+var vm = Npm.require('vm');
+var crypto = Npm.require('crypto');
 
 /**
  * A compiler that can be instantiated with features and used inside
@@ -145,15 +147,37 @@ BCp.initializeMeteorAppConfig = function () {
 let lastModifiedSwcConfig;
 let lastModifiedSwcConfigTime;
 BCp.initializeMeteorAppSwcrc = function () {
-  if (!lastModifiedSwcConfig && !fs.existsSync(`${getMeteorAppDir()}/.swcrc`)) {
+  const hasSwcRc = fs.existsSync(`${getMeteorAppDir()}/.swcrc`);
+  const hasSwcJs = !hasSwcRc && fs.existsSync(`${getMeteorAppDir()}/swc.config.js`);
+  if (!lastModifiedSwcConfig && !hasSwcRc && !hasSwcJs) {
     return;
   }
-  const currentLastModifiedConfigTime = fs
-    .statSync(`${getMeteorAppDir()}/.swcrc`)
-    ?.mtime?.getTime();
+  const swcFile = hasSwcJs ? 'swc.config.js' : '.swcrc';
+  const filePath = `${getMeteorAppDir()}/${swcFile}`;
+  const fileStats = fs.statSync(filePath);
+  const fileModTime = fileStats?.mtime?.getTime();
+
+  let currentLastModifiedConfigTime;
+  if (hasSwcJs) {
+    // For dynamic JS files, first get the resolved configuration
+    const resolvedConfig = lastModifiedSwcConfig || getMeteorAppSwcrc(swcFile);
+    // Calculate a hash of the resolved configuration to detect changes
+    const contentHash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(resolvedConfig))
+      .digest('hex');
+    // Combine file modification time and content hash to create a unique identifier
+    currentLastModifiedConfigTime = `${fileModTime}-${contentHash}`;
+    // Store the resolved configuration
+    lastModifiedSwcConfig = resolvedConfig;
+  } else {
+    // For static JSON files, just use the file modification time
+    currentLastModifiedConfigTime = fileModTime;
+  }
+
   if (currentLastModifiedConfigTime !== lastModifiedSwcConfigTime) {
     lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
-    lastModifiedSwcConfig = getMeteorAppSwcrc();
+    lastModifiedSwcConfig = getMeteorAppSwcrc(swcFile);
 
     // Resolve custom baseUrl to an absolute path pointing to the project root
     if (lastModifiedSwcConfig.jsc && lastModifiedSwcConfig.jsc.baseUrl) {
@@ -879,11 +903,34 @@ function getMeteorAppPackageJson() {
   );
 }
 
-function getMeteorAppSwcrc() {
+function getMeteorAppSwcrc(file = '.swcrc') {
   try {
-    return JSON.parse(fs.readFileSync(`${getMeteorAppDir()}/.swcrc`, 'utf-8'));
+    const filePath = `${getMeteorAppDir()}/${file}`;
+    if (file.endsWith('.js')) {
+      let content = fs.readFileSync(filePath, 'utf-8');
+      // Check if the content uses ES module syntax (export default)
+      if (content.includes('export default')) {
+        // Transform ES module syntax to CommonJS
+        content = content.replace(/export\s+default\s+/, 'module.exports = ');
+      }
+      const script = new vm.Script(`
+        (function() {
+          const module = {};
+          module.exports = {};
+          (function(exports, module) {
+            ${content}
+          })(module.exports, module);
+          return module.exports;
+        })()
+      `);
+      const context = vm.createContext({ process });
+      return script.runInContext(context);
+    } else {
+      // For .swcrc and other JSON files, parse as JSON
+      return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    }
   } catch (e) {
-    console.error('Error parsing .swcrc file', e);
+    console.error(`Error parsing ${file} file`, e);
   }
 }
 
