@@ -1181,24 +1181,90 @@ For version-specific information (like exports), Meteor will use:
 :::
 
 
-## meteor publish {meteorpublish}
+## meteor publish {#meteorpublish}
 
-Publishes your package. To publish, you must `cd` into the package directory, log
-in with your Meteor Developer Account and run `meteor publish`. By convention,
-published package names must begin with the maintainer's Meteor Developer
-Account username and a colon, like so: `iron:router`.
+Publish a package to Atmosphere (Meteor package server).
 
-To publish a package for the first time, use `meteor publish --create`.
+```bash
+meteor publish [options]
+meteor publish --update
+```
 
-Sometimes packages may contain binary code specific to an architecture (for
-example, they may use an npm package). In that case, running publish will only
-upload the build to the architecture that you were using to publish it. You can
-use `publish-for-arch` to upload a build to a different architecture from a
-different machine.
+### Description
 
-If you have already published a package but need to update it's metadata
-(the content of `Package.describe`) or the README you can actually achieve this
-via `meteor publish --update`.
+Publishes a new version of a local package to Atmosphere. Must be run from the package directory.
+
+::: warning Package Naming Convention
+Published package names must begin with the maintainer's Meteor Developer Account username and a colon, like `username:package-name`.
+:::
+
+### Common Operations
+
+#### Publish a New Package
+
+```bash
+cd my-package
+meteor publish --create
+```
+
+#### Update an Existing Package
+
+```bash
+cd my-package
+meteor publish
+```
+
+#### Update Package Metadata
+
+Update README, description, or other metadata without changing the code:
+
+```bash
+cd my-package
+meteor publish --update
+```
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--create` | Publish a new package for the first time |
+| `--update` | Update metadata of a previously published version (README, git URL, description, etc.) |
+| `--allow-incompatible-update` | Allow dependencies to be upgraded/downgraded to potentially incompatible versions |
+| `--no-lint` | Skip linting the package and its local dependencies before publishing |
+
+### Architecture-Specific Packages
+
+For packages with binary components:
+- Regular `publish` will only upload the build for your current architecture
+- Use `meteor publish-for-arch` from a different machine to upload builds for other architectures
+
+::: details Package Publication Process
+When you publish a package:
+1. Meteor reads version information from `package.js`
+2. Builds the package
+3. Sends both source code and built version to the package server
+4. Marks you as the sole maintainer (use `meteor admin maintainers` to modify)
+:::
+
+### Examples
+
+```bash
+# Publish a new package
+meteor publish --create
+
+# Update an existing package
+meteor publish
+
+# Update metadata only
+meteor publish --update
+
+# Publish without linting
+meteor publish --no-lint
+```
+
+::: tip
+Use `meteor show` to preview how your package information will appear in the package server.
+:::
 
 ## meteor publish-for-arch {meteorpublishforarch}
 
