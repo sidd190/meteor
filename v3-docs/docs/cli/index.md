@@ -1266,24 +1266,56 @@ meteor publish --no-lint
 Use `meteor show` to preview how your package information will appear in the package server.
 :::
 
-## meteor publish-for-arch {meteorpublishforarch}
+## meteor publish-for-arch {#meteorpublishforarch}
 
-Publishes a build of an existing package version from a different architecture.
+Publish architecture-specific builds of a package.
 
-Some packages contain code specific to an architecture. Running `publish` by
-itself, will upload the build to the architecture that you were using to
-publish. You need to run `publish-for-arch` from a different architecture to
-upload a different build.
+```bash
+meteor publish-for-arch packageName@version
+```
 
-For example, let's say you published name:cool-binary-blob from a Mac. If you
-want people to be able to use cool-binary-blob from Linux, you should log into a
-Linux machine and then run
-`meteor publish-for-arch name:cool-binary-blob@version`.  It will notice that you
-are on a linux machine, and that there is no Linux-compatible build for your package
-and publish one.
+### Description
 
-Currently, the supported architectures for Meteor are 32-bit Linux, 64-bit Linux
-and Mac OS. Galaxy's servers run 64-bit Linux.
+Creates and publishes a build of an existing package version for a different architecture than the one initially published.
+
+::: info Architecture Support
+Meteor currently supports the following architectures:
+- 32-bit Linux
+- 64-bit Linux (used by Galaxy servers)
+- 64-bit macOS
+:::
+
+### Use Case
+
+When a package contains platform-specific components (like npm modules with native code), running `meteor publish` only creates a build for your current architecture. To make your package usable on other architectures, you need to run `publish-for-arch` from machines with those architectures.
+
+### How It Works
+
+1. Run the command on a machine with the target architecture
+2. Meteor downloads your package's source and dependencies from the package server
+3. Builds the package for the current architecture
+4. Uploads the architecture-specific build to the package server
+
+::: tip No Source Required
+You don't need to have a copy of your package's source code to run this command. Meteor automatically downloads everything needed from the package server.
+:::
+
+### Example Workflow
+
+Imagine you've published a package with binary components from a Mac:
+
+```bash
+# On your Mac
+cd my-binary-package
+meteor publish --create
+```
+
+To make it available for Linux users:
+
+```bash
+# Later, on a 64-bit Linux machine
+meteor publish-for-arch username:my-binary-package@1.0.0
+```
 
 
 ## meteor publish-release {meteorpublishrelease}
