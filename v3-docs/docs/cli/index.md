@@ -1101,20 +1101,84 @@ meteor search "router$"
 :::
 
 
-## meteor show {meteorshow}
+## meteor show {#meteorshow}
 
-Shows more information about a specific package or release: name, summary, the
-usernames of its maintainers, and, if specified, its homepage and git URL.
+Display detailed information about packages and releases.
 
-Get information on meteor recommended releases:
 ```bash
+meteor show <name> [options]
+meteor show <name@version> [options]
+meteor show [options]
+```
+
+### Description
+
+Shows detailed information about a specific package or release, including:
+- Name and summary
+- Available versions
+- Maintainers
+- Homepage and git URL (if specified)
+- Exports and other package metadata
+
+::: tip
+This works on both local packages built from source and remote packages stored on the server.
+:::
+
+### Common Usage
+
+#### View Package Information
+
+```bash
+# Show information about a package
+meteor show jam:easy-schema
+
+# Show information about a specific version
+meteor show jam:easy-schema@1.7.0
+
+# Show information about the local version
+meteor show jam:easy-schema@local
+```
+
+#### View Meteor Releases
+
+```bash
+# Show recommended Meteor releases
 meteor show METEOR
+
+# Show all Meteor releases (including intermediate ones)
+meteor show METEOR --show-all
 ```
 
-Get information on all meteor releases (including intermediate releases)"
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--show-all` | Show hidden versions, experimental releases, and incompatible packages |
+| `--ejson` | Display more detailed output in EJSON format |
+
+### Examples
+
 ```bash
-meteor show --show-all METEOR
+# Running from a package directory shows info for that package
+cd ~/my-package
+meteor show
+
+# View detailed EJSON output
+meteor show react-meteor-data --ejson
 ```
+
+::: info Default Behavior
+By default, Meteor:
+- Shows no more than five versions
+- Hides experimental release versions
+- Hides packages incompatible with Meteor 0.9.0 and later
+:::
+
+::: details Version Selection
+For version-specific information (like exports), Meteor will use:
+1. The local version, if available
+2. The latest official version, if no local version exists
+:::
 
 
 ## meteor publish {meteorpublish}
