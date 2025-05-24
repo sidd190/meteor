@@ -1007,10 +1007,44 @@ meteor build ../build --architecture=os.linux.x86_64
 meteor build ../build --packageType=apk
 ```
 
-## meteor lint {meteorlint}
+## meteor lint {#meteorlint}
 
-Run through the whole build process for the app and run all linters the app
-uses. Outputs all build errors or linting warnings to the standard output.
+Run linters on your Meteor application code.
+
+```bash
+meteor lint [options]
+```
+
+### Description
+
+This command:
+- Performs a complete build of your application
+- Runs all configured linters
+- Outputs build errors and linting warnings to standard output
+
+::: tip CI Integration
+The `meteor lint` command is particularly useful for continuous integration environments to catch code quality issues before deployment.
+:::
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--allow-incompatible-update` | Allow packages to be upgraded or downgraded to potentially incompatible versions if required to satisfy all package version constraints |
+
+### Example Usage
+
+```bash
+# Basic usage
+meteor lint
+
+# Allow incompatible package updates during linting
+meteor lint --allow-incompatible-update
+```
+
+::: warning
+Linting errors will prevent your application from being built successfully. Fixing these errors is required for deployment.
+:::
 
 
 ## meteor search {meteorsearch}
