@@ -1318,24 +1318,98 @@ meteor publish-for-arch username:my-binary-package@1.0.0
 ```
 
 
-## meteor publish-release {meteorpublishrelease}
+## meteor publish-release {#meteorpublishrelease}
 
-Publishes a release of Meteor. Takes in a JSON configuration file.
+Publish a new Meteor release.
 
-Meteor releases are divided into tracks. While only MDG members can publish to
-the default Meteor track, anyone can create a track of their own and publish to
-it. Running `meteor update` without specifying the `--release` option will not
-cause the user to switch tracks.
+```bash
+meteor publish-release <path-to-json-config> [options]
+```
 
-To publish to a release track for the first time, use the `--create-track` flag.
+### Description
 
-The JSON configuration file must contain the name of the release track
-(`track`), the release version (`version`), various metadata, the packages
-specified by the release as mapped to versions (`packages`), and the package &
-version of the Meteor command-line tool (`tool`). Note that this means that
-forks of the meteor tool can be published as packages and people can use them by
-switching to a corresponding release. For more information, run
-`meteor help publish-release`.
+Publishes a new release of Meteor based on a JSON configuration file. This allows you to create custom Meteor releases or release tracks.
+
+::: info Release Tracks
+Meteor releases are divided into tracks:
+- Only Meteor Software can publish to the default Meteor track
+- Anyone can create and publish to their own custom tracks
+- Users won't switch tracks when running `meteor update` unless specified
+:::
+
+### Configuration File Format
+
+The JSON configuration file must contain:
+
+```json
+{
+  "track": "TRACK_NAME",          // Release track (e.g., "METEOR")
+  "version": "VERSION",           // Version number (e.g., "2.8.0")
+  "recommended": true|false,      // Is this a recommended release?
+  "description": "DESCRIPTION",   // Brief description of the release
+  "tool": "PACKAGE@VERSION",      // The meteor tool package and version
+  "packages": {                   // Specific package versions for this release
+    "package1": "version",
+    "package2": "version"
+  },
+  "patchFrom": ["VERSION1", "VERSION2"]  // Optional: releases this patches
+}
+```
+
+::: warning Prerequisites
+You must publish all package versions to the package server before you can specify them in a release.
+:::
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--create-track` | Create and publish a new release track |
+
+### Recommended Flag
+
+- Set `recommended: true` for stable releases (e.g., METEOR@3.2.2)
+- Set `recommended: false` for release candidates, experimental releases, etc.
+
+### Patch Releases
+
+Use the `patchFrom` field to specify a patch release:
+- Lists releases this new release patches
+- Automatically unrecommends the releases specified in `patchFrom`
+
+### Examples
+
+#### Publishing a New Release Track
+
+```bash
+meteor publish-release my-release-config.json --create-track
+```
+
+#### Publishing a New Release
+
+```bash
+meteor publish-release meteor-3.3.0.json
+```
+
+#### Sample Configuration File
+
+```json
+{
+  "track": "MYCORP",
+  "version": "1.0.0",
+  "recommended": true,
+  "description": "MyCompany's custom Meteor release",
+  "tool": "meteor-tool@2.8.0",
+  "packages": {
+    "accounts-base": "2.2.5",
+    "mongo": "1.15.0"
+  }
+}
+```
+
+::: tip Custom Tool Forks
+This system allows forks of the meteor tool to be published as packages, letting users switch to custom tool implementations by changing to the corresponding release.
+:::
 
 
 ## meteor test-packages {meteortestpackages}
