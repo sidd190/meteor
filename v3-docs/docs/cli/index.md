@@ -934,38 +934,78 @@ For now, you cannot run this while a development server is running. Quit all run
 :::
 
 
-## meteor build {meteorbuild}
+## meteor build {#meteorbuild}
 
-Package this project up for deployment. The output is a directory with several
-build artifacts:
+Package your project for deployment.
 
-<ul><li>a tarball (.tar.gz) that includes everything necessary to run the application
-  server (see the <code>README</code> in the tarball for details).  Using the
-  `--directory` option will produce a `bundle` directory instead of the tarball.</li>
-<li>an unsigned <code>apk</code> bundle and a project source if Android is targeted as a
-  mobile platform</li>
-<li>a directory with an Xcode project source if iOS is targeted as a mobile
-  platform</li></ul>
+```bash
+meteor build <output-path> [options]
+```
 
-You can use the application server bundle to host a Meteor application on your
-own server, instead of deploying to Galaxy.  You will have to deal
-with logging, monitoring, backups, load-balancing, etc, all of which we handle
-for you if you use Galaxy.
+### Output Artifacts
 
-The unsigned `apk` bundle and the outputted Xcode project can be used to deploy
-your mobile apps to Android Play Store and Apple App Store.
+The command produces deployment-ready artifacts for all platforms in your project:
 
-By default, your application is bundled for your current architecture.
-This may cause difficulties if your app contains binary code due to,
-for example, npm packages. You can try to override that behavior
-with the `--architecture` flag.
+- **Server Bundle**: A tarball containing everything needed to run the application server
+- **Android Package**: AAB/APK bundle and Android project source (if Android platform is added)
+- **iOS Package**: Xcode project source (if iOS platform is added)
 
-You can set optional data for the initial value of `Meteor.settings`
-in your mobile application with the `--mobile-settings` flag. A new value for
-`Meteor.settings` can be set later by the server as part of hot code push.
+::: tip Self-Hosting
+You can use the server bundle to host a Meteor application on your own infrastructure instead of Galaxy. Note that you'll need to handle logging, monitoring, backups, and load-balancing yourself.
+:::
 
-You can also specify which platforms you want to build with the `--platforms` flag.
-Examples: `--platforms=android`, `--platforms=ios`, `--platforms=web.browser`.
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--debug` | Build in debug mode (don't minify, preserve source maps) |
+| `--directory` | Output a directory instead of a tarball (existing output location will be deleted first) |
+| `--server-only` | Skip building mobile apps but still build the 'web.cordova' client target for hot code push |
+| `--mobile-settings <file>` | Set the initial value of `Meteor.settings` in mobile apps |
+| `--server <url>` | Location where mobile builds connect to the Meteor server (defaults to localhost:3000) |
+| `--architecture <arch>` | Build for a different architecture than your development machine |
+| `--allow-incompatible-update` | Allow packages to be upgraded/downgraded to potentially incompatible versions |
+| `--platforms <platforms>` | Build only for specified platforms (when available) |
+| `--packageType <type>` | Choose between `apk` or `bundle` for Android builds (defaults to `bundle`) |
+
+::: details Available Architectures
+Valid architectures include:
+- `os.osx.x86_64`
+- `os.linux.x86_64`
+- `os.linux.x86_32`
+- `os.windows.x86_32`
+- `os.windows.x86_64`
+
+This option selects the architecture of binary-dependent Atmosphere packages. If your project doesn't use Atmosphere packages with binary dependencies, `--architecture` has no effect.
+:::
+
+### Examples
+
+```bash
+# Basic build
+meteor build ../build
+
+# Output a directory instead of a tarball
+meteor build ../build --directory
+
+# Debug build (unminified)
+meteor build ../build --debug
+
+# Build only the server (skip mobile apps)
+meteor build ../build --server-only
+
+# Build for specific platforms
+meteor build ../build --platforms=android,ios
+
+# Set server location for mobile apps
+meteor build ../build --server=https://example.com:443
+
+# Build for a different architecture
+meteor build ../build --architecture=os.linux.x86_64
+
+# Specify Android package type
+meteor build ../build --packageType=apk
+```
 
 ## meteor lint {meteorlint}
 
