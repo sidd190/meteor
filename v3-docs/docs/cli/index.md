@@ -1047,10 +1047,58 @@ Linting errors will prevent your application from being built successfully. Fixi
 :::
 
 
-## meteor search {meteorsearch}
+## meteor search {#meteorsearch}
 
-Searches for Meteor packages and releases, whose names contain the specified
-regular expression.
+Search for Meteor packages and releases.
+
+```bash
+meteor search <regex> [options]
+```
+
+### Description
+
+Searches through the Meteor package and release database for items whose names match the specified regular expression.
+
+::: info Default Behavior
+By default, the search will not show:
+- Packages without official versions (e.g., those with only prereleases)
+- Packages known to be incompatible with Meteor 0.9.0 and later due to migration issues
+:::
+
+### Options
+
+| Option | Description |
+|--------|-------------|
+| `--maintainer <username>` | Filter results by authorized maintainer |
+| `--show-all` | Show all matches, including prereleases and incompatible packages |
+| `--ejson` | Display more detailed output in EJSON format |
+
+### Examples
+
+```bash
+# Search for all packages related to "auth"
+meteor search auth
+
+# Search for packages maintained by a specific user
+meteor search mongo --maintainer meteor
+
+# Show all matching packages, including prereleases
+meteor search bootstrap --show-all
+
+# Get detailed output in EJSON format
+meteor search react --ejson
+```
+
+::: tip Advanced Searching
+You can use regular expressions for more powerful searches:
+```bash
+# Packages that start with "react-"
+meteor search "^react-"
+
+# Packages that end with "router"
+meteor search "router$"
+```
+:::
 
 
 ## meteor show {meteorshow}
