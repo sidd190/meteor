@@ -147,11 +147,6 @@ BCp.initializeMeteorAppSwcrc = function () {
     lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
     lastModifiedSwcConfig = getMeteorAppSwcrc(swcFile);
 
-    // Resolve custom baseUrl to an absolute path pointing to the project root
-    if (lastModifiedSwcConfig.jsc && lastModifiedSwcConfig.jsc.baseUrl) {
-      lastModifiedSwcConfig.jsc.baseUrl = path.resolve(process.cwd(), lastModifiedSwcConfig.jsc.baseUrl);
-    }
-
     if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
@@ -333,6 +328,11 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         this.modifyConfig(swcOptions, inputFile);
       }
 
+      // Resolve custom baseUrl to an absolute path pointing to the project root
+      if (swcOptions.jsc && swcOptions.jsc.baseUrl) {
+        swcOptions.jsc.baseUrl = path.resolve(process.cwd(), swcOptions.jsc.baseUrl);
+      }
+
       return swcOptions;
     };
 
@@ -380,7 +380,6 @@ BCp.processOneFileForTarget = function (inputFile, source) {
           .join('-');
         // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc = !shouldSkipSwc && !this._swcIncompatible[cacheKey];
-        console.log("--> (babel-compiler.js-Line: 383)\n shouldUseSwc: ", shouldUseSwc);
         let compilation;
         try {
           let usedSwc = false;
