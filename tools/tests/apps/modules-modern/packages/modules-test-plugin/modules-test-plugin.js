@@ -1,9 +1,5 @@
 import { strictEqual } from "assert";
-
-// SWC version doesn't use the Babel-specific oyez-transform.js plugin
-// Instead, we'll just use a direct assertion that passes
-strictEqual("ASDF", "ASDF");
-
+s
 // Test that the SWC configuration in .swcrc is correctly applied
 // The legacyDecorator and decoratorMetadata options should be enabled
 function testDecorator(target, key) {
