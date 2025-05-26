@@ -105,7 +105,7 @@ BCp.initializeMeteorAppConfig = function () {
       modern: normalizeModern(modernForced || lastModifiedMeteorConfig?.modern),
     } : {};
 
-    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
+    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose || this.extraFeatures?.verbose) {
       logConfigBlock('Meteor Config', lastModifiedMeteorConfig);
     }
   }
@@ -147,7 +147,7 @@ BCp.initializeMeteorAppSwcrc = function () {
     lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
     lastModifiedSwcConfig = getMeteorAppSwcrc(swcFile);
 
-    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose) {
+    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose || this.extraFeatures?.verbose) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
   }
@@ -157,7 +157,7 @@ BCp.initializeMeteorAppSwcrc = function () {
 let lastModifiedSwcLegacyConfig;
 BCp.initializeMeteorAppLegacyConfig = function () {
   const swcLegacyConfig = convertBabelTargetsForSwc(Babel.getMinimumModernBrowserVersions());
-  if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose && !lastModifiedSwcLegacyConfig) {
+  if ((lastModifiedMeteorConfig?.modern?.transpiler?.verbose || this.extraFeatures?.verbose) && !lastModifiedSwcLegacyConfig) {
     logConfigBlock('SWC Legacy Config', swcLegacyConfig);
   }
   lastModifiedSwcLegacyConfig = swcLegacyConfig;
@@ -379,7 +379,9 @@ BCp.processOneFileForTarget = function (inputFile, source) {
           .filter(Boolean)
           .join('-');
         // Determine if SWC should be used based on package and file criteria.
-        const shouldUseSwc = !shouldSkipSwc && !this._swcIncompatible[cacheKey];
+        const shouldUseSwc =
+          (!shouldSkipSwc || this.extraFeatures?.swc) &&
+          !this._swcIncompatible[cacheKey];
         let compilation;
         try {
           let usedSwc = false;
@@ -389,7 +391,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             compilation = this.readFromSwcCache({ cacheKey });
             // Return cached result if found.
             if (compilation) {
-              if (config?.verbose) {
+              if (config?.verbose || this.extraFeatures?.verbose) {
                 logTranspilation({
                   usedSwc: true,
                   inputFilePath,
@@ -419,7 +421,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             usedSwc = false;
           }
 
-          if (config?.verbose) {
+          if (config?.verbose || this.extraFeatures?.verbose) {
             logTranspilation({
               usedSwc,
               inputFilePath,
@@ -435,7 +437,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
           babelOptions = setupBabelOptions();
           compilation = compileWithBabel(source, babelOptions, cacheOptions);
-          if (config?.verbose) {
+          if (config?.verbose || this.extraFeatures?.verbose) {
             logTranspilation({
               usedSwc: false,
               inputFilePath,
@@ -1168,3 +1170,18 @@ function convertBabelTargetsForSwc(babelTargets) {
 
   return filteredTargets;
 }
+
+/**
+ * A compiler that extends BabelCompiler but always uses SWC
+ * @param {Object} extraFeatures Additional features to pass to BabelCompiler
+ * @param {Function} modifyConfig Function to modify the configuration
+ */
+SwcCompiler = function SwcCompiler(extraFeatures, modifyConfig) {
+  extraFeatures = extraFeatures || {};
+  extraFeatures.swc = true;
+  BabelCompiler.call(this, extraFeatures, modifyConfig);
+};
+
+// Inherit from BabelCompiler
+SwcCompiler.prototype = Object.create(BabelCompiler.prototype);
+SwcCompiler.prototype.constructor = SwcCompiler;
