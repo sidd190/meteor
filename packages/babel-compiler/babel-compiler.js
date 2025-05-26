@@ -304,33 +304,22 @@ BCp.processOneFileForTarget = function (inputFile, source) {
       },
     };
 
-    // Helper function to setup Babel options
-    const setupBabelOptions = () => {
-      this.inferTypeScriptConfig(features, inputFile, cacheOptions.cacheDeps);
+    this.inferTypeScriptConfig(features, inputFile, cacheOptions.cacheDeps);
 
-      var babelOptions = Babel.getDefaultOptions(features);
-      babelOptions.caller = { name: "meteor", arch };
+    var babelOptions = Babel.getDefaultOptions(features);
+    babelOptions.caller = { name: "meteor", arch };
 
-      babelOptions.sourceMaps = true;
-      const filename = packageName
-          ? `packages/${packageName}/${inputFilePath}`
-          : inputFilePath;
-      babelOptions.filename = babelOptions.sourceFileName = filename;
+    this.inferExtraBabelOptions(inputFile, babelOptions, cacheOptions.cacheDeps);
 
-      this.inferExtraBabelOptions(inputFile, babelOptions, cacheOptions.cacheDeps);
-
-      if (this.modifyBabelConfig) {
-        this.modifyBabelConfig(babelOptions, inputFile);
-      }
-
-      return babelOptions;
-    };
-
-    // Define babelOptions at the outer scope so it's available for source map
-    var babelOptions;
+    babelOptions.sourceMaps = true;
     const filename = packageName
         ? `packages/${packageName}/${inputFilePath}`
         : inputFilePath;
+    babelOptions.filename = babelOptions.sourceFileName = filename;
+
+    if (this.modifyBabelConfig) {
+      this.modifyBabelConfig(babelOptions, inputFile);
+    }
 
     try {
       var result = (() => {
@@ -395,8 +384,6 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                   arch,
                 });
               }
-              // Set babelOptions.filename for source map
-              babelOptions = { filename };
               return compilation;
             }
 
@@ -409,12 +396,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             // Save result in cache
             this.writeToSwcCache({ cacheKey, compilation });
             usedSwc = true;
-            // Set babelOptions.filename for source map
-            babelOptions = { filename };
           } else {
-            // Set up Babel options only when compiling with Babel
-            babelOptions = setupBabelOptions();
-
             compilation = compileWithBabel(source, babelOptions, cacheOptions);
             usedSwc = false;
           }
@@ -432,10 +414,6 @@ BCp.processOneFileForTarget = function (inputFile, source) {
         } catch (e) {
           this._swcIncompatible[cacheKey] = true;
           // If SWC fails, fall back to Babel
-
-          // Set up Babel options for fallback
-          babelOptions = setupBabelOptions();
-
           compilation = compileWithBabel(source, babelOptions, cacheOptions);
           if (config?.verbose) {
             logTranspilation({
