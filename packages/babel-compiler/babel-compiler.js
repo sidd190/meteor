@@ -13,9 +13,9 @@ var crypto = Npm.require('crypto');
  * Plugin.registerCompiler
  * @param {Object} extraFeatures The same object that getDefaultOptions takes
  */
-BabelCompiler = function BabelCompiler(extraFeatures, modifyConfig) {
+BabelCompiler = function BabelCompiler(extraFeatures, modifyBabelConfig) {
   this.extraFeatures = extraFeatures;
-  this.modifyConfig = modifyConfig;
+  this.modifyBabelConfig = modifyBabelConfig;
   this._babelrcCache = null;
   this._babelrcWarnings = Object.create(null);
   this.cacheDirectory = null;
@@ -37,10 +37,42 @@ function compileWithBabel(source, babelOptions, cacheOptions) {
   });
 }
 
-function compileWithSwc(source, swcOptions = {}, { features }) {
+function compileWithSwc(source, swcOptions = {}, { inputFilePath, filename, sourceFileName, features, arch }) {
   return profile('SWC.compile', function () {
+    // Determine file extension based syntax.
+    const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
+    const hasTSXSupport = inputFilePath.endsWith('.tsx');
+    const hasJSXSupport = inputFilePath.endsWith('.jsx');
+
+    const isLegacyWebArch = arch.includes('legacy');
+    const baseSwcConfig = {
+      jsc: {
+        ...(!isLegacyWebArch && { target: 'es2015' }),
+        parser: {
+          syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
+          jsx: hasJSXSupport,
+          tsx: hasTSXSupport,
+        },
+      },
+      module: { type: 'es6' },
+      minify: false,
+      sourceMaps: true,
+      filename,
+      sourceFileName,
+      ...(isLegacyWebArch && {
+        env: { targets: lastModifiedSwcLegacyConfig || {} },
+      }),
+    };
+    const nextSwcConfig =
+      Object.keys(swcOptions)?.length > 0
+        ? deepMerge(baseSwcConfig, swcOptions, [
+            'env.targets',
+            'module.type',
+          ])
+        : baseSwcConfig;
+
     // Perform SWC transformation.
-    const transformed = SWC.transformSync(source, swcOptions);
+    const transformed = SWC.transformSync(source, nextSwcConfig);
 
     let content = transformed.code;
 
@@ -272,10 +304,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
       },
     };
 
-    const filename = packageName
-      ? `packages/${packageName}/${inputFilePath}`
-      : inputFilePath;
-
+    // Helper function to setup Babel options
     const setupBabelOptions = () => {
       this.inferTypeScriptConfig(features, inputFile, cacheOptions.cacheDeps);
 
@@ -283,60 +312,26 @@ BCp.processOneFileForTarget = function (inputFile, source) {
       babelOptions.caller = { name: "meteor", arch };
 
       babelOptions.sourceMaps = true;
+      const filename = packageName
+          ? `packages/${packageName}/${inputFilePath}`
+          : inputFilePath;
       babelOptions.filename = babelOptions.sourceFileName = filename;
 
       this.inferExtraBabelOptions(inputFile, babelOptions, cacheOptions.cacheDeps);
 
-      if (this.modifyConfig) {
-        this.modifyConfig(babelOptions, inputFile);
+      if (this.modifyBabelConfig) {
+        this.modifyBabelConfig(babelOptions, inputFile);
       }
 
       return babelOptions;
     };
 
-    const setupSWCOptions = () => {
-      const isTypescriptSyntax = inputFilePath.endsWith('.ts') || inputFilePath.endsWith('.tsx');
-      const hasTSXSupport = inputFilePath.endsWith('.tsx');
-      const hasJSXSupport = inputFilePath.endsWith('.jsx');
-      const isLegacyWebArch = arch.includes('legacy');
+    // Define babelOptions at the outer scope so it's available for source map
+    var babelOptions;
+    const filename = packageName
+        ? `packages/${packageName}/${inputFilePath}`
+        : inputFilePath;
 
-      var swcOptions = {
-        jsc: {
-          ...(!isLegacyWebArch && { target: 'es2015' }),
-          parser: {
-            syntax: isTypescriptSyntax ? 'typescript' : 'ecmascript',
-            jsx: hasJSXSupport,
-            tsx: hasTSXSupport,
-          },
-        },
-        module: { type: 'es6' },
-        minify: false,
-        sourceMaps: true,
-        filename,
-        sourceFileName: filename,
-        ...(isLegacyWebArch && {
-          env: { targets: lastModifiedSwcLegacyConfig || {} },
-        }),
-      };
-
-      // Merge with app-level SWC config
-      if (lastModifiedSwcConfig) {
-        swcOptions = deepMerge(swcOptions, lastModifiedSwcConfig, [
-          'env.targets',
-          'module.type',
-        ]);
-      }
-
-      this.inferExtraSWCOptions(inputFile, swcOptions, cacheOptions.cacheDeps);
-
-      if (!!this.extraFeatures?.swc && this.modifyConfig) {
-        this.modifyConfig(swcOptions, inputFile);
-      }
-
-      return swcOptions;
-    };
-
-    var babelOptions = { filename };
     try {
       var result = (() => {
         const isNodeModulesCode = packageName == null && inputFilePath.includes("node_modules/");
@@ -380,7 +375,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
           .join('-');
         // Determine if SWC should be used based on package and file criteria.
         const shouldUseSwc = !shouldSkipSwc && !this._swcIncompatible[cacheKey];
-        console.log("--> (babel-compiler.js-Line: 383)\n shouldUseSwc: ", shouldUseSwc);
+
         let compilation;
         try {
           let usedSwc = false;
@@ -400,18 +395,22 @@ BCp.processOneFileForTarget = function (inputFile, source) {
                   arch,
                 });
               }
+              // Set babelOptions.filename for source map
+              babelOptions = { filename };
               return compilation;
             }
 
-            const swcOptions = setupSWCOptions();
+            const sourceFileName = filename;
             compilation = compileWithSwc(
               source,
-              swcOptions,
-              { features },
+              lastModifiedSwcConfig,
+              { inputFilePath, features, arch, filename, sourceFileName },
             );
             // Save result in cache
             this.writeToSwcCache({ cacheKey, compilation });
             usedSwc = true;
+            // Set babelOptions.filename for source map
+            babelOptions = { filename };
           } else {
             // Set up Babel options only when compiling with Babel
             babelOptions = setupBabelOptions();
@@ -434,7 +433,9 @@ BCp.processOneFileForTarget = function (inputFile, source) {
           this._swcIncompatible[cacheKey] = true;
           // If SWC fails, fall back to Babel
 
+          // Set up Babel options for fallback
           babelOptions = setupBabelOptions();
+
           compilation = compileWithBabel(source, babelOptions, cacheOptions);
           if (config?.verbose) {
             logTranspilation({
@@ -565,15 +566,6 @@ BCp.inferExtraBabelOptions = function (inputFile, babelOptions, cacheDeps) {
   );
 };
 
-BCp.inferExtraSWCOptions = function (inputFile, swcOptions, cacheDeps) {
-  if (! inputFile.require ||
-      ! inputFile.findControlFile ||
-      ! inputFile.readAndWatchFile) {
-    return false;
-  }
-  return this._inferFromSwcRc(inputFile, swcOptions, cacheDeps);
-};
-
 BCp._inferFromBabelRc = function (inputFile, babelOptions, cacheDeps) {
   var babelrcPath = inputFile.findControlFile(".babelrc");
   if (babelrcPath) {
@@ -624,66 +616,6 @@ BCp._inferFromPackageJson = function (inputFile, babelOptions, cacheDeps) {
       return true;
     }
   }
-};
-
-BCp._inferFromSwcRc = function (inputFile, swcOptions, cacheDeps) {
-  var swcrcPath = inputFile.findControlFile(".swcrc");
-  if (swcrcPath) {
-    if (! hasOwn.call(this._babelrcCache, swcrcPath)) {
-      try {
-        this._babelrcCache[swcrcPath] = {
-          controlFilePath: swcrcPath,
-          controlFileData: JSON.parse(
-            inputFile.readAndWatchFile(swcrcPath)),
-          deps: Object.create(null),
-        };
-      } catch (e) {
-        if (e instanceof SyntaxError) {
-          e.message = ".swcrc is not a valid JSON file: " + e.message;
-        }
-        throw e;
-      }
-    }
-
-    const cacheEntry = this._babelrcCache[swcrcPath];
-
-    if (this._inferHelperForSwc(inputFile, cacheEntry)) {
-      deepMerge(swcOptions, cacheEntry.controlFileData);
-      console.log("--> (babel-compiler.js-Line: 661)\n swcOptions: ", swcOptions);
-      Object.assign(cacheDeps, cacheEntry.deps);
-      return true;
-    }
-  }
-};
-
-BCp._inferHelperForSwc = function (inputFile, cacheEntry) {
-  if (! cacheEntry.controlFileData) {
-    return false;
-  }
-
-  if (hasOwn.call(cacheEntry, "finalInferHelperForSwcResult")) {
-    // We've already run _inferHelperForSwc and populated
-    // cacheEntry.controlFileData, so we can return early here.
-    return cacheEntry.finalInferHelperForSwcResult;
-  }
-
-  // First, ensure that the current file path is not excluded.
-  if (cacheEntry.controlFileData.exclude) {
-    const exclude = cacheEntry.controlFileData.exclude;
-    const path = inputFile.getPathInPackage();
-
-    if (exclude instanceof Array) {
-      for (let i = 0; i < exclude.length; ++i) {
-        if (path.match(exclude[i])) {
-          return cacheEntry.finalInferHelperForSwcResult = false;
-        }
-      }
-    } else if (path.match(exclude)) {
-      return cacheEntry.finalInferHelperForSwcResult = false;
-    }
-  }
-
-  return cacheEntry.finalInferHelperForSwcResult = true;
 };
 
 BCp._inferHelper = function (inputFile, cacheEntry) {
@@ -1128,7 +1060,7 @@ function logConfigBlock(description, configObject) {
   console.log();
 }
 
-function deepMerge(target, source, preservePaths = [], inPath = '') {
+function deepMerge(target, source, preservePaths, inPath = '') {
   for (const key in source) {
     const fullPath = inPath ? `${inPath}.${key}` : key;
 
