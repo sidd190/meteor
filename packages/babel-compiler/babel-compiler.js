@@ -82,7 +82,7 @@ function compileWithSwc(source, swcOptions = {}, { features }) {
 }
 
 BCp.initializeMeteorAppConfig = function () {
-  if (this.isVerbose(global.meteorConfig)) {
+  if (this.isVerbose()) {
     logConfigBlock('Meteor Config', global.meteorConfig);
   }
   return global.meteorConfig;
@@ -123,7 +123,7 @@ BCp.initializeMeteorAppSwcrc = function () {
     lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
     lastModifiedSwcConfig = getMeteorAppSwcrc(swcFile);
 
-    if (this.isVerbose(global.meteorConfig)) {
+    if (this.isVerbose()) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
   }
@@ -133,7 +133,7 @@ BCp.initializeMeteorAppSwcrc = function () {
 let lastModifiedSwcLegacyConfig;
 BCp.initializeMeteorAppLegacyConfig = function () {
   const swcLegacyConfig = convertBabelTargetsForSwc(Babel.getMinimumModernBrowserVersions());
-  if (this.isVerbose(global.meteorConfig) && !lastModifiedSwcLegacyConfig) {
+  if (this.isVerbose() && !lastModifiedSwcLegacyConfig) {
     logConfigBlock('SWC Legacy Config', swcLegacyConfig);
   }
   lastModifiedSwcLegacyConfig = swcLegacyConfig;
@@ -367,7 +367,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             compilation = this.readFromSwcCache({ cacheKey });
             // Return cached result if found.
             if (compilation) {
-              if (this.isVerbose(config)) {
+              if (this.isVerbose()) {
                 logTranspilation({
                   usedSwc: true,
                   inputFilePath,
@@ -397,7 +397,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             usedSwc = false;
           }
 
-          if (this.isVerbose(config)) {
+          if (this.isVerbose()) {
             logTranspilation({
               usedSwc,
               inputFilePath,
@@ -413,7 +413,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
           babelOptions = setupBabelOptions();
           compilation = compileWithBabel(source, babelOptions, cacheOptions);
-          if (this.isVerbose(config)) {
+          if (this.isVerbose()) {
             logTranspilation({
               usedSwc: false,
               inputFilePath,
