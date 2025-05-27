@@ -384,6 +384,10 @@ selftest.define("compiler plugin caching - local plugin", async function () {
 
 // Tests that SwcCompiler properly applies SWC compilation on JS files
 selftest.define("compiler plugin caching - local plugin with SwcCompiler", async function () {
+  // Enable legacy watcher for testing.
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '{ "watcher": false }';
+
   var s = new Sandbox({ fakeMongo: true });
   await s.init();
 
@@ -488,10 +492,16 @@ Package.onUse(function (api) {
   await run.match("SwcJsCompiler invocation 3", false, true);
 
   await run.stop();
+
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 // Test error on duplicate compiler plugins.
 selftest.define("compiler plugins - duplicate extension", async () => {
+  // Enable legacy watcher for testing.
+  const currentMeteorModern = process.env.METEOR_MODERN;
+  process.env.METEOR_MODERN = '{ "watcher": false }';
+
   const s = new Sandbox({ fakeMongo: true });
   await s.init();
 
@@ -510,6 +520,7 @@ selftest.define("compiler plugins - duplicate extension", async () => {
   run.waitSecs(30);
 
   await run.stop();
+  process.env.METEOR_MODERN = currentMeteorModern;
 });
 
 // Test error when a source file no longer has an active plugin.
