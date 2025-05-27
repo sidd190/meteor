@@ -23,4 +23,5 @@ Package.onUse(function (api) {
 
   api.export('Babel', 'server');
   api.export('BabelCompiler', 'server');
+  api.export('SwcCompiler', 'server');
 });
