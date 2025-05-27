@@ -3481,6 +3481,7 @@ main.registerCommand(
   name: 'profile',
   maxArgs: Infinity,
   options: {
+    ...buildCommands.options || {},
     ...runCommandOptions.options || {},
     'size': { type: Boolean },
     'size-only': { type: Boolean },
