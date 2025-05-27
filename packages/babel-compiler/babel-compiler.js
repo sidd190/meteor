@@ -25,6 +25,17 @@ var BCp = BabelCompiler.prototype;
 var excludedFileExtensionPattern = /\.(es5|min)\.js$/i;
 var hasOwn = Object.prototype.hasOwnProperty;
 
+// Check if verbose mode is enabled either in the provided config or in extraFeatures
+BCp.isVerbose = function(config) {
+  if (config?.modern?.transpiler?.verbose) {
+    return true;
+  }
+  if (config?.verbose) {
+    return true;
+  }
+  return !!this.extraFeatures?.verbose;
+};
+
 // There's no way to tell the current Meteor version, but we can infer
 // whether it's Meteor 1.4.4 or earlier by checking the Node version.
 var isMeteorPre144 = semver.lt(process.version, "4.8.1");
@@ -105,7 +116,7 @@ BCp.initializeMeteorAppConfig = function () {
       modern: normalizeModern(modernForced || lastModifiedMeteorConfig?.modern),
     } : {};
 
-    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose || this.extraFeatures?.verbose) {
+    if (this.isVerbose(lastModifiedMeteorConfig)) {
       logConfigBlock('Meteor Config', lastModifiedMeteorConfig);
     }
   }
@@ -147,7 +158,7 @@ BCp.initializeMeteorAppSwcrc = function () {
     lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
     lastModifiedSwcConfig = getMeteorAppSwcrc(swcFile);
 
-    if (lastModifiedMeteorConfig?.modern?.transpiler?.verbose || this.extraFeatures?.verbose) {
+    if (this.isVerbose(lastModifiedMeteorConfig)) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
   }
@@ -157,7 +168,7 @@ BCp.initializeMeteorAppSwcrc = function () {
 let lastModifiedSwcLegacyConfig;
 BCp.initializeMeteorAppLegacyConfig = function () {
   const swcLegacyConfig = convertBabelTargetsForSwc(Babel.getMinimumModernBrowserVersions());
-  if ((lastModifiedMeteorConfig?.modern?.transpiler?.verbose || this.extraFeatures?.verbose) && !lastModifiedSwcLegacyConfig) {
+  if (this.isVerbose(lastModifiedMeteorConfig) && !lastModifiedSwcLegacyConfig) {
     logConfigBlock('SWC Legacy Config', swcLegacyConfig);
   }
   lastModifiedSwcLegacyConfig = swcLegacyConfig;
@@ -391,7 +402,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             compilation = this.readFromSwcCache({ cacheKey });
             // Return cached result if found.
             if (compilation) {
-              if (config?.verbose || this.extraFeatures?.verbose) {
+              if (this.isVerbose(config)) {
                 logTranspilation({
                   usedSwc: true,
                   inputFilePath,
@@ -421,7 +432,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             usedSwc = false;
           }
 
-          if (config?.verbose || this.extraFeatures?.verbose) {
+          if (this.isVerbose(config)) {
             logTranspilation({
               usedSwc,
               inputFilePath,
@@ -437,7 +448,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
 
           babelOptions = setupBabelOptions();
           compilation = compileWithBabel(source, babelOptions, cacheOptions);
-          if (config?.verbose || this.extraFeatures?.verbose) {
+          if (this.isVerbose(config)) {
             logTranspilation({
               usedSwc: false,
               inputFilePath,
