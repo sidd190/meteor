@@ -204,6 +204,11 @@ selftest.define("modern build stack - transpiler boolean-like options", async fu
   run.waitSecs(waitToStart);
   await run.match("App running at");
 
+  /* check verbose logs */
+  await run.match(/SWC Config/, false, true);
+  await run.match(/SWC Legacy Config/, false, true);
+  await run.match(/Meteor Config/, false, true);
+
   /* check transpiler options */
   await run.match(/\[Transpiler] Used SWC.*\(app\)/, false, true);
   await run.match(/\[Transpiler] Used SWC.*\(package\)/, false, true);
@@ -251,6 +256,11 @@ selftest.define("modern build stack - transpiler string-like options", async fun
 
   run.waitSecs(waitToStart);
   await run.match("App running at");
+
+  /* check verbose logs */
+  await run.match(/SWC Config/, false, true);
+  await run.match(/SWC Legacy Config/, false, true);
+  await run.match(/Meteor Config/, false, true);
 
   /* check transpiler options */
   await run.match(/\[Transpiler] Used SWC.*\(app\)/, false, true);
