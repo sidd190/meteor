@@ -650,7 +650,6 @@ BCp._inferFromSwcRc = function (inputFile, swcOptions, cacheDeps) {
 
     if (this._inferHelperForSwc(inputFile, cacheEntry)) {
       deepMerge(swcOptions, cacheEntry.controlFileData);
-      console.log("--> (babel-compiler.js-Line: 661)\n swcOptions: ", swcOptions);
       Object.assign(cacheDeps, cacheEntry.deps);
       return true;
     }
