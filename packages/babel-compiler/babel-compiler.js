@@ -26,7 +26,7 @@ var excludedFileExtensionPattern = /\.(es5|min)\.js$/i;
 var hasOwn = Object.prototype.hasOwnProperty;
 
 // Check if verbose mode is enabled either in the provided config or in extraFeatures
-BCp.isVerbose = function(config) {
+BCp.isVerbose = function(config = global.meteorConfig) {
   if (config?.modern?.transpiler?.verbose) {
     return true;
   }
@@ -82,7 +82,7 @@ function compileWithSwc(source, swcOptions = {}, { features }) {
 }
 
 BCp.initializeMeteorAppConfig = function () {
-  if (this.isVerbose(lastModifiedMeteorConfig)) {
+  if (this.isVerbose(global.meteorConfig)) {
     logConfigBlock('Meteor Config', global.meteorConfig);
   }
   return global.meteorConfig;
@@ -123,7 +123,7 @@ BCp.initializeMeteorAppSwcrc = function () {
     lastModifiedSwcConfigTime = currentLastModifiedConfigTime;
     lastModifiedSwcConfig = getMeteorAppSwcrc(swcFile);
 
-    if (this.isVerbose(lastModifiedMeteorConfig)) {
+    if (this.isVerbose(global.meteorConfig)) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
   }
@@ -133,7 +133,7 @@ BCp.initializeMeteorAppSwcrc = function () {
 let lastModifiedSwcLegacyConfig;
 BCp.initializeMeteorAppLegacyConfig = function () {
   const swcLegacyConfig = convertBabelTargetsForSwc(Babel.getMinimumModernBrowserVersions());
-  if (this.isVerbose(lastModifiedMeteorConfig) && !lastModifiedSwcLegacyConfig) {
+  if (this.isVerbose(global.meteorConfig) && !lastModifiedSwcLegacyConfig) {
     logConfigBlock('SWC Legacy Config', swcLegacyConfig);
   }
   lastModifiedSwcLegacyConfig = swcLegacyConfig;
