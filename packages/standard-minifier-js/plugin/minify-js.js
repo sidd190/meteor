@@ -1,9 +1,5 @@
 import { extractModuleSizesTree } from "./stats.js";
 
-export function getConfig() {
-  return global.meteorConfig;
-};
-
 const statsEnabled = process.env.DISABLE_CLIENT_STATS !== 'true'
 
 
@@ -45,11 +41,6 @@ if (typeof Plugin !== 'undefined') {
 }
 
 export class MeteorMinifier {
-
-  constructor() {
-    this.config = getConfig();
-  }
-
   _minifyWithSWC(file) {
     return Profile('_minifyWithSWC', () => {
       swc = swc || require('@meteorjs/swc-core'); 
@@ -111,9 +102,13 @@ export class MeteorMinifier {
 
   minifyOneFile(file) {
     return Profile('minifyOneFile', () => {
-      const modern = this.config && (this.config.modern === true || (this.config.modern && this.config.modern.minifier === true));
+      const modern =
+        global.meteorConfig &&
+        (global.meteorConfig.modern === true ||
+          (global.meteorConfig.modern &&
+            global.meteorConfig.modern.minifier === true));
       // check if config is an empty object
-      if(this.config && Object.keys(this.config).length === 0 || !modern) {
+      if(global.meteorConfig && Object.keys(global.meteorConfig).length === 0 || !modern) {
         Meteor._debug(`Minifying using Terser  | file: ${file.getPathInBundle()}`);
         return this._minifyWithTerser(file);
       }
