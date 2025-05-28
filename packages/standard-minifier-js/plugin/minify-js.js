@@ -104,9 +104,9 @@ export class MeteorMinifier {
     return Profile('minifyOneFile', () => {
       const modern =
         global.meteorConfig &&
-        (global.meteorConfig.modern === true ||
-          (global.meteorConfig.modern &&
-            global.meteorConfig.modern.minifier === true));
+        (global.meteorConfig?.modern === true ||
+          (global.meteorConfig?.modern &&
+            global.meteorConfig?.modern?.minifier === true));
       // check if config is an empty object
       if(global.meteorConfig && Object.keys(global.meteorConfig).length === 0 || !modern) {
         Meteor._debug(`Minifying using Terser  | file: ${file.getPathInBundle()}`);

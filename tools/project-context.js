@@ -1771,6 +1771,7 @@ Object.assign(exports.FinishedUpgraders.prototype, {
 
 const DEFAULT_MODERN = {
   transpiler: true,
+  minifier: true,
   webArchOnly: true,
   watcher: true,
 };
