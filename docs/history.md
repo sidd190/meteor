@@ -23,7 +23,7 @@
 - Fix user agent detection and oplog collection filtering
 - Refine type definitions for Meteor methods and SSR's ServerSink
 - Allow opting out of usage stats with `DO_NOT_TRACK`
-- Update Node to 22.15.1 and Express to 5.1.0
+- Update Node to 22.16.0 and Express to 5.1.0
 
 All Merged PRs@[GitHub PRs 3.3](https://github.com/meteor/meteor/pulls?q=is%3Apr+is%3Amerged+base%3Arelease-3.3)
 
@@ -32,9 +32,9 @@ React Packages Changelog: [react-meteor-data@4.0.0-beta.0](https://github.com/me
 #### Breaking Changes
 
 - File watching strategy switched to `@parcel/watcher`
-    - Most setups should be fine, but if issues appear, like when using WSL with host, volumes, or remote setups—switch to polling.
-    - Set `METEOR_WATCH_FORCE_POLLING=true` to enable polling.
-    - Set `METEOR_WATCH_POLLING_INTERVAL_MS=1000` to adjust the interval.
+  - Most setups should be fine, but if issues appear, like when using WSL with host, volumes, or remote setups—switch to polling.
+  - Set `METEOR_WATCH_FORCE_POLLING=true` to enable polling.
+  - Set `METEOR_WATCH_POLLING_INTERVAL_MS=1000` to adjust the interval.
 
 - `react-meteor-data@4.0.0-beta.0`
   - Independent from the core, only applies if upgraded manually.
@@ -96,9 +96,9 @@ meteor add react-meteor-data@4.0.0-beta.0
 
 ✨✨✨
 
-- [@nachocodoner](https://github.com/nachocodoner)  
+- [@nachocodoner](https://github.com/nachocodoner)
 - [@italojs](https://github.com/italojs)
-- [@Grubba27](https://github.com/Grubba27)  
+- [@Grubba27](https://github.com/Grubba27)
 - [@zodern](https://github.com/zodern)
 - [@9Morello](https://github.com/9Morello)
 - [@welkinwong](https://github.com/welkinwong)
@@ -106,8 +106,9 @@ meteor add react-meteor-data@4.0.0-beta.0
 - [@PedroMarianoAlmeida](https://github.com/PedroMarianoAlmeida)
 - [@harryadel](https://github.com/harryadel)
 - [@ericm546](https://github.com/ericm546)
+- [@StorytellerCZ](https://github.com/StorytellerCZ)
 
-✨✨✨ 
+✨✨✨
 
 ## v3.0.1, 2024-07-16
 
