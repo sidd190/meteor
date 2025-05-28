@@ -293,6 +293,9 @@ require('./commands-packages-query.js');
 require('./commands-cordova.js');
 require('./commands-aliases.js');
 
+// Initialize meteorConfig globally
+global.meteorConfig = getMeteorConfig();
+
 ///////////////////////////////////////////////////////////////////////////////
 // Record all the top-level commands as JSON
 ///////////////////////////////////////////////////////////////////////////////
@@ -865,9 +868,10 @@ makeGlobalAsyncLocalStorage().run({}, async function () {
   var appDir = files.findAppDir();
   if (appDir) {
     appDir = files.pathResolve(appDir);
+
+    // Renitialize meteorConfig globally when having appDir context
+    global.meteorConfig = getMeteorConfig(appDir);
   }
-  // Initialize meteorConfig globally for command context
-  global.meteorConfig = getMeteorConfig(appDir);
 
   await require('../tool-env/isopackets.js').ensureIsopacketsLoadable();
 
