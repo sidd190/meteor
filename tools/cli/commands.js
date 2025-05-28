@@ -262,7 +262,6 @@ export function parseRunTargets(targets) {
 };
 
 export function getMeteorConfig(appDir) {
-  if (global.meteorConfig) return global.meteorConfig;
   let packageJson;
   if (appDir) {
     const packageJsonPath = files.pathJoin(appDir, 'package.json');
