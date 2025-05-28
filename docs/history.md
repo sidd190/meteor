@@ -8,7 +8,7 @@
 
 [//]: # (go to meteor/docs/generators/changelog/docs)
 
-## v3.3.0, 2025-05-15
+## v3.3.0, 2025-05-28
 
 ### Highlights
 
@@ -72,21 +72,24 @@ meteor add react-meteor-data@4.0.0-beta.0
 
 #### Bumped Meteor Packages
 
-- accounts-base@3.1.1
-- accounts-password@3.2.0
-- autoupdate@2.0.1
-- babel-compiler@7.12.0
-- boilerplate-generator@2.0.1
-- ddp-client@3.1.1
-- ecmascript@0.16.11
-- ejson@1.1.5
-- meteor@2.1.1
-- modern-browsers@0.2.2
-- mongo@2.1.2
-- server-render@0.4.3
-- socket-stream-client@0.6.1
-- webapp@2.0.7
-- meteor-tool@3.3.0
+- accounts-base@3.1.1-rc330.0
+- accounts-password@3.2.0-rc330.0
+- autoupdate@2.0.1-rc330.0
+- babel-compiler@7.12.0-rc330.0
+- boilerplate-generator@2.0.1-rc330.0
+- ddp-client@3.1.1-rc330.0
+- ecmascript@0.16.11-rc330.0
+- ejson@1.1.5-rc330.0
+- meteor@2.1.1-rc330.0
+- minifier-js@3.0.2-rc330.0
+- modern-browsers@0.2.2-rc330.0
+- mongo@2.1.2-rc330.0
+- server-render@0.4.3-rc330.0
+- socket-stream-client@0.6.1-rc330.0
+- standard-minifier-js@3.1.0-rc330.0
+- typescript@5.6.4-rc330.0
+- webapp@2.0.7-rc330.0
+- meteor-tool@3.3.0-rc.0
 
 #### Bumped NPM Packages
 
