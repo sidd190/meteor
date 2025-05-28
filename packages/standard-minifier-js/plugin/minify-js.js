@@ -1,16 +1,7 @@
 import { extractModuleSizesTree } from "./stats.js";
-import fs from 'fs';
 
 export function getConfig() {
-  try{
-    const meteorAppDir = process.cwd();
-    const packageJson = fs.readFileSync(`${meteorAppDir}/package.json`, 'utf8');
-    const meteorConfig = JSON.parse(packageJson).meteor;
-    return meteorConfig;
-  } catch (error) {
-    console.log(error);
-    return {};
-  }
+  return global.meteorConfig;
 };
 
 const statsEnabled = process.env.DISABLE_CLIENT_STATS !== 'true'
