@@ -194,6 +194,8 @@ To use the same aliases in SWC, add them to your [.swcrc](#custom-swcrc):
 }
 ```
 
+This enables you to use `@ui/components` instead of `./ui/components` in your imports.
+
 You can use `swc.config.js` to define different aliases based on an environment variable.
 
 ``` js
@@ -214,8 +216,6 @@ module.exports = {
     },
 };
 ```
-
-This enables you to use `@ui/components` instead of `./ui/components` in your imports.
 
 :::warning
 SWC only resolves aliases to imports, not `require` calls.
