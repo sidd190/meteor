@@ -262,16 +262,19 @@ export function parseRunTargets(targets) {
 };
 
 export function getMeteorConfig(appDir) {
+  const modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
   let packageJson;
   if (appDir) {
     const packageJsonPath = files.pathJoin(appDir, 'package.json');
     if (!files.exists(packageJsonPath)) {
-      return false;
+      global.meteorConfig = {
+        modern: projectContextModule.normalizeModern(modernForced || false),
+      };
+      return global.meteorConfig;
     }
     const packageJsonFile = files.readFile(packageJsonPath, 'utf8');
     packageJson = JSON.parse(packageJsonFile);
   }
-  const modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
   global.meteorConfig = {
     ...(packageJson?.meteor || {}),
     modern: projectContextModule.normalizeModern(modernForced || packageJson?.meteor?.modern || false),
