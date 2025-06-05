@@ -514,9 +514,6 @@ Object.assign(Isopack.prototype, {
     var Plugin = {
       name: pluginName,
 
-      // Share the meteorConfig with the plugin
-      meteorConfig: global.meteorConfig || {},
-
       // 'extension' is a file extension without the separation dot
       // (eg 'js', 'coffee', 'coffee.md')
       //

@@ -27,7 +27,7 @@ if (typeof Plugin !== 'undefined' && Plugin.Profile) {
 }
 
 function getMeteorConfig() {
-  return Plugin?.meteorConfig || global?.meteorConfig || {};
+  return global?.meteorConfig || {};
 }
 
 let swc;
