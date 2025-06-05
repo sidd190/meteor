@@ -82,10 +82,11 @@ function compileWithSwc(source, swcOptions = {}, { features }) {
 }
 
 BCp.initializeMeteorAppConfig = function () {
+  const meteorConfig = Plugin?.meteorConfig || global.meteorConfig;
   if (this.isVerbose()) {
-    logConfigBlock('Meteor Config', global.meteorConfig);
+    logConfigBlock('Meteor Config', meteorConfig);
   }
-  return global.meteorConfig;
+  return meteorConfig;
 };
 
 let lastModifiedSwcConfig;

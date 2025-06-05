@@ -13,9 +13,7 @@ const Meteor = typeof global.Meteor !== 'undefined' ? global.Meteor : {
 
 // Profile for test and production environments
 let Profile;
-if (typeof global.Profile !== 'undefined') {
-  Profile = global.Profile;
-} else if (typeof Plugin !== 'undefined' && Plugin.Profile) {
+if (typeof Plugin !== 'undefined' && Plugin.Profile) {
   Profile = Plugin.Profile;
 } else {
   Profile = function (label, func) {
@@ -26,6 +24,10 @@ if (typeof global.Profile !== 'undefined') {
   Profile.time = function (label, func) {
     func();
   }
+}
+
+function getMeteorConfig() {
+  return Plugin?.meteorConfig || global?.meteorConfig || {};
 }
 
 let swc;
@@ -102,13 +104,14 @@ export class MeteorMinifier {
 
   minifyOneFile(file) {
     return Profile('minifyOneFile', () => {
+      const meteorConfig = getMeteorConfig();
       const modern =
-        global.meteorConfig &&
-        (global.meteorConfig?.modern === true ||
-          (global.meteorConfig?.modern &&
-            global.meteorConfig?.modern?.minifier === true));
+        meteorConfig &&
+        (meteorConfig?.modern === true ||
+          (meteorConfig?.modern &&
+            meteorConfig?.modern?.minifier === true));
       // check if config is an empty object
-      if(global.meteorConfig && Object.keys(global.meteorConfig).length === 0 || !modern) {
+      if(meteorConfig && Object.keys(meteorConfig).length === 0 || !modern) {
         Meteor._debug(`Minifying using Terser  | file: ${file.getPathInBundle()}`);
         return this._minifyWithTerser(file);
       }
