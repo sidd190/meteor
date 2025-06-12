@@ -1524,26 +1524,70 @@ meteor help admin <command>
 ```
 :::
 
-## meteor shell {meteorshell}
+## meteor shell {#meteorshell}
 
-When `meteor shell` is executed in an application directory where a server
-is already running, it connects to the server and starts an interactive
-shell for evaluating server-side code.
+Start an interactive JavaScript shell for evaluating server-side code.
 
-Multiple shells can be attached to the same server. If no server is
-currently available, `meteor shell` will keep trying to connect until it
-succeeds.
+```bash
+meteor shell
+```
 
-Exiting the shell does not terminate the server. If the server restarts
-because a change was made in server code, or a fatal exception was
-encountered, the shell will restart along with the server. This behavior
-can be simulated by typing `.reload` in the shell.
+### Description
 
-The shell supports tab completion for global variables like `Meteor`,
-`Mongo`, and `Package`. Try typing `Meteor.is` and then pressing tab.
+The `meteor shell` command connects to a running Meteor server and provides an interactive JavaScript REPL (Read-Eval-Print Loop) for executing server-side code.
 
-The shell maintains a persistent history across sessions. Previously-run
-commands can be accessed by pressing the up arrow.
+::: tip Connection Behavior
+- Requires a running Meteor server in the application directory
+- If no server is available, it will keep trying to connect until successful
+- Multiple shells can be attached to the same server simultaneously
+:::
+
+### Features
+
+#### Server Integration
+
+- Exiting the shell does not terminate the server
+- If the server restarts (due to code changes or errors), the shell will automatically restart with it
+- You can manually trigger a reload by typing `.reload` in the shell
+
+#### Developer Experience
+
+| Feature | Description |
+|---------|-------------|
+| **Tab Completion** | Built-in tab completion for global variables like `Meteor`, `Mongo`, and `Package` |
+| **Persistent History** | Command history is maintained across sessions |
+| **Command Recall** | Access previously-run commands using the up arrow key |
+
+### Example Usage
+
+```bash
+# Start a Meteor server in one terminal
+meteor run
+
+# Connect a shell in another terminal
+meteor shell
+
+# Now you can run server-side code interactively:
+> Meteor.users.find().count()
+> Package.mongo.Mongo.Collection.prototype
+> Meteor.isServer
+true
+> .reload  # Manually restart the shell
+```
+
+::: details Advanced Example
+```js
+// Query the database
+> db = Package.mongo.MongoInternals.defaultRemoteCollectionDriver().mongo.db
+> db.collection('users').find().toArray()
+
+// Access Meteor settings
+> Meteor.settings.public
+
+// Inspect publications
+> Object.keys(Meteor.server.publish_handlers)
+```
+:::
 
 ## meteor npm {meteornpm}
 
