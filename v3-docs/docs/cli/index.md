@@ -1478,14 +1478,51 @@ meteor test-packages --driver-package meteortesting:mocha
 meteor test-packages --ios-device
 ```
 
-## meteor admin {meteoradmin}
+## meteor admin {#meteoradmin}
 
-Catch-all for miscellaneous commands that require authorization to use.
+Administrative commands for official Meteor services.
 
-Some example uses of `meteor admin` include adding and removing package
-maintainers and setting a homepage for a package. It also includes various
-helpful functions for managing a Meteor release.  Run `meteor help admin` for
-more information.
+```bash
+meteor admin <command> [args]
+```
+
+::: warning Authorization Required
+These commands require authorization to use.
+:::
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `maintainers` | View or change package maintainers |
+| `recommend-release` | Recommend a previously published release |
+| `change-homepage` | Change the homepage URL of a package |
+| `list-organizations` | List the organizations of which you are a member |
+| `members` | View or change the members of an organization |
+| `get-machine` | Open an SSH shell to a machine in the Meteor build farm |
+
+### Usage Examples
+
+```bash
+# View or change package maintainers
+meteor admin maintainers packagename [add/remove] [username]
+
+# Change a package homepage
+meteor admin change-homepage packagename [url]
+
+# List your organizations
+meteor admin list-organizations
+
+# Manage organization members
+meteor admin members organization-name [add/remove] [username]
+```
+
+::: tip Detailed Help
+For more information on any admin command, run:
+```bash
+meteor help admin <command>
+```
+:::
 
 ## meteor shell {meteorshell}
 
