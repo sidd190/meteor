@@ -1589,28 +1589,55 @@ true
 ```
 :::
 
-## meteor npm {meteornpm}
+## meteor npm {#meteornpm}
 
-The `meteor npm` command calls the
-[`npm`](https://docs.npmjs.com/getting-started/what-is-npm) version bundled
-with Meteor itself.
+Run npm commands using Meteor's bundled npm version.
 
-Additional parameters can be passed in the same way as the `npm` command
-(e.g. `meteor npm rebuild`, `meteor npm ls`, etc.) and the
-[npm documentation](https://docs.npmjs.com/) should be consulted for the
-full list of commands and for a better understanding of their usage.
+```bash
+meteor npm <command> [args...]
+```
 
-For example, executing `meteor npm install lodash --save` would install `lodash`
-from npm to your `node_modules` directory and save its usage in your
-[`package.json`](https://docs.npmjs.com/files/package.json) file.
+### Description
 
-Using the `meteor npm ...` commands in place of traditional `npm ...` commands
-is particularly important when using Node.js modules that have binary
-dependencies that make native C calls (like [`bcrypt`](https://www.npmjs.com/package/bcrypt))
-because doing so ensures that they are built using the same libraries.
+The `meteor npm` command executes [npm](https://docs.npmjs.com/) commands using the version bundled with Meteor itself.
 
-Additionally, this access to the npm that comes with Meteor avoids the need to
-download and install npm separately.
+::: tip Benefits of Using Meteor's npm
+1. Ensures compatibility with Meteor's Node.js version
+2. Crucial for packages with native dependencies (like `bcrypt`)
+3. No need to install npm separately
+4. Consistent behavior across development environments
+:::
+
+### Common Commands
+
+| Command | Description |
+|---------|-------------|
+| `meteor npm install` | Install all dependencies listed in `package.json` |
+| `meteor npm install <package> --save` | Install and save a package as a dependency |
+| `meteor npm install <package> --save-dev` | Install and save a package as a development dependency |
+| `meteor npm update` | Update all packages to their latest allowed versions |
+| `meteor npm ls` | List installed packages |
+| `meteor npm rebuild` | Rebuild packages that have native dependencies |
+
+### Examples
+
+```bash
+# Install a package and save to dependencies
+meteor npm install lodash --save
+
+# Install packages from package.json
+meteor npm install
+
+# Run an npm script defined in package.json
+meteor npm run start
+
+# View package information
+meteor npm info react
+```
+
+::: warning Native Dependencies
+Using `meteor npm` instead of regular `npm` is especially important when working with packages that have binary dependencies making native C calls (like `bcrypt`). This ensures they're built with the same libraries used by Meteor.
+:::
 
 ## meteor node {meteornode}
 
