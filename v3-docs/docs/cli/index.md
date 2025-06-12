@@ -1639,23 +1639,56 @@ meteor npm info react
 Using `meteor npm` instead of regular `npm` is especially important when working with packages that have binary dependencies making native C calls (like `bcrypt`). This ensures they're built with the same libraries used by Meteor.
 :::
 
-## meteor node {meteornode}
+## meteor node {#meteornode}
 
-The `meteor node` command calls the
-[`node`](https://nodejs.org) version bundled with Meteor itself.
+Run Node.js commands using Meteor's bundled Node.js version.
 
-> This is not to be confused with [`meteor shell`](#meteor-shell), which provides
-> an almost identical experience but also gives you access to the "server" context
-> of a Meteor application. Typically, `meteor shell` will be preferred.
+```bash
+meteor node [options] [script.js] [arguments]
+```
 
-Additional parameters can be passed in the same way as the `node` command, and
-the [Node.js documentation](https://nodejs.org/dist/latest-v4.x/docs/api/cli.html)
-should be consulted for the full list of commands and for a better understanding
-of their usage.
+::: info Alternative
+Consider using [`meteor shell`](#meteorshell) instead, which provides similar functionality plus access to your Meteor application's server context.
+:::
 
-For example, executing `meteor node` will enter the Node.js
-[Read-Eval-Print-Loop (REPL)](https://nodejs.org/dist/latest-v4.x/docs/api/repl.html)
-interface and allow you to interactively run JavaScript and see the results.
+### Description
 
-Executing `meteor node -e "console.log(process.versions)"` would
-run `console.log(process.versions)` in the version of `node` bundled with Meteor.
+The `meteor node` command runs [Node.js](https://nodejs.org/) using the version bundled with Meteor itself.
+
+### Common Uses
+
+| Command | Description |
+|---------|-------------|
+| `meteor node` | Start an interactive Node.js REPL |
+| `meteor node script.js` | Execute a JavaScript file |
+| `meteor node -e "<code>"` | Execute a line of JavaScript |
+| `meteor node --version` | Show Node.js version |
+
+### Examples
+
+```bash
+# Start an interactive REPL
+meteor node
+
+# Execute inline JavaScript
+meteor node -e "console.log(process.versions)"
+
+# Run a script with arguments
+meteor node scripts/migrate.js --force
+
+# Check installed Node.js version
+meteor node --version
+```
+
+::: details Running a Simple Script
+Create `hello.js`:
+```js
+console.log('Hello from Node.js version', process.version);
+console.log('Arguments:', process.argv.slice(2));
+```
+
+Run it:
+```bash
+meteor node hello.js arg1 arg2
+```
+:::
