@@ -1465,23 +1465,38 @@ If no packages are specified, all available packages will be tested.
 ### Examples
 
 #### Test specific packages by name
+
+```bash
 meteor test-packages accounts-base accounts-password
+```
 
 #### Test a package by path
+
+```bash
 meteor test-packages ./packages/my-package
+```
 
 #### Test with custom settings
+
+```bash
 meteor test-packages --settings settings.json
+```
 
 #### Test with Mocha test driver
+
+```bash
 meteor test-packages --driver-package meteortesting:mocha
+```
 
 #### Test with filter
+
+```bash
 meteor test-packages --filter myTestName
+```
 
 Alternatively, you can use the `TINYTEST_FILTER` environment variable to filter:
 
-```sh
+```bash
 TINYTEST_FILTER=myTestName meteor test-packages
 ```
 
