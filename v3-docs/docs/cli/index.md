@@ -1465,19 +1465,19 @@ If no packages are specified, all available packages will be tested.
 ### Examples
 
 
-# Test specific packages by name
+#### Test specific packages by name
 meteor test-packages accounts-base accounts-password
 
-# Test a package by path
+#### Test a package by path
 meteor test-packages ./packages/my-package
 
-# Test with custom settings
+#### Test with custom settings
 meteor test-packages --settings settings.json
 
-# Test with Mocha test driver
+#### Test with Mocha test driver
 meteor test-packages --driver-package meteortesting:mocha
 
-# Test with filter
+#### Test with filter
 meteor test-packages --filter myTestName
 
 Alternatively, you can use the `TINYTEST_FILTER` environment variable to filter:
@@ -1486,7 +1486,7 @@ Alternatively, you can use the `TINYTEST_FILTER` environment variable to filter:
 TINYTEST_FILTER=myTestName meteor test-packages
 ```
 
-# Test on mobile device
+#### Test on mobile device
 meteor test-packages --ios-device
 
 ## meteor admin {#meteoradmin}
