@@ -1501,7 +1501,10 @@ TINYTEST_FILTER=myTestName meteor test-packages
 ```
 
 #### Test on mobile device
+
+```bash
 meteor test-packages --ios-device
+```
 
 ## meteor admin {#meteoradmin}
 
