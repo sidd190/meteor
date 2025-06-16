@@ -55,7 +55,7 @@ Contributors are encouraged to focus their efforts on work that aligns with the 
 **Target Release:** 3.3.x ⏳
 
 **Goal:** Improve the build size and make meteor use less resources for building, decreasing even more build and rebuild time.
-- And updates based on the feedback from the community, so that we can have a better experience with our new transpiler(SWC).
+- Expanding compatibility and updates based on the feedback from the community, so that we can have a better experience with our new build tools, in this case SWC
 
 #### Phase 5: External Bundler integration
 
@@ -69,6 +69,7 @@ Contributors are encouraged to focus their efforts on work that aligns with the 
 **Target Release:** 3.4.x ⏳
 
 **Goal:** Improve the build size and make meteor use less resources for building, decreasing even more build and rebuild time.
+- Expanding compatibility and updates based on the feedback from the community, so that we can have a better experience with our new build tools
 
 
 #### Documentation Strategy
