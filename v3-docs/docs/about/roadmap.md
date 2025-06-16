@@ -44,19 +44,18 @@ Contributors are encouraged to focus their efforts on work that aligns with the 
  - To have an external transpiler working with Meteor and producing a bundle that is smaller or faster than the current Meteor bundle.
 
 
-#### Phase 3: Bundler Improvements & feedback
+#### Phase 3: HMR Improvements
+
+**Target Release:** 3.3 ✅
+
+**Goal:** Improve the HMR performance, so that it is faster and more reliable on what needs to be changed.
+
+#### Phase 4: Bundler Improvements & feedback
 
 **Target Release:** 3.3.x ⏳
 
 **Goal:** Improve the build size and make meteor use less resources for building, decreasing even more build and rebuild time.
 - And updates based on the feedback from the community, so that we can have a better experience with our new transpiler(SWC).
-
-#### Phase 4: HMR Improvements
-
-**Target Release:** 3.4 ⏳
-
-**Goal:** Improve the HMR performance, so that it is faster and more reliable on what needs to be changed.
-
 
 #### Phase 5: External Bundler integration
 
@@ -67,7 +66,7 @@ Contributors are encouraged to focus their efforts on work that aligns with the 
 
 #### Phase 6: Build Process Optimization
 
-**Target Release:** 3.5 ⏳
+**Target Release:** 3.4.x ⏳
 
 **Goal:** Improve the build size and make meteor use less resources for building, decreasing even more build and rebuild time.
 
