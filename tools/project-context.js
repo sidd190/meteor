@@ -1821,13 +1821,17 @@ export class MeteorConfig {
     let config = this._ensureInitialized();
     let filteredConfig = keys.length ? {} : config;
     if (config) {
-      keys.every(key => {
-        if (config && _.has(config, key)) {
-          filteredConfig = config[key];
-          return true;
-        }
-        return false;
-      });
+      const subConfig = config[keys[0]];
+      if (subConfig) {
+        filteredConfig = subConfig;
+        const [, ...subConfigKeys] = keys;
+        subConfigKeys.every(key => {
+          if (filteredConfig && _.has(filteredConfig, key)) {
+            filteredConfig = filteredConfig[key];
+            return true;
+          }
+        });
+      }
       return filteredConfig;
     }
   }
