@@ -1818,22 +1818,14 @@ export class MeteorConfig {
   // General utility for querying the "meteor" section of package.json.
   // TODO Implement an API for setting these values?
   get(...keys) {
-    let config = this._ensureInitialized();
-    let filteredConfig = keys.length ? {} : config;
-    if (config) {
-      const subConfig = config[keys[0]];
-      if (subConfig) {
-        filteredConfig = subConfig;
-        const [, ...subConfigKeys] = keys;
-        subConfigKeys.every(key => {
-          if (filteredConfig && _.has(filteredConfig, key)) {
-            filteredConfig = filteredConfig[key];
-            return true;
-          }
-        });
-      }
-      return filteredConfig;
-    }
+    const config = this._ensureInitialized();
+    if (!config) return undefined;
+
+    return keys.reduce((cur, key) => {
+      return (cur != null && _.has(cur, key))
+        ? cur[key]
+        : undefined;
+    }, config);
   }
 
   getNodeModulesToRecompileByArch() {
