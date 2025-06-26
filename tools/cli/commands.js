@@ -1,3 +1,5 @@
+import { getMeteorConfig } from "../tool-env/meteor-config";
+
 var main = require('./main.js');
 var _ = require('underscore');
 var files = require('../fs/files');
@@ -261,51 +263,6 @@ export function parseRunTargets(targets) {
   });
 };
 
-const DEFAULT_MODERN = {
-    transpiler: true,
-    webArchOnly: true,
-    watcher: true,
-};
-
-const normalizeModern = (r = false) => Object.fromEntries(
-    Object.entries(DEFAULT_MODERN).map(([k, def]) => [
-        k,
-        r === true
-            ? def
-            : r === false || r?.[k] === false
-                ? false
-                : typeof r?.[k] === 'object'
-                    ? { ...r[k] }
-                    : def,
-    ]),
-);
-
-
-let modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
-let meteorConfig;
-
-function getMeteorConfig(appDir) {
-  if (meteorConfig) return meteorConfig;
-  const packageJsonPath = files.pathJoin(appDir, 'package.json');
-  if (!files.exists(packageJsonPath)) {
-    return false;
-  }
-  const packageJsonFile = files.readFile(packageJsonPath, 'utf8');
-  const packageJson = JSON.parse(packageJsonFile);
-  meteorConfig = packageJson?.meteor;
-  return meteorConfig;
-}
-
-function isModernArchsOnlyEnabled(appDir) {
-  const meteorConfig = getMeteorConfig(appDir);
-  return normalizeModern(modernForced || meteorConfig?.modern).webArchOnly !== false;
-}
-
-export function isModernWatcherEnabled(appDir) {
-  const meteorConfig = getMeteorConfig(appDir);
-  return normalizeModern(modernForced || meteorConfig?.modern).watcher !== false;
-}
-
 function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
   const platforms = (options.platforms || []);
   const isBuildMode = platforms?.length > 0;
@@ -325,7 +282,7 @@ function filterWebArchs(webArchs, excludeArchsOption, appDir, options) {
     if (!isCordovaDev) {
       const excludeArchsOptions = excludeArchsOption ? excludeArchsOption.trim().split(/\s*,\s*/) : [];
       const hasExcludeArchsOptions = (excludeArchsOptions?.length || 0) > 0;
-      const hasModernArchsOnlyEnabled = appDir && isModernArchsOnlyEnabled(appDir);
+      const hasModernArchsOnlyEnabled = appDir && getMeteorConfig()?.modern?.webArchOnly !== false;
       if (hasExcludeArchsOptions && hasModernArchsOnlyEnabled) {
         console.warn('modern.webArchOnly and --exclude-archs are both active. If both are set, --exclude-archs takes priority.');
       }

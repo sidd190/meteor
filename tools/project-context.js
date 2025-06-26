@@ -1,3 +1,4 @@
+import { normalizeModernConfig, setMeteorConfig } from "./tool-env/meteor-config";
 
 var assert = require("assert");
 var _ = require('underscore');
@@ -492,6 +493,8 @@ Object.assign(ProjectContext.prototype, {
       self.meteorConfig = new MeteorConfig({
         appDirectory: self.projectDir,
       });
+      self.meteorConfig._ensureInitialized();
+
       if (buildmessage.jobHasMessages()) {
         return;
       }
@@ -1811,6 +1814,13 @@ export class MeteorConfig {
             },
           }),
         } : this._config;
+    const modernForced = JSON.parse(process.env.METEOR_MODERN || "false");
+    // Reinitialize meteorConfig globally for project context
+    // Updates config when package.json changes trigger rebuilds
+    setMeteorConfig({
+      ...(this._config || {}),
+      modern: normalizeModernConfig(modernForced || this._config?.modern || false),
+    });
 
     return this._config;
   }
