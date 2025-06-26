@@ -118,6 +118,7 @@ You can also review these migration topics that use custom `.swcrc` configs:
 
 :::warning
 The standard name for the SWC configuration file is [`.swcrc`](https://swc.rs/docs/configuration/compilation).
+
 Using as an extension, such as `config.swcrc`, won’t work.
 :::
 
