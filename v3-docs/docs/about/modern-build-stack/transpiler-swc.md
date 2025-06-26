@@ -104,22 +104,11 @@ Most apps will benefit just by enabling `modern: true`. Most Meteor packages sho
 
 You can use `.swcrc` config in the root of your project to describe specific [SWC plugins](https://github.com/swc-project/plugins) there, that will be applied to compile the entire files of your project.
 
-You can also configure other options using the `.swcrc` format.
-
-``` json
-{
-  "jsc": {
-    "parser": {
-      "syntax": "ecmascript",
-      "jsx": true
-    }
-  }
-}
-```
+You can also configure other options using the `.swcrc` format. For custom SWC configs, see the [SWC configuration API](https://swc.rs/docs/configuration/compilation).
 
 Use `swc.config.js` in your project root for dynamic configuration. Meteor will import and apply the SWC config automatically. This lets you choose a config based on environment variables or other runtime factors.
 
-For custom SWC configs, see the [SWC configuration API](https://swc.rs/docs/configuration/compilation). You can also review these migration topics:
+You can also review these migration topics that use custom `.swcrc` configs:
 
 - [Import Aliases](#import-aliases)
 - [JSX Syntax in JS files](#jsx-syntax-in-js-files)
