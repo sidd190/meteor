@@ -104,7 +104,7 @@ Most apps will benefit just by enabling `modern: true`. Most Meteor packages sho
 
 You can use `.swcrc` config in the root of your project to describe specific [SWC plugins](https://github.com/swc-project/plugins) there, that will be applied to compile the entire files of your project.
 
-You can also configure other options using the `.swcrc` format.
+You can also configure other options using the `.swcrc` format. One common case is when your project uses `.js` files for React code. React typically uses `.jsx` for components. We still recommend following that convention for compatibility, but if you prefer `.js`, you can provide a custom `.swcrc` like this:
 
 ``` json
 {
@@ -117,14 +117,13 @@ You can also configure other options using the `.swcrc` format.
 }
 ```
 
+> You can also configure it for TypeScript, make sure to set `"syntax": "typescript"` and `"tsx": true` instead.
+
+This overrides Meteor's internal SWC config to apply your settings, ensuring SWC processes `.js` or `.ts` files with React components without falling back to Babel.
+
 Use `swc.config.js` in your project root for dynamic configuration. Meteor will import and apply the SWC config automatically. This lets you choose a config based on environment variables or other runtime factors.
 
-For custom SWC configs, see the [SWC configuration API](https://swc.rs/docs/configuration/compilation). You can also review these migration topics:
-
-- [Import Aliases](#import-aliases)
-- [JSX Syntax in JS files](#jsx-syntax-in-js-files)
-- [React Runtime](#react-runtime)
-- [Transform Imports](#transform-imports)
+Explore additional custom SWC configs, including ["Import Aliases"](#import-aliases) and ["React Runtime"](#react-runtime).
 
 ## Config API
 
@@ -253,32 +252,11 @@ SWC resolve aliases for imports correctly, but require calls won’t. For requir
 
 SWC has no [module-resolver plugin like Babel’s](https://www.npmjs.com/package/babel-plugin-module-resolver) yet, which could affect require calls in the future.
 
-### JSX Syntax in JS files
-
-When migrating your app to use SWC, Meteor SWC falls back to Babel if you include JSX in `.js` files, since JSX is only recognized in `.jsx` files.
-
-To enable JSX in `.js` files, create a [`.swcrc`](#custom-swcrc) file with this config:
-
-``` json
-{
-  "jsc": {
-    "parser": {
-      "syntax": "ecmascript",
-      "jsx": true
-    }
-  }
-}
-```
-
-> For TypeScript, set "syntax": "typescript" and "tsx": true instead.
-
-This overrides Meteor’s internal SWC config so SWC handles `.js` and `.ts` files with React components instead of falling back to Babel.
-
 ### React Runtime
 
 Meteor Babel lets you skip importing React in your files by using the [`@babel/plugin-transform-react-jsx`](https://www.npmjs.com/package/@babel/plugin-transform-react-jsx) runtime config.
 
-To use the same config in SWC, add it to your [`.swcrc`](#custom-swcrc):
+To use the same config in SWC, add it to your [.swcrc](#custom-swcrc):
 
 ```json
 {
@@ -291,56 +269,6 @@ To use the same config in SWC, add it to your [`.swcrc`](#custom-swcrc):
   }
 }
 ```
-
-### Transform Imports
-
-You might have used Meteor Babel with the  [`babel-plugin-transform-imports`](https://www.npmjs.com/package/babel-plugin-transform-imports) plugin to rewrite imports in your app.
-
-SWC offers a similar plugin: [`@swc/plugin-transform-imports`](https://www.npmjs.com/package/@swc/plugin-transform-imports).
-
-To switch to SWC, install the plugin: 
-
-```bash
-meteor npm install -D @swc/plugin-transform-imports
-```
-
-and add it to your [`.swcrc`](#custom-swcrc):
-
-```json
-{
-  "jsc": {
-    "experimental": {
-      "plugins": [
-        [
-          "@swc/plugin-transform-imports",
-          {
-            "lodash": {
-              "transform": "lodash/{{member}}",
-              "preventFullImport": true
-            }
-          }
-        ]
-      ]
-    }
-  }
-}
-```
-
-This tells SWC to replace, for example,
-
-``` javascript
-import { map } from "lodash"
-```
-
-with
-
-``` javascript
-import map from "lodash/map"
-```
-
-avoiding full-package imports and reducing bundle size.
-
-You can use advanced import transformations. [See the test suite for examples.](https://github.com/swc-project/plugins/blob/main/packages/transform-imports/__tests__/wasm.test.ts#L12-L63)
 
 ## Troubleshotting
 
