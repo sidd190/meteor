@@ -125,7 +125,6 @@ For custom SWC configs, see the [SWC configuration API](https://swc.rs/docs/conf
 - [JSX Syntax in JS files](#jsx-syntax-in-js-files)
 - [React Runtime](#react-runtime)
 - [Transform Imports](#transform-imports)
-- [Private Properties](#private-properties)
 
 ## Config API
 
@@ -342,29 +341,6 @@ import map from "lodash/map"
 avoiding full-package imports and reducing bundle size.
 
 You can use advanced import transformations. [See the test suite for examples.](https://github.com/swc-project/plugins/blob/main/packages/transform-imports/__tests__/wasm.test.ts#L12-L63)
-
-
-### Private Properties
-
-SWC supports many of the most modern JS systax features, including private class properties, which Meteor Babel doesn’t.
-
-Just by enabling SWC, Meteor will parse properly code like:
-
-``` javascript
-class ClassWithPrivate {
-  #privateField;
-  #privateFieldWithInitializer = 42;
-  
-  #privateMethod() {}
-  
-  static #privateStaticField;
-  static #privateStaticFieldWithInitializer = 42;
-
-  static #privateStaticMethod() {}
-}
-```
-
-You can opt-out of [private properties in SWC options with "privateMethod" setting](https://swc.rs/docs/configuration/compilation#ecmascript) with the [`.swcrc`](#custom-swcrc) file.
 
 ## Troubleshotting
 
