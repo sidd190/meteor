@@ -127,6 +127,11 @@ For custom SWC configs, see the [SWC configuration API](https://swc.rs/docs/conf
 - [Transform Imports](#transform-imports)
 - [Private Properties](#private-properties)
 
+:::warning
+The standard name for the SWC configuration file is [`.swcrc`](https://swc.rs/docs/configuration/compilation).
+Using as an extension, such as `config.swcrc`, won’t work.
+:::
+
 ## Config API
 
 - `modern.transpiler: [true|false]` - Default: `true`
