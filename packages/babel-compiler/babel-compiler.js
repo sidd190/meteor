@@ -34,6 +34,9 @@ BCp.isVerbose = function(config = getMeteorConfig()) {
   if (config?.modern?.transpiler?.verbose) {
     return true;
   }
+  if (config?.modern?.verbose) {
+    return true;
+  }
   if (config?.verbose) {
     return true;
   }
@@ -129,7 +132,7 @@ BCp.initializeMeteorAppSwcrc = function () {
     lastModifiedSwcConfig = getMeteorAppSwcrc(swcFile);
 
     if (this.isVerbose()) {
-      logConfigBlock('SWC Config', lastModifiedSwcConfig);
+      logConfigBlock('SWC Custom Config', lastModifiedSwcConfig);
     }
   }
   return lastModifiedSwcConfig;
@@ -145,6 +148,42 @@ BCp.initializeMeteorAppLegacyConfig = function () {
   return lastModifiedSwcConfig;
 };
 
+// Helper function to check if @swc/helpers is available
+function hasSwcHelpers() {
+  return fs.existsSync(`${getMeteorAppDir()}/node_modules/@swc/helpers`);
+}
+
+// Helper function to log friendly messages about SWC helpers
+function logSwcHelpersStatus(isAvailable) {
+  const label = color('[SWC Helpers]', 36);
+
+  if (isAvailable) {
+    // Green message for when helpers are available
+    console.log(`${label} ${color('✓ @swc/helpers is available in your project!', 32)}`);
+    console.log(`  ${color('Benefits:', 32)}`);
+    console.log(`  ${color('• Smaller bundle size: External helpers reduce code duplication', 32)}`);
+    console.log(`  ${color('• Faster loads: less code to parse on first download', 32)}`);
+    console.log(`  ${color('• Optional caching: separate vendor chunk can be cached by browsers', 32)}`);
+  } else {
+    // Yellow message for when helpers are not available
+    console.log(`${label} ${color('⚠ @swc/helpers is not available in your project', 33)}`);
+    console.log(`  ${color('Suggestion:', 33)}`);
+    console.log(`  ${color('• Add @swc/helpers to your project:', 33)}`);
+    console.log(`    ${color('meteor npm install --save @swc/helpers', 33)}`);
+    console.log(`  ${color('• This will reduce bundle size and improve performance', 33)}`);
+  }
+  console.log();
+}
+
+let hasSwcHelpersAvailable = false;
+BCp.initializeMeteorAppSwcHelpersAvailable = function () {
+  hasSwcHelpersAvailable = hasSwcHelpers();
+  if (this.isVerbose()) {
+    logSwcHelpersStatus(hasSwcHelpersAvailable);
+  }
+  return hasSwcHelpersAvailable;
+};
+
 BCp.processFilesForTarget = function (inputFiles) {
   var compiler = this;
 
@@ -154,6 +193,7 @@ BCp.processFilesForTarget = function (inputFiles) {
   this.initializeMeteorAppConfig();
   this.initializeMeteorAppSwcrc();
   this.initializeMeteorAppLegacyConfig();
+  this.initializeMeteorAppSwcHelpersAvailable();
 
   inputFiles.forEach(function (inputFile) {
     if (inputFile.supportsLazyCompilation) {
@@ -284,6 +324,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             jsx: hasJSXSupport,
             tsx: hasTSXSupport,
           },
+          ...(hasSwcHelpersAvailable && { externalHelpers: true }),
         },
         module: { type: 'es6' },
         minify: false,
@@ -356,6 +397,7 @@ BCp.processOneFileForTarget = function (inputFile, source) {
           toBeAdded.hash,
           lastModifiedSwcConfigTime,
           isLegacyWebArch ? 'legacy' : '',
+          hasSwcHelpersAvailable,
         ]
           .filter(Boolean)
           .join('-');
