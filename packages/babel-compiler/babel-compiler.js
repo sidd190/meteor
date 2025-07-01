@@ -324,7 +324,11 @@ BCp.processOneFileForTarget = function (inputFile, source) {
             jsx: hasJSXSupport,
             tsx: hasTSXSupport,
           },
-          ...(hasSwcHelpersAvailable && { externalHelpers: true }),
+          ...(hasSwcHelpersAvailable &&
+            (packageName == null ||
+              !['modules-runtime'].includes(packageName)) && {
+              externalHelpers: true,
+            }),
         },
         module: { type: 'es6' },
         minify: false,
