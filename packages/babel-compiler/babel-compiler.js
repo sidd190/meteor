@@ -109,7 +109,9 @@ BCp.initializeMeteorAppSwcrc = function () {
   let currentLastModifiedConfigTime;
   if (hasSwcJs) {
     // For dynamic JS files, first get the resolved configuration
-    const resolvedConfig = lastModifiedSwcConfig || getMeteorAppSwcrc(swcFile);
+    const resolvedConfig = lastModifiedSwcConfigTime?.includes(`${fileModTime}`)
+      ? lastModifiedSwcConfig || getMeteorAppSwcrc(swcFile)
+      : getMeteorAppSwcrc(swcFile);
     // Calculate a hash of the resolved configuration to detect changes
     const contentHash = crypto
       .createHash('sha256')
@@ -131,6 +133,8 @@ BCp.initializeMeteorAppSwcrc = function () {
     if (this.isVerbose()) {
       logConfigBlock('SWC Config', lastModifiedSwcConfig);
     }
+
+    this._swcIncompatible = {};
   }
   return lastModifiedSwcConfig;
 };
