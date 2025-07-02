@@ -234,7 +234,7 @@ selftest.define("modern build stack - transpiler boolean-like options", async fu
   await run.match(/Loaded NPM package "config"/, false, true);
 
   /* check verbose logs */
-  await run.match(/SWC Config/, false, true);
+  await run.match(/SWC Custom Config/, false, true);
   await run.match(/SWC Legacy Config/, false, true);
   await run.match(/Meteor Config/, false, true);
 
@@ -330,7 +330,7 @@ console.log('Loaded NPM package "config"', require('config').id);`);
   await run.match(/Loaded NPM package "config"/, false, true);
 
   /* check verbose logs */
-  await run.match(/SWC Config/, false, true);
+  await run.match(/SWC Custom Config/, false, true);
   await run.match(/SWC Legacy Config/, false, true);
   await run.match(/Meteor Config/, false, true);
 
