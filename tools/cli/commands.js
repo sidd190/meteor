@@ -3439,7 +3439,7 @@ const setupBenchmarkSuite = async (profilingPath) => {
       `git sparse-checkout set scripts`,
       `git checkout ${branch}`,
       `mkdir -p ${profilingPath}/scripts`,
-      `tar --exclude=".*" -czf /tmp/scripts.tar.gz -C ./scripts .`,
+      `tar -czf /tmp/scripts.tar.gz -C ./scripts .`,
       `tar -xzf /tmp/scripts.tar.gz -C ${profilingPath}/scripts`,
       `rm -rf ${tempDir}`,
       `rm -f /tmp/scripts.tar.gz`
