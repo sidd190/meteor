@@ -3407,6 +3407,7 @@ const setupBenchmarkSuite = async (profilingPath) => {
 
   const repoUrl = "https://github.com/meteor/performance";
   const branch = "v3.3.0";
+
   const gitCommand = [
     `mkdir -p ${profilingPath}`,
     `git clone --no-checkout --depth 1 --filter=tree:0 --sparse --progress --branch ${branch} --single-branch ${repoUrl} ${profilingPath}`,
@@ -3414,15 +3415,48 @@ const setupBenchmarkSuite = async (profilingPath) => {
     `git sparse-checkout init --cone`,
     `git sparse-checkout set scripts`,
     `git checkout ${branch}`,
-    `find ${profilingPath} -maxdepth 1 -type f -delete`,
+    `find ${profilingPath} -maxdepth 1 -type f -delete`
   ].join(" && ");
-  const [, errClone] = await bash`${gitCommand}`;
+
+  const [okClone, errClone] = await bash`${gitCommand}`;
   const errorMessage = errClone && typeof errClone === "string" ? errClone : errClone?.message;
-  if (errorMessage && errorMessage.includes("Cloning into")) {
-    throw new Error("error cloning benchmark");
+
+  if (errorMessage && errorMessage.includes("fatal:")) {
+    Console.warn("Standard git clone failed. Trying tar fallback...");
+
+    // Check if tar is available
+    const [okTar, errTar] = await bash`tar --version`;
+    if (errTar) {
+      throw new Error(`git clone failed and tar is not installed:\n${errorMessage}`);
+    }
+
+    const tempDir = "/tmp/performance-fallback";
+    const fallbackCommand = [
+      `rm -rf ${tempDir}`,
+      `git clone --no-checkout --depth 1 --filter=tree:0 --sparse --progress --branch ${branch} --single-branch ${repoUrl} ${tempDir}`,
+      `cd ${tempDir}`,
+      `git sparse-checkout init --cone`,
+      `git sparse-checkout set scripts`,
+      `git checkout ${branch}`,
+      `mkdir -p ${profilingPath}/scripts`,
+      `tar --exclude=".*" -czf /tmp/scripts.tar.gz -C ./scripts .`,
+      `tar -xzf /tmp/scripts.tar.gz -C ${profilingPath}/scripts`,
+      `rm -rf ${tempDir}`,
+      `rm -f /tmp/scripts.tar.gz`
+    ].join(" && ");
+
+    const [okFallback, errFallback] = await bash`${fallbackCommand}`;
+    if (errFallback) {
+      throw new Error(`git clone failed and tar fallback also failed:\n${errorMessage}\n\n${errFallback}`);
+    }
   }
-  // remove .git folder from the example
-  await files.rm_recursive_async(files.pathJoin(profilingPath, ".git"));
+
+  // remove .git folder if exists (in fallback it won't)
+  const gitDir = files.pathJoin(profilingPath, ".git");
+  if (await files.exists(gitDir)) {
+    await files.rm_recursive_async(gitDir);
+  }
+
   Console.info(
     "Meteor profiling suite cloned to: " + Console.path(profilingPath),
   );
