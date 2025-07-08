@@ -1203,71 +1203,85 @@ main.registerCommand({
     toIgnore.push(/(\.html|\.js|\.css)/);
   }
 
-  try {
-    // Prototype option should use local skeleton.
-    // Maybe we should use a different skeleton for prototype
-    if (options.prototype) throw new Error("Using prototype option");
-    // if using the release option we should use the default skeleton
-    // using it as it was before 2.x
-    if (release.explicit) throw new Error("Using release option");
+  const copyFromLocalSkeleton = async () => {
+    await files.cp_r(
+      skeletonPath,
+      appPath,
+      {
+        transformFilename: function (f) {
+          return transform(f);
+        },
+        transformContents: function (contents, f) {
+          // check if this app is just for prototyping if it is then we need to add autopublish and insecure in the packages file
+          if (/packages/.test(f)) {
+            const prototypePackages = () =>
+              "autopublish             # Publish all data to the clients (for prototyping)\n" +
+              "insecure                # Allow all DB writes from clients (for prototyping)";
 
-    await setupExampleByURL(`https://github.com/meteor/skel-${skeleton}`);
-  } catch (e) {
+            // XXX: if there is the need to add more options maybe we should have a better abstraction for this if-else
+            if (options.prototype) {
+              return Buffer.from(
+                contents.toString().replace(/~prototype~/g, prototypePackages())
+              );
+            } else {
+              return Buffer.from(contents.toString().replace(/~prototype~/g, ""));
+            }
+          }
+          if (/(\.html|\.[jt]sx?|\.css)/.test(f)) {
+            return Buffer.from(transform(contents.toString()));
+          } else {
+            return contents;
+          }
+        },
+        ignore: toIgnore,
+        preserveSymlinks: true,
+      }
+    );
+  };
 
-    if (
-      e.message !== "Using prototype option" &&
-      e.message !== "Using release option"
-    ) {
-      // something has happened while creating the app using git clone
-      Console.error(
-        `Something has happened while creating your app using git clone.
+  // Check if the local skeleton path exists
+  const skeletonPath = files.pathJoin(
+    __dirnameConverted,
+    "..",
+    "static-assets",
+    `skel-${skeleton}`
+  );
+
+  const useLocalSkeleton = files.exists(skeletonPath) ||
+    options.prototype ||
+    release.explicit;
+  if (useLocalSkeleton) {
+    // Use local skeleton
+    await copyFromLocalSkeleton();
+  } else {
+    try {
+      // Prototype option should use local skeleton.
+      // Maybe we should use a different skeleton for prototype
+      if (options.prototype) throw new Error("Using prototype option");
+      // if using the release option we should use the default skeleton
+      // using it as it was before 2.x
+      if (release.explicit) throw new Error("Using release option");
+
+      // If local skeleton doesn't exist, use setupExampleByURL
+      await setupExampleByURL(`https://github.com/meteor/skel-${skeleton}`);
+    } catch (e) {
+      if (
+        e.message !== "Using prototype option" &&
+        e.message !== "Using release option"
+      ) {
+        // something has happened while creating the app using git clone
+        Console.error(
+          `Something has happened while creating your app using git clone.
          Will use cached version of skeletons.
          Error message: `,
-        e.message
-      );
+          e.message
+        );
+      }
+      // For prototype or release options, use local skeleton
+      await copyFromLocalSkeleton();
     }
-
-       // TODO: decide if this should stay here or not.
-       await files.cp_r(
-        files.pathJoin(
-          __dirnameConverted,
-          "..",
-          "static-assets",
-          `skel-${skeleton}`
-        ),
-        appPath,
-        {
-          transformFilename: function (f) {
-            return transform(f);
-          },
-          transformContents: function (contents, f) {
-            // check if this app is just for prototyping if it is then we need to add autopublish and insecure in the packages file
-            if (/packages/.test(f)) {
-              const prototypePackages = () =>
-                "autopublish             # Publish all data to the clients (for prototyping)\n" +
-                "insecure                # Allow all DB writes from clients (for prototyping)";
-
-              // XXX: if there is the need to add more options maybe we should have a better abstraction for this if-else
-              if (options.prototype) {
-                return Buffer.from(
-                  contents.toString().replace(/~prototype~/g, prototypePackages())
-                );
-              } else {
-                return Buffer.from(contents.toString().replace(/~prototype~/g, ""));
-              }
-            }
-            if (/(\.html|\.[jt]sx?|\.css)/.test(f)) {
-              return Buffer.from(transform(contents.toString()));
-            } else {
-              return contents;
-            }
-          },
-          ignore: toIgnore,
-          preserveSymlinks: true,
-        }
-      );
-      await setupMessages();
   }
+  await setupMessages();
 
   Console.info("");
 });
