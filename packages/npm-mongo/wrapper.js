@@ -16,7 +16,7 @@ function connect(client) {
 }
 
 connect(new MongoClient(process.env.MONGO_URL)).then(client => {
-  if (client) client.close().catch(() => {});
+  if (client) client.close()
 });
 
 const useLegacyMongo = Package['npm-mongo-legacy']
