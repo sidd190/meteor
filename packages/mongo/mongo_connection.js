@@ -83,13 +83,17 @@ export const MongoConnection = function (url, options) {
       });
     }
   }));
-
+  
   if (options.oplogUrl && ! Package['disable-oplog']) {
     self._oplogHandle = new OplogHandle(options.oplogUrl, self.db.databaseName);
     self._docFetcher = new DocFetcher(self);
   }
-
+  
 };
+  
+MongoConnection.prototype.connect = function () {
+  return MongoDB.connect(this.client);
+}
 
 MongoConnection.prototype._close = async function() {
   var self = this;

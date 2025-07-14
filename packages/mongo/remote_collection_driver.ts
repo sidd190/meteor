@@ -121,7 +121,7 @@ MongoInternals.defaultRemoteCollectionDriver = once((): RemoteCollectionDriver =
 
   // Initialize database connection on startup
   Meteor.startup(async (): Promise<void> => {
-    await driver.mongo.client.connect();
+    await driver.mongo.connect();
   });
 
   return driver;

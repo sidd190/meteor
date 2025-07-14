@@ -1,25 +1,29 @@
 const { MongoClient, MongoServerSelectionError, MongoCompatibilityError } = Npm.require('mongodb');
 
-async function ableToConnectToMongo(url) {
-  let client;
-  try {
-    client = new MongoClient(url);
-    await client.connect();
-  } catch (error) {
-    if (error.cause instanceof MongoCompatibilityError && error.message.includes('maximum wire version')) {
-      console.warn('Legacy MongoDB version detected, using mongo-legacy package:', error.message);
-      console.warn('Warning: MongoDB versions <= 3.6 are deprecated. Some Meteor features may not work properly with this version. It is recommended to use MongoDB >= 4.');
-    } else console.error('Failed to get MongoDB server version:', error);
-    return false;
-  } finally {
-    if (client) await client.close().catch(() => {});
-    return true
-  }
+function connect(client) {
+  return client.connect()
+    .catch(error => {
+      if (error.cause instanceof MongoCompatibilityError && error.message.includes('maximum wire version')) {
+      console.warn(`[DEPRECATION] Legacy MongoDB version detected, using mongo-legacy package: ${error.message}
+        Warning: MongoDB versions <= 3.6 are deprecated. Some Meteor features may not work properly with this version.
+        It is recommended to use MongoDB >= 4.`);
+      if (!Package['npm-mongo-legacy']) {
+        throw new Error('Please, install npm-mongo-legacy package to use this version of MongoDB running "meteor add npm-mongo-legacy"');
+      }
+      return false
+    } else throw new Error(`Failed to initialize Meteor's npm-mongo package: ${error}`);
+  })
 }
 
-const useLegacyMongo = ableToConnectToMongo(process.env.MONGO_URL)
+connect(new MongoClient(process.env.MONGO_URL)).then(client => {
+  if (client) client.close().catch(() => {});
+});
 
+const useLegacyMongo = Package['npm-mongo-legacy']
 const oldNoDeprecationValue = process.noDeprecation;
+
+useLegacyMongo && console.log('WARN: npm-mongo-legacy package detected, using package for mongo <= 3.6');
+
 try {
   // Silence deprecation warnings introduced in a patch update to mongodb:
   // https://github.com/meteor/meteor/pull/9942#discussion_r218564879
@@ -34,3 +38,5 @@ try {
 NpmModuleMongodbVersion = useLegacyMongo
   ? Package['npm-mongo-legacy'].NpmModuleMongodbVersion
   : Npm.require('mongodb/package.json').version;
+
+NpmModuleMongodb.connect = connect
