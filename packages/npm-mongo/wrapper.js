@@ -8,7 +8,7 @@ function connect(client) {
         Warning: MongoDB versions <= 3.6 are deprecated. Some Meteor features may not work properly with this version.
         It is recommended to use MongoDB >= 4.`);
       if (!Package['npm-mongo-legacy']) {
-        throw new Error('Please, install npm-mongo-legacy package to use this version of MongoDB running "meteor add npm-mongo-legacy"');
+        throw new Error('Please, install npm-mongo-legacy package to use this version of MongoDB running "meteor add npm-mongo-legacy", then move the listed package inside .meteor/packages to the top.');
       }
       return false
     } else throw new Error(`Failed to initialize Meteor's npm-mongo package: ${error}`);
