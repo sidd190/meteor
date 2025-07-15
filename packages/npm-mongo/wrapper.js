@@ -11,19 +11,20 @@ function connect(client) {
         throw new Error('Please, install npm-mongo-legacy package to use this version of MongoDB running "meteor add npm-mongo-legacy", then move the listed package inside .meteor/packages to the top.');
       }
       return false
-    } else throw new Error(`Failed to initialize Meteor's npm-mongo package: ${error}`);
+    } else {
+      // log the stack
+      console.error(error.stack);
+      throw new Error(`Failed to initialize Meteor's npm-mongo package: ${error}`);
+    }
   })
 }
 
-const getDefaultMongoUrl = () => {
-  const defaultPort = process.env.METEOR_MONGO_PORT || '3001';
-  return `mongodb://127.0.0.1:${defaultPort}/meteor`;
-};
-
-const mongoUrl = process.env.MONGO_URL || getDefaultMongoUrl();
-connect(new MongoClient(mongoUrl)).then(client => {
-  if (client) client.close();
-});
+if(process.env.METEOR_MONGO_PORT){
+  // If we aren't using the default Meteor's MongoDB(>6), we should to check the mongo version
+  connect(new MongoClient(process.env.MONGO_URL)).then(client => {
+    if (client) client.close();
+  });
+}
 
 const useLegacyMongo = Package['npm-mongo-legacy']
 const oldNoDeprecationValue = process.noDeprecation;
