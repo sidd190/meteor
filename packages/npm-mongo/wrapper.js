@@ -15,8 +15,14 @@ function connect(client) {
   })
 }
 
-connect(new MongoClient(process.env.MONGO_URL)).then(client => {
-  if (client) client.close()
+const getDefaultMongoUrl = () => {
+  const defaultPort = process.env.METEOR_MONGO_PORT || '3001';
+  return `mongodb://127.0.0.1:${defaultPort}/meteor`;
+};
+
+const mongoUrl = process.env.MONGO_URL || getDefaultMongoUrl();
+connect(new MongoClient(mongoUrl)).then(client => {
+  if (client) client.close();
 });
 
 const useLegacyMongo = Package['npm-mongo-legacy']
