@@ -1,4 +1,4 @@
-const { MongoClient, MongoServerSelectionError, MongoCompatibilityError } = Npm.require('mongodb');
+const { MongoClient, MongoCompatibilityError } = Npm.require('mongodb');
 
 function connect(client) {
   return client.connect()
