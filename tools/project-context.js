@@ -1218,7 +1218,6 @@ Object.assign(exports.ProjectConstraintsFile.prototype, {
           trailingSpaceAndComment: ''
         };
         if (constraintToAdd.package === 'npm-mongo-legacy') {
-          // Procura o índice do mongo
           const mongoIdx = self._constraintLines.findIndex(lr => lr.constraint && lr.constraint.package === 'mongo');
           if (mongoIdx > -1) {
             self._constraintLines.splice(mongoIdx, 0, lineRecord);

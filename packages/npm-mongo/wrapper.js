@@ -19,7 +19,7 @@ function connect(client) {
   })
 }
 
-if(process.env.METEOR_MONGO_PORT){
+if(process.env.MONGO_URL){
   // If we aren't using the default Meteor's MongoDB(>6), we should to check the mongo version
   connect(new MongoClient(process.env.MONGO_URL)).then(client => {
     if (client) client.close();
@@ -45,5 +45,3 @@ try {
 NpmModuleMongodbVersion = useLegacyMongo
   ? Package['npm-mongo-legacy'].NpmModuleMongodbVersion
   : Npm.require('mongodb/package.json').version;
-
-NpmModuleMongodb.connect = connect
