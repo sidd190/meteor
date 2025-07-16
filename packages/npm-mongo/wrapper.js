@@ -19,7 +19,7 @@ function connect(client) {
   })
 }
 
-if(process.env.MONGO_URL?.startsWith('mongodb://')){
+if(process.env.MONGO_URL && process.env.MONGO_URL.startsWith('mongodb://')){
   // If we aren't using the default Meteor's MongoDB(>6), we should to check the mongo version
   connect(new MongoClient(process.env.MONGO_URL)).then(client => {
     if (client) client.close();
