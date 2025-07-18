@@ -12,8 +12,6 @@ function connect(client) {
       }
       return false
     } else {
-      // log the stack
-      console.error(error.stack);
       throw new Error(`Failed to initialize Meteor's npm-mongo package: ${error}`);
     }
   })
