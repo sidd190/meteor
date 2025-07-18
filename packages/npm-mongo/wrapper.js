@@ -17,16 +17,13 @@ function connect(client) {
   })
 }
 
-if (process.env.MONGO_URL) {
+if (process.env.MONGO_URL && (/^mongodb(\+srv)?:\/\//.test(process.env.MONGO_URL))) {
   try {
     // Try to parse the connection string to check if it's valid
     new URL(process.env.MONGO_URL);
-    // If it starts with mongodb:// or mongodb+srv://, proceed to check the mongo version
-    if (/^mongodb(\+srv)?:\/\//.test(process.env.MONGO_URL)) {
-      connect(new MongoClient(process.env.MONGO_URL)).then(client => {
-        if (client) client.close();
-      });
-    }
+    connect(new MongoClient(process.env.MONGO_URL)).then(client => {
+      if (client) client.close();
+    });
   } catch (e) {
     console.warn('Invalid MongoDB connection string in MONGO_URL:', process.env.MONGO_URL);
   }
