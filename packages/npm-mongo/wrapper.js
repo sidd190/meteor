@@ -19,14 +19,22 @@ function connect(client) {
   })
 }
 
-if(process.env.MONGO_URL && process.env.MONGO_URL.startsWith('mongodb://')){
-  // If we aren't using the default Meteor's MongoDB(>6), we should to check the mongo version
-  connect(new MongoClient(process.env.MONGO_URL)).then(client => {
-    if (client) client.close();
-  });
+if (process.env.MONGO_URL) {
+  try {
+    // Try to parse the connection string to check if it's valid
+    new URL(process.env.MONGO_URL);
+    // If it starts with mongodb:// or mongodb+srv://, proceed to check the mongo version
+    if (/^mongodb(\+srv)?:\/\//.test(process.env.MONGO_URL)) {
+      connect(new MongoClient(process.env.MONGO_URL)).then(client => {
+        if (client) client.close();
+      });
+    }
+  } catch (e) {
+    console.warn('Invalid MongoDB connection string in MONGO_URL:', process.env.MONGO_URL);
+  }
 }
 
-const useLegacyMongo = Package['npm-mongo-legacy']
+const useLegacyMongo = !!Package['npm-mongo-legacy']
 const oldNoDeprecationValue = process.noDeprecation;
 
 useLegacyMongo && console.log('WARN: npm-mongo-legacy package detected, using package for mongo <= 3.6');
