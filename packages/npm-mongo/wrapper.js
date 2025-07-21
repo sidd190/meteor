@@ -19,8 +19,6 @@ function connect(client) {
 
 if (process.env.MONGO_URL && (/^mongodb(\+srv)?:\/\//.test(process.env.MONGO_URL))) {
   try {
-    // Try to parse the connection string to check if it's valid
-    new URL(process.env.MONGO_URL);
     connect(new MongoClient(process.env.MONGO_URL)).then(client => {
       if (client) client.close();
     });
@@ -33,7 +31,7 @@ const useLegacyMongo = !!Package['npm-mongo-legacy']
 const oldNoDeprecationValue = process.noDeprecation;
 
 useLegacyMongo && console.log('WARN: npm-mongo-legacy package detected, using package for mongo <= 3.6');
-
+console.log('useLegacyMongo', useLegacyMongo);
 try {
   // Silence deprecation warnings introduced in a patch update to mongodb:
   // https://github.com/meteor/meteor/pull/9942#discussion_r218564879
