@@ -31,7 +31,7 @@ const useLegacyMongo = !!Package['npm-mongo-legacy']
 const oldNoDeprecationValue = process.noDeprecation;
 
 useLegacyMongo && console.log('WARN: npm-mongo-legacy package detected, using package for mongo <= 3.6');
-console.log('useLegacyMongo', useLegacyMongo);
+
 try {
   // Silence deprecation warnings introduced in a patch update to mongodb:
   // https://github.com/meteor/meteor/pull/9942#discussion_r218564879
