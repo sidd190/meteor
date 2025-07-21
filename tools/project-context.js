@@ -1217,7 +1217,16 @@ Object.assign(exports.ProjectConstraintsFile.prototype, {
           constraint: constraintToAdd,
           trailingSpaceAndComment: ''
         };
-        self._constraintLines.push(lineRecord);
+        if (constraintToAdd.package === 'npm-mongo-legacy') {
+          const mongoIdx = self._constraintLines.findIndex(lr => lr.constraint && lr.constraint.package === 'mongo');
+          if (mongoIdx > -1) {
+            self._constraintLines.splice(mongoIdx, 0, lineRecord);
+          } else {
+            self._constraintLines.push(lineRecord);
+          }
+        } else {
+          self._constraintLines.push(lineRecord);
+        }
         self._constraintMap[constraintToAdd.package] = lineRecord;
         self._modified = true;
         return;
