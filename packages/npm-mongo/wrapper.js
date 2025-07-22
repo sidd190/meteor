@@ -11,8 +11,6 @@ function connect(client) {
         throw new Error('Please, install npm-mongo-legacy package to use this version of MongoDB running "meteor add npm-mongo-legacy", then move the listed package inside .meteor/packages to the top.');
       }
       return false
-    } else {
-      throw new Error(`Failed to initialize Meteor's npm-mongo package: ${error}`);
     }
   })
 }
