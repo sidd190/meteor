@@ -11,15 +11,16 @@ function connect(client) {
         throw new Error('Please, install npm-mongo-legacy package to use this version of MongoDB running "meteor add npm-mongo-legacy", then move the listed package inside .meteor/packages to the top.');
       }
       return false
-    } else {
-      throw new Error(`Failed to initialize Meteor's npm-mongo package: ${error}`);
     }
   })
 }
 
 if (process.env.MONGO_URL && (/^mongodb(\+srv)?:\/\//.test(process.env.MONGO_URL))) {
   try {
-    connect(new MongoClient(process.env.MONGO_URL)).then(client => {
+    connect(new MongoClient(process.env.MONGO_URL, {
+      tls: true,
+      tlsAllowInvalidCertificates: true,
+    })).then(client => {
       if (client) client.close();
     });
   } catch (e) {
