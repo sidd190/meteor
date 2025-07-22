@@ -1,7 +1,10 @@
 const { MongoClient, MongoCompatibilityError } = Npm.require('mongodb');
 
 function connect(client) {
-  return client.connect()
+  return client.connect( {
+      tls: true,
+      tlsAllowInvalidCertificates: true
+    })
     .catch(error => {
       if (error.cause instanceof MongoCompatibilityError && error.message.includes('maximum wire version')) {
       console.warn(`[DEPRECATION] Legacy MongoDB version detected, using mongo-legacy package: ${error.message}
