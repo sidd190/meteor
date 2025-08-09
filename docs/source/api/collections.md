@@ -211,14 +211,12 @@ On the client, there will be a period of time between when the page loads and
 when the published data arrives from the server during which your client-side
 collections will be empty.
 
-Note that `fields` has been deprecated and now updated to `projection`.
-
 {% apibox "Mongo.Collection#findOne" %}
 
 Equivalent to [`find`](#find)`(selector, options).`[`fetch`](#fetch)`()[0]` with
 `options.limit = 1`.
 
-**Note**: The `fields` option is deprecated in favor of `projection`, which aligns with MongoDB's official terminology and driver. Using `projection` ensures consistency and clarity in specifying which fields to include or exclude in query results.
+> **Note**: The `fields` option is deprecated in favor of `projection`, which aligns with MongoDB's official terminology and driver. Using `projection` ensures consistency and clarity in specifying which fields to include or exclude in query results.
 
 {% apibox "Mongo.Collection#findOneAsync" %}
 
@@ -1002,7 +1000,7 @@ Users.findOne({}, { projection: { 'alterEgos.name': 1, _id: 0 } });
 // Returns { alterEgos: [{ name: 'Kira' }, { name: 'L' }] }
 ```
 
-Note: The `fields` option is deprecated in favor of `projection`, which is the standard term used by MongoDB. Using `projection` ensures compatibility with MongoDB's documentation and drivers.
+> Note: The `fields` option is deprecated in favor of `projection`, which is the standard term used by MongoDB. Using `projection` ensures compatibility with MongoDB's documentation and drivers.
 
 See <a href="http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/#projection">
 the MongoDB docs</a> for details of the nested field rules and array behavior.
