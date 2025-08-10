@@ -1051,14 +1051,14 @@ Object.assign(Roles, {
    *   - `queryOptions`: options which are passed directly through to `Meteor.users.find(query, options)`
    * @return {Promise<Cursor>} Cursor of users in roles.
    */
-  getUsersInRoleAsync: async function (roles, options, queryOptions) {
+  getUsersInRoleAsync: async function (roles, options = {}, queryOptions) {
     const ids = (
       await Roles.getUserAssignmentsForRole(roles, options).fetchAsync()
     ).map((a) => a.user._id)
 
     return Meteor.users.find(
       { _id: { $in: ids } },
-      (options && options.queryOptions) || queryOptions || {}
+      (options.queryOptions) || queryOptions || {}
     )
   },
 
