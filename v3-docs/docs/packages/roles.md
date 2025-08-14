@@ -253,6 +253,11 @@ const legacyUsers = await (await Roles.getUsersInRoleAsync(
   { sort: { createdAt: -1 }, limit: 10 }
 )).fetchAsync();
 
+// Preferred usage with queryOptions in options
+const users = await (await Roles.getUsersInRoleAsync("manager", {
+  queryOptions: { sort: { createdAt: -1 }, limit: 10 }
+})).fetchAsync();
+
 ```
 
 ## Checking Roles

@@ -1052,14 +1052,15 @@ Object.assign(Roles, {
    * @return {Promise<Cursor>} Cursor of users in roles.
    */
   getUsersInRoleAsync: async function (roles, options = {}, queryOptions) {
+    if (!options.queryOptions) options.queryOptions = queryOptions;
     const ids = (
       await Roles.getUserAssignmentsForRole(roles, options).fetchAsync()
     ).map((a) => a.user._id)
 
     return Meteor.users.find(
       { _id: { $in: ids } },
-      (options.queryOptions) || queryOptions || {}
-    )
+      options
+    );
   },
 
   /**
